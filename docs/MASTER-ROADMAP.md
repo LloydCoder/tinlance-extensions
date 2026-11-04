@@ -30,6 +30,21 @@ The project retains the 25-phase ecosystem roadmap. The MCP programme is a dedic
 9. Use pull requests, CI evidence and reviewable changes; avoid undocumented direct-to-production edits.
 10. The project status must distinguish proposed, in progress, implemented, verified, released and deprecated.
 
+## 2A. Phase 0 — Repository foundation
+
+**Purpose:** establish the minimum governed, testable repository foundation before product implementation.
+
+Scope:
+- Repository conventions, ignore rules, security and contribution policies.
+- Least-privilege CI workflow with immutable action pins.
+- Dependency-free repository validation and regression tests.
+- ADRs for repository governance and the proposed MCP protocol baseline.
+- Accurate README, architecture, roadmap and implementation-status links.
+- Preserve the existing Apache-2.0 license pending a separate legal/IP decision.
+- No paid infrastructure, product runtime, browser package, or MCP gateway in this phase.
+
+**Phase 0 exit:** foundation files exist; repository validation and tests pass in GitHub Actions; architecture and roadmap are reconciled; final change is merged to main. This is repository readiness, not application readiness.
+
 ## 3. The 25-phase ecosystem roadmap
 
 ### Foundation — Milestone A
@@ -46,6 +61,19 @@ The project retains the 25-phase ecosystem roadmap. The MCP programme is a dedic
 | 08 | Identity, authentication and tenancy | Account model, sessions, organization model, tenant isolation and authorization primitives |
 | 09 | Backend and data architecture | Service ownership, schemas, migrations, API contracts, queues and data lifecycle |
 | 10 | Security and privacy control plane | Threat models, policies, consent, audit, secret handling, retention and security gates |
+
+### Phase 01 — Repository and baseline forensic audit
+
+**Purpose:** establish a dated, commit-specific factual baseline and remediation register for the repository, rather than inferring implementation from product plans.
+
+Scope:
+- Inspect default branch contents, history, repository settings available to the audit, license, package manifests, workflows, tests, releases, and current pull requests.
+- Record verified facts separately from unavailable/unknown administrative settings.
+- Inventory absent runtime components and identify security, privacy, supply-chain, quality, and operational risks.
+- Reconcile README, architecture, roadmap, ADRs and actual repository state.
+- Add reproducible repository validation so the baseline itself remains regression-tested.
+
+**Phase 01 exit:** baseline report is committed; all accessible evidence is cited or identified; unknowns are explicit; critical/high foundation blockers have an owner and treatment; CI is green and the change is merged. Administrative settings inaccessible to the integration remain owner-verification items and must not be falsely marked complete.
 
 **Milestone A exit:** the architecture and repository are sufficiently defined and reproducible to build products without creating duplicate authority, security or data models. MCP implementation must not begin before the MCP-specific P0 design gates in section 4 are approved.
 
