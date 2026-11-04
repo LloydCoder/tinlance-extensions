@@ -189,7 +189,7 @@ flowchart TD
 
 ## 5. Initial product portfolio and release order
 
-The proposed ecosystem catalogue contains 32 product concepts across intelligence, security, business intelligence, governed automation, developer utilities and specialist tools. This is a product opportunity catalogue, not a commitment to build or release all 32 simultaneously.
+The canonical portfolio contains 26 distinct extension products. See [PRODUCT-CATALOGUE.md](PRODUCT-CATALOGUE.md) for approved product identities, boundaries, overlap decisions and status rules. Portfolio approval is not a commitment to implement or release all 26 simultaneously.
 
 ### Initial commercial release candidates
 
