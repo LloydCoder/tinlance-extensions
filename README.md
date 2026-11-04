@@ -8,10 +8,13 @@ A unified cross-browser extension ecosystem by Tinlance, delivering intelligence
 
 - [Master system architecture](docs/SYSTEM-ARCHITECTURE.md)
 - [Master delivery roadmap](docs/MASTER-ROADMAP.md)
+- [Phase 0–1 forensic baseline and closeout evidence](docs/PHASE-0-1-BASELINE.md)
+- [Security policy](SECURITY.md)
+- [Contribution guide](CONTRIBUTING.md)
 
 ## Project status
 
-The architecture and roadmap documents describe the intended system and delivery plan. They are not evidence that the listed applications, services, MCP endpoint, integrations, browser packages, or marketplace listings have been implemented or released.
+The architecture and roadmap documents describe the intended system and delivery plan. They are not evidence that the listed applications, services, MCP endpoint, integrations, browser packages, or marketplace listings have been implemented or released. The Phase 0–1 report records the original repository baseline and the foundation controls added in the current change set; application runtime and product readiness remain unimplemented.
 
 ## Product principle
 
