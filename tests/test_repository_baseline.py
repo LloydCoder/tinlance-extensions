@@ -49,6 +49,15 @@ class RepositoryBaselineTests(unittest.TestCase):
                 ref = line.strip().split("@", 1)[1]
                 self.assertRegex(ref, r"^[0-9a-f]{40}$")
 
+    def test_phase_closeout_evidence_is_not_left_stale(self):
+        report = (ROOT / "docs/PHASE-0-1-BASELINE.md").read_text(encoding="utf-8")
+        self.assertIn("run #41881649377", report)
+        self.assertIn("run #41882386245", report)
+        self.assertIn("current main", report)
+        self.assertNotIn("- [ ] GitHub Actions workflow passes", report)
+        self.assertNotIn("- [ ] PR is merged to main", report)
+        self.assertNotIn("- [ ] Final CI is green", report)
+
     def test_no_package_or_product_runtime_is_claimed(self):
         readme = (ROOT / "README.md").read_text(encoding="utf-8").lower()
         self.assertIn("not evidence that", readme)

@@ -5,7 +5,7 @@
 **Baseline commit on main:** cfa4538aef9a8c3895fcda2d3b76246bcc0a91fe  
 **Scope:** repository foundation (Phase 0) and repository/baseline forensic audit (Phase 01)
 
-> This report records the observed repository state before the Phase 0 foundation changes in this pull request. It does not imply that browser products, a web application, APIs, a backend, an MCP server, or production infrastructure exist.
+> This report separates the historical baseline from the verified current repository state. It does not imply that browser products, a web application, APIs, a backend, an MCP server, or production infrastructure exist.
 
 ## 1. Executive finding
 
@@ -13,9 +13,19 @@ The initial main branch was an empty project shell rather than an application re
 
 The earlier architecture/roadmap work existed only in an open draft pull request (#1) at audit time. It was not part of main.
 
-**Baseline disposition:** critical foundation gaps were present. The Phase 0 changes in this PR establish repository-level controls and documentation validation. Phase 01 records the baseline and remediation evidence. This is not an application or product launch gate.
+**Baseline disposition:** critical foundation gaps were present and the repository-level remediation is now merged. Phase 0 and Phase 01 are complete for the explicitly defined repository-foundation and forensic-audit scope. This is not an application or product launch gate; owner-controlled GitHub security settings remain a separate, unresolved administrative gate.
 
-## 2. Evidence and observations
+## 2. Current-state closeout evidence
+
+- Current default branch: `main`.
+- Current main commit: `ab708d5374fb1abb629945a85afc41e384876f6c`.
+- Phase 0/1 foundation PR #1, CI repair PR #3, and final CI hardening PR #5 are merged. Dependabot PRs #2 and #4 were closed as superseded, not merged.
+- Final pull-request workflow run #41881649377 passed on the final PR head before merge.
+- A separate `push` workflow run on the exact main merge commit also passed: run #41882386245, conclusion `success`.
+- The repository currently has zero open pull requests.
+- The workflow validates repository contracts, standard-library tests, Python syntax, and whitespace. It is not an application build, security certification, or penetration test.
+
+## 3. Historical baseline evidence and observations
 
 | Area | Observed baseline | Evidence / consequence |
 |---|---|---|
@@ -34,7 +44,7 @@ The earlier architecture/roadmap work existed only in an open draft pull request
 | Secrets / environments | Not audited | Integration does not expose repository secret values; no claim is made about their state |
 | Deployed services / stores | Not verified | No deployment or marketplace status is inferred |
 
-## 3. Risk register
+## 4. Risk register
 
 | ID | Severity | Finding | Required treatment |
 |---|---|---|---|
@@ -49,7 +59,7 @@ The earlier architecture/roadmap work existed only in an open draft pull request
 | EXT-BASE-09 | Medium | Branch protection and repository secret configuration not verifiable through current integration | Owner must inspect GitHub settings directly; never infer a passing control from unavailable evidence |
 | EXT-BASE-10 | High | No application code means product build/runtime status is not applicable | Do not report product builds, browser compatibility, endpoint health, or store approval as complete |
 
-## 4. Phase 0 — repository foundation
+## 5. Phase 0 — repository foundation
 
 ### Implemented in this change set
 
@@ -73,7 +83,7 @@ The earlier architecture/roadmap work existed only in an open draft pull request
 
 These are intentionally deferred to later roadmap phases. A documentation-quality workflow is not an application build.
 
-## 5. Phase 01 — repository and baseline forensic audit
+## 6. Phase 01 — repository and baseline forensic audit
 
 ### Completed evidence work
 
@@ -98,7 +108,7 @@ The connected integration cannot inspect protected secret values or complete adm
 
 These settings are not fabricated or represented as verified by this report.
 
-## 6. Phase exit criteria
+## 7. Phase exit criteria
 
 ### Phase 0 exit
 
@@ -107,8 +117,8 @@ These settings are not fabricated or represented as verified by this report.
 - [x] Automated baseline tests and validation script exist.
 - [x] License is preserved and its implications are recorded.
 - [x] Architecture/roadmap/ADR links are discoverable.
-- [ ] GitHub Actions workflow passes on the final PR commit.
-- [ ] PR is merged to main.
+- [x] GitHub Actions workflow passes on the final PR commit (run #41881649377).
+- [x] Foundation changes are merged to main (PR #1, #3 and #5; current main `ab708d5374fb1abb629945a85afc41e384876f6c`).
 
 ### Phase 01 exit
 
@@ -117,9 +127,9 @@ These settings are not fabricated or represented as verified by this report.
 - [x] Risk register and remediation scope are recorded.
 - [x] Architecture/roadmap status is reconciled with actual implementation.
 - [x] Owner-only administrative checks that could not be inspected are explicitly listed as unknowns with an owner action; they are not falsely reported as passed.
-- [ ] Final CI is green and the evidence is merged to main.
+- [x] Final CI is green on the final PR head and on the resulting main commit (runs #41881649377 and #41882386245).
 
-## 7. Next-phase gate
+## 8. Next-phase gate
 
 Do not start product runtime or MCP gateway implementation merely because this foundation PR merges. The next sequence is:
 
@@ -129,7 +139,7 @@ Do not start product runtime or MCP gateway implementation merely because this f
 4. MCP Gate 0 approval (strategy, protocol, tool contracts, security/authorization, Agent Platform boundary).
 5. MCP gateway implementation only after Gate 0 is explicitly accepted.
 
-## 8. Status vocabulary
+## 9. Status vocabulary
 
 - **Implemented:** files or code are present in a branch.
 - **Verified:** the relevant automated/manual test evidence passed.
