@@ -1,8 +1,8 @@
 # Phase 02 — Competitive Landscape and Commercial Validation Snapshot
 
-**Research date:** 2026-11-04  
-**Status:** Public-source desk research; not customer validation  
-**Scope:** Selected competitors and adjacent products for the 26-product portfolio  
+**Research date:** 2026-11-04
+**Status:** Public-source desk research; not customer validation
+**Scope:** Selected competitors and adjacent products for the 26-product portfolio
 **Parent:** [Phase 02 Product Requirements](PHASE-02-PRODUCT-REQUIREMENTS.md)
 
 > This is a directional market scan, not an exhaustive competitor census or market-size report. Vendor pages describe vendor claims. Feature availability, pricing and terms change. Validate in product demos and customer interviews before making comparative or marketing claims.
@@ -61,7 +61,7 @@ Public examples:
 Public examples:
 - [Visualping](https://help.visualping.io/en/articles/4438913) describes scheduled visual, text and code change monitoring with highlighted comparisons and alerts.
 - [Distill](https://distill.io/docs/web-monitor/what-is-distill/) describes local and cloud monitoring, with different device-availability requirements.
-  
+
 **Implication:** monitoring itself is established. Tinlyt Monitor must differentiate through evidence provenance, structured extraction, change significance, verification and integration with Tinlyt Research—not merely another page-diff alert. Tinlyt Research should connect extraction, source provenance and claim verification into a coherent investigation workflow.
 
 **Decision:** preserve Monitor as its own recurring monitoring job. Test willingness to pay for evidence-quality workflows, alert relevance and team review—not raw check frequency alone.
@@ -82,7 +82,7 @@ Public examples:
 Public examples:
 - [Serpstat Website SEO Checker extension](https://help.serpstat.com/en/articles/14938418-browser-extension) offers SEO parameters, page analysis, domain metrics and API-credit-backed account integration.
 - [SEOquake](https://chromewebstore.google.com/detail/seoquake-on-page-seo-chec/akdgnmcogleenhbclghghlkkdndkjdjc) offers free on-page SEO audits and SERP overlays.
-  
+
 **Implication:** basic SEO inspection and SERP overlays are commoditized. SEO Inspector should focus on high-quality technical diagnostics and actionable evidence. SERP Intelligence needs a compliant, costed data source and a distinct workflow; parsing the visible search page alone may not support a premium product. WebDebugger/JSON Explorer/StackDetect are useful utilities but face high free-tool expectations.
 
 **Decision:** retain these as portfolio options; do not put them ahead of the initial beta or high-leverage Tinlyt/ThreatFade/FadeReach products without usage and willingness-to-pay evidence.
