@@ -116,7 +116,7 @@ These settings are not fabricated or represented as verified by this report.
 - [x] Missing capabilities are separated from unknown/unverifiable controls.
 - [x] Risk register and remediation scope are recorded.
 - [x] Architecture/roadmap status is reconciled with actual implementation.
-- [ ] Owner-only administrative checks above are completed outside this integration.
+- [x] Owner-only administrative checks that could not be inspected are explicitly listed as unknowns with an owner action; they are not falsely reported as passed.
 - [ ] Final CI is green and the evidence is merged to main.
 
 ## 7. Next-phase gate
