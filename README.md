@@ -9,6 +9,7 @@ A unified cross-browser extension ecosystem by Tinlance, delivering intelligence
 - [Master system architecture](docs/SYSTEM-ARCHITECTURE.md)
 - [Master delivery roadmap](docs/MASTER-ROADMAP.md)
 - [Canonical product catalogue — 26 products](docs/PRODUCT-CATALOGUE.md)
+- [Four proposal decisions, dependencies and validation gates](docs/FOUR-PROPOSAL-DECISIONS.md)
 - [Phase 02 product requirements and prioritization](docs/PHASE-02-PRODUCT-REQUIREMENTS.md)
 - [Phase 02 competitive landscape and validation](docs/PHASE-02-COMPETITIVE-VALIDATION.md)
 - [Phase 02 customer discovery playbook](docs/PHASE-02-CUSTOMER-DISCOVERY-PLAYBOOK.md)
@@ -19,6 +20,8 @@ A unified cross-browser extension ecosystem by Tinlance, delivering intelligence
 ## Project status
 
 The architecture and roadmap documents describe the intended system and delivery plan. They are not evidence that the listed applications, services, MCP endpoint, integrations, browser packages, or marketplace listings have been implemented or released. Phase 0 (repository foundation) and Phase 01 (repository forensic baseline) are closed for their documented repository scope, with CI passing on the merged main commit. Owner-controlled GitHub security settings remain an administrative verification gate; application runtime and product readiness remain unimplemented.
+
+The four-proposal decision record approves portfolio disposition and validation sequencing only. It does not authorize implementation or establish commercial, technical, legal or security validation.
 
 ## Product principle
 
