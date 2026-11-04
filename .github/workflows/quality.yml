@@ -34,4 +34,4 @@ jobs:
       - name: Check Python syntax
         run: python -m compileall -q scripts tests
       - name: Check whitespace errors
-        run: git diff --check
+        run: git diff --check HEAD^ HEAD
