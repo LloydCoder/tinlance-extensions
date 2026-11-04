@@ -7,7 +7,8 @@ A unified cross-browser extension ecosystem by Tinlance, delivering intelligence
 ## Project documentation
 
 - [Master system architecture](docs/SYSTEM-ARCHITECTURE.md)
-- [Master delivery roadmap](docs/MASTER-ROADMAP.md)\n- [Canonical product catalogue — 26 products](docs/PRODUCT-CATALOGUE.md)
+- [Master delivery roadmap](docs/MASTER-ROADMAP.md)
+- [Canonical product catalogue — 26 products](docs/PRODUCT-CATALOGUE.md)
 - [Phase 0–1 forensic baseline and closeout evidence](docs/PHASE-0-1-BASELINE.md)
 - [Security policy](SECURITY.md)
 - [Contribution guide](CONTRIBUTING.md)
