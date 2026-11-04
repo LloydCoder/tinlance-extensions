@@ -56,6 +56,8 @@ def main() -> int:
         fail("workflow must declare least-privilege contents: read permissions")
     if "cache: false" in workflow:
         fail("setup-python does not accept cache: false; omit cache configuration when unused")
+    if "fetch-depth: 0" not in workflow:
+        fail("checkout must fetch full history for the commit-diff whitespace check")
     action_refs = re.findall(r"uses:\s*([^\s]+)", workflow)
     if not action_refs or any(not re.search(r"@[0-9a-f]{40}$", ref) for ref in action_refs):
         fail("every GitHub Action must be pinned to a full 40-character commit SHA")
