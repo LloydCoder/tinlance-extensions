@@ -1,10 +1,10 @@
 # Four Proposal Decisions — Portfolio, Dependencies and Validation Gates
 
-**Decision status:** Approved portfolio direction; validation and implementation gates remain open  
-**Decision date:** 2026-11-04  
-**Owner:** Tinlance Limited  
-**Repository:** `LloydCoder/tinlance-extensions`  
-**Scope:** Four external proposals assessed for Tinlance Extensions  
+**Decision status:** Approved portfolio direction; validation and implementation gates remain open
+**Decision date:** 2026-11-04
+**Owner:** Tinlance Limited
+**Repository:** `LloydCoder/tinlance-extensions`
+**Scope:** Four external proposals assessed for Tinlance Extensions
 **Related records:** [Canonical Product Catalogue](PRODUCT-CATALOGUE.md), [Master System Architecture](SYSTEM-ARCHITECTURE.md), [Master Delivery Roadmap](MASTER-ROADMAP.md), [Phase 02 Product Requirements](PHASE-02-PRODUCT-REQUIREMENTS.md)
 
 > This record approves the portfolio disposition and the order in which the opportunities should be validated. It does not authorize product implementation, establish customer demand, approve a production architecture, or claim that any capability exists. No product status changes from this record alone.
