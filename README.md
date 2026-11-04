@@ -14,7 +14,7 @@ A unified cross-browser extension ecosystem by Tinlance, delivering intelligence
 
 ## Project status
 
-The architecture and roadmap documents describe the intended system and delivery plan. They are not evidence that the listed applications, services, MCP endpoint, integrations, browser packages, or marketplace listings have been implemented or released. The Phase 0–1 report records the original repository baseline and the foundation controls added in the current change set; application runtime and product readiness remain unimplemented.
+The architecture and roadmap documents describe the intended system and delivery plan. They are not evidence that the listed applications, services, MCP endpoint, integrations, browser packages, or marketplace listings have been implemented or released. Phase 0 (repository foundation) and Phase 01 (repository forensic baseline) are closed for their documented repository scope, with CI passing on the merged main commit. Owner-controlled GitHub security settings remain an administrative verification gate; application runtime and product readiness remain unimplemented.
 
 ## Product principle
 
