@@ -203,13 +203,13 @@ The canonical portfolio contains 26 distinct extension products. See [PRODUCT-CA
 
 ### Later release groups
 
-- Tinlyt Research, Evidence and Source Inspector.
-- Aithyrex Prompt Injection Detector.
+- Tinlyt Research (including Evidence and Source Inspector capabilities).
+- Auctaryn Guard (new portfolio product; requirements and Auctaryn integration gate required).
 - ThreatFade LinkShield, PrivacyGuard and DownloadGuard.
-- FadeReach CompanyIntel, ContactIntel, Outreach Assistant and CRM Bridge.
-- Tinlance Workflow, FormPilot and Memory Vault Clipper.
-- Developer utilities: API Inspector, JSON Explorer, StackDetect, WebDebugger and AccessibilityCheck.
-- SEO Inspector, SERP Intelligence, ShopIntel, compliance and authorized bug bounty tooling.
+- FadeReach CompanyIntel, ContactIntel and Outreach Assistant; CRM is an integration, not a separate extension.
+- Tinlance Workflow (including FormPilot capability) and Memory Vault Clipper.
+- Developer utilities: JSON Explorer, StackDetect, WebDebugger (including API inspection) and AccessibilityCheck.
+- SEO Inspector, SERP Intelligence, ShopIntel, Compliance Assistant and Authorized Security Testing Companion.
 
 Do not expose a product or MCP tool as generally available while it is only a roadmap item, mock, fixture, prototype or unverified integration.
 
