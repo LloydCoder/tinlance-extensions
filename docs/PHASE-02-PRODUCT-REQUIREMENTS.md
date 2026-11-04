@@ -1,10 +1,10 @@
 # Tinlance Extensions — Phase 02 Product Requirements and Prioritization
 
-**Status:** Requirements baseline drafted; review and customer validation outstanding  
-**Date:** 2026-11-04  
-**Owner:** Tinlance Limited  
-**Catalogue:** [26-product canonical catalogue](PRODUCT-CATALOGUE.md)  
-**Architecture:** [System architecture](SYSTEM-ARCHITECTURE.md)  
+**Status:** Requirements baseline drafted; review and customer validation outstanding
+**Date:** 2026-11-04
+**Owner:** Tinlance Limited
+**Catalogue:** [26-product canonical catalogue](PRODUCT-CATALOGUE.md)
+**Architecture:** [System architecture](SYSTEM-ARCHITECTURE.md)
 **Roadmap:** [Master roadmap](MASTER-ROADMAP.md)
 
 > This document defines proposed product requirements. It is not proof of implementation, customer validation, browser compatibility, security certification, or release readiness. Scores, revenue models and commercial assumptions are hypotheses to test.
