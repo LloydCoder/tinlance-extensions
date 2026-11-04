@@ -1,8 +1,8 @@
 # Tinlance Extensions — Canonical Product Catalogue
 
-**Decision status:** Approved portfolio baseline — 2026-11-04  
-**Owner:** Tinlance Limited  
-**Repository:** https://github.com/LloydCoder/tinlance-extensions  
+**Decision status:** Approved portfolio baseline — 2026-11-04
+**Owner:** Tinlance Limited
+**Repository:** https://github.com/LloydCoder/tinlance-extensions
 **Decision scope:** Product identity, boundaries, canonical count, overlap disposition and portfolio-level release grouping.
 
 > Approval in this document means the concepts below are the canonical portfolio baseline for requirements and sequencing. It does not mean every product is funded, implemented, security-reviewed, commercially validated, browser-compatible, or approved for release. Each product still requires its own brief, acceptance criteria, threat model, dependencies and release gate.
