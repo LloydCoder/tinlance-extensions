@@ -10,6 +10,7 @@ A unified cross-browser extension ecosystem by Tinlance, delivering intelligence
 - [Master delivery roadmap](docs/MASTER-ROADMAP.md)
 - [Canonical product catalogue — 26 products](docs/PRODUCT-CATALOGUE.md)
 - [Phase 02 product requirements and prioritization](docs/PHASE-02-PRODUCT-REQUIREMENTS.md)
+- [Phase 02 competitive landscape and validation](docs/PHASE-02-COMPETITIVE-VALIDATION.md)
 - [Phase 0–1 forensic baseline and closeout evidence](docs/PHASE-0-1-BASELINE.md)
 - [Security policy](SECURITY.md)
 - [Contribution guide](CONTRIBUTING.md)
