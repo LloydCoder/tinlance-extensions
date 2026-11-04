@@ -43,6 +43,7 @@ class RepositoryBaselineTests(unittest.TestCase):
         self.assertIn("actions/setup-python@", workflow)
         self.assertIn("ready_for_review", workflow)
         self.assertNotIn("cache: false", workflow)
+        self.assertIn("fetch-depth: 0", workflow)
         for line in workflow.splitlines():
             if line.strip().startswith("uses:"):
                 ref = line.strip().split("@", 1)[1]
