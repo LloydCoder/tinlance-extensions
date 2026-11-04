@@ -1,8 +1,8 @@
 # Phase 02 — Customer Discovery and Commercial Validation Playbook
 
-**Status:** Research protocol; no interviews are represented as completed  
-**Date:** 2026-11-04  
-**Parent:** [Product requirements](PHASE-02-PRODUCT-REQUIREMENTS.md)  
+**Status:** Research protocol; no interviews are represented as completed
+**Date:** 2026-11-04
+**Parent:** [Product requirements](PHASE-02-PRODUCT-REQUIREMENTS.md)
 **Desk research:** [Competitive landscape](PHASE-02-COMPETITIVE-VALIDATION.md)
 
 ## 1. Purpose
