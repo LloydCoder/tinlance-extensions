@@ -292,31 +292,31 @@ Initial 1–5 planning estimates, weighted as follows: user value/urgency 25%; s
 | ID | Product | Value | Fit | Revenue | Feasibility | Difference | Risk | Weighted / 5 | Band |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---|
 | EXT-01 | Site Security Auditor | 4 | 5 | 4 | 4 | 3 | 3 | 3.95 | Initial beta |
-| EXT-02 | Aithyrex Guard | 5 | 5 | 5 | 3 | 4 | 3 | 4.25 | Initial beta |
+| EXT-02 | Aithyrex Guard | 5 | 5 | 5 | 3 | 4 | 3 | 4.30 | Initial beta |
 | EXT-03 | Auctaryn Guard | 5 | 5 | 4 | 2 | 5 | 2 | 3.95 | Strategic gated |
-| EXT-04 | ThreatFade LinkShield | 4 | 5 | 4 | 3 | 3 | 3 | 3.85 | Near-term |
-| EXT-05 | ThreatFade PrivacyGuard | 4 | 4 | 3 | 3 | 3 | 3 | 3.50 | Near-term |
+| EXT-04 | ThreatFade LinkShield | 4 | 5 | 4 | 3 | 3 | 3 | 3.80 | Near-term |
+| EXT-05 | ThreatFade PrivacyGuard | 4 | 4 | 3 | 3 | 3 | 3 | 3.45 | Near-term |
 | EXT-06 | ThreatFade DownloadGuard | 4 | 5 | 4 | 2 | 3 | 2 | 3.50 | Gated |
-| EXT-07 | Compliance Assistant | 4 | 4 | 4 | 3 | 3 | 2 | 3.50 | Gated |
-| EXT-08 | Authorized Security Testing Companion | 4 | 5 | 4 | 3 | 4 | 2 | 3.80 | Specialist |
-| EXT-09 | Tinlyt Page Extractor | 4 | 5 | 4 | 4 | 3 | 4 | 4.05 | Initial beta |
+| EXT-07 | Compliance Assistant | 4 | 4 | 4 | 3 | 3 | 2 | 3.45 | Gated |
+| EXT-08 | Authorized Security Testing Companion | 4 | 5 | 4 | 3 | 4 | 2 | 3.75 | Specialist |
+| EXT-09 | Tinlyt Page Extractor | 4 | 5 | 4 | 4 | 3 | 4 | 4.10 | Initial beta |
 | EXT-10 | Tinlyt Verify | 5 | 5 | 4 | 3 | 4 | 3 | 4.15 | Initial beta |
 | EXT-11 | Tinlyt Monitor | 4 | 5 | 5 | 3 | 4 | 3 | 4.05 | Initial beta |
 | EXT-12 | Tinlyt Research | 5 | 5 | 4 | 3 | 4 | 3 | 4.15 | Near-term |
 | EXT-13 | FadeReach Prospect Capture | 4 | 5 | 5 | 4 | 3 | 3 | 4.10 | Initial beta |
-| EXT-14 | FadeReach CompanyIntel | 4 | 5 | 4 | 3 | 3 | 3 | 3.85 | Near-term |
+| EXT-14 | FadeReach CompanyIntel | 4 | 5 | 4 | 3 | 3 | 3 | 3.80 | Near-term |
 | EXT-15 | FadeReach ContactIntel | 4 | 4 | 4 | 2 | 3 | 2 | 3.30 | Gated |
-| EXT-16 | FadeReach Outreach Assistant | 4 | 5 | 4 | 3 | 3 | 3 | 3.85 | Near-term |
+| EXT-16 | FadeReach Outreach Assistant | 4 | 5 | 4 | 3 | 3 | 3 | 3.80 | Near-term |
 | EXT-17 | Agent Browser Bridge | 5 | 5 | 5 | 2 | 5 | 2 | 4.10 | Platform-gated |
 | EXT-18 | Tinlance Workflow | 4 | 4 | 4 | 2 | 3 | 2 | 3.30 | Platform-gated |
-| EXT-19 | Memory Vault Clipper | 3 | 5 | 3 | 4 | 3 | 4 | 3.75 | Near-term |
-| EXT-20 | WebDebugger | 4 | 3 | 3 | 4 | 2 | 4 | 3.40 | Utility |
-| EXT-21 | JSON Explorer | 3 | 2 | 2 | 5 | 2 | 5 | 3.10 | Utility |
-| EXT-22 | StackDetect | 3 | 3 | 3 | 4 | 2 | 4 | 3.15 | Utility |
+| EXT-19 | Memory Vault Clipper | 3 | 5 | 3 | 4 | 3 | 4 | 3.70 | Near-term |
+| EXT-20 | WebDebugger | 4 | 3 | 3 | 4 | 2 | 4 | 3.45 | Utility |
+| EXT-21 | JSON Explorer | 3 | 2 | 2 | 5 | 2 | 5 | 3.15 | Utility |
+| EXT-22 | StackDetect | 3 | 3 | 3 | 4 | 2 | 4 | 3.20 | Utility |
 | EXT-23 | AccessibilityCheck | 4 | 4 | 3 | 4 | 3 | 4 | 3.75 | Near-term |
 | EXT-24 | SEO Inspector | 4 | 3 | 4 | 4 | 2 | 4 | 3.60 | Near-term |
-| EXT-25 | SERP Intelligence | 4 | 3 | 4 | 2 | 3 | 2 | 3.15 | Data-source gated |
-| EXT-26 | ShopIntel | 4 | 3 | 4 | 3 | 3 | 3 | 3.45 | Data-source gated |
+| EXT-25 | SERP Intelligence | 4 | 3 | 4 | 2 | 3 | 2 | 3.10 | Data-source gated |
+| EXT-26 | ShopIntel | 4 | 3 | 4 | 3 | 3 | 3 | 3.40 | Data-source gated |
 
 ### Sequencing interpretation
 
