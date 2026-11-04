@@ -75,6 +75,25 @@ Scope:
 
 **Phase 01 exit:** baseline report is committed; all accessible evidence is cited or identified; unknowns are explicit; critical/high foundation blockers have an owner and treatment; CI is green and the change is merged. Administrative settings inaccessible to the integration remain owner-verification items and must not be falsely marked complete.
 
+### Phase 02 — Product requirements and portfolio specification
+
+**Working baseline:** [PHASE-02-PRODUCT-REQUIREMENTS.md](PHASE-02-PRODUCT-REQUIREMENTS.md)
+
+The Phase 02 document defines product briefs for all 26 catalogue entries, MVP boundaries, permission/data assumptions, security acceptance criteria, shared dependencies, commercial hypotheses, prioritization scores and validation gates.
+
+**Current status:** requirements baseline drafted; customer discovery, legal/provider reviews, product-specific threat-model approvals and Phase 03 architecture decisions remain outstanding. Do not mark Phase 02 complete until the evidence and approvals listed in the requirements document are recorded.
+
+Phase 02 must:
+- secure a named owner and reviewed brief for every catalogue product;
+- validate target-user jobs and commercial assumptions with structured customer discovery;
+- review least-privilege permissions, data classes, retention and deletion per product;
+- produce product-specific threat models for security-sensitive and agent-governed products;
+- resolve shared-service dependencies and authority boundaries;
+- record technical spikes and browser/API compatibility unknowns;
+- approve the ranked portfolio and any proposed change to the initial seven-product release order.
+
+**Phase 02 exit:** all 26 briefs are reviewed; priority-segment discovery and commercial evidence are recorded; high-risk product gates have owners and treatments; permission/data and security reviews are approved; dependency graph and ranked release plan are signed off; Phase 03 has stable inputs.
+
 **Milestone A exit:** the architecture and repository are sufficiently defined and reproducible to build products without creating duplicate authority, security or data models. MCP implementation must not begin before the MCP-specific P0 design gates in section 4 are approved.
 
 ### Product and commercial beta — Milestone B
