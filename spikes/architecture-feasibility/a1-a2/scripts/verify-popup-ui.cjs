@@ -3,7 +3,6 @@ const fs = require("node:fs/promises");
 const path = require("node:path");
 
 const root = path.resolve(__dirname, "..");
-const output = path.join(root, "artifacts", "brand-ui");
 const cases = [
   { directory: "extension-readonly", target: "chrome-mv3", label: "read-only", name: "Tinlance Read-only Browser Spike" },
   { directory: "extension-permission-sensitive", target: "chrome-mv3", label: "permission-sensitive", name: "Tinlance Permission-sensitive Browser Spike" }
@@ -34,7 +33,6 @@ async function discoverExtensionId(context, expectedName) {
 }
 
 (async () => {
-  await fs.mkdir(output, { recursive: true });
   for (const item of cases) {
     const extensionPath = path.join(root, "apps", item.directory, ".output", item.target);
     const context = await chromium.launchPersistentContext("", {
@@ -75,21 +73,11 @@ async function discoverExtensionId(context, expectedName) {
       ) {
         throw new Error(`Brand token mismatch: ${JSON.stringify(colors)}`);
       }
-      // Extension pages can reject full-page capture in headless Chromium. Keep the
-      // deterministic viewport capture; the popup is intentionally a fixed-size surface.
-      await page.setViewportSize({ width: 420, height: 560 });
-      await page.screenshot({
-        path: path.join(output, `${item.label}.png`),
-        fullPage: false,
-        animations: "disabled",
-        timeout: 15000
-      });
       console.log(JSON.stringify({
         case: item.label,
         extensionId,
         imageState,
-        colors,
-        screenshot: `${item.label}.png`
+        colors
       }));
     } finally {
       await context.close();
