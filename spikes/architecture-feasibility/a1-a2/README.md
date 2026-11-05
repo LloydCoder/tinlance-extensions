@@ -1,6 +1,6 @@
 # A1–A2 isolated feasibility spike
 
-**Purpose:** prove that the accepted toolchain can install from a clean checkout, build a minimal Next.js App Router surface, and produce two narrowly permissioned WXT extension packages for Chromium and Firefox.
+**Purpose:** prove that the accepted toolchain can install from a clean checkout, build a minimal Next.js App Router surface, and produce narrowly permissioned WXT extension packages for Chromium, Firefox and a Safari packaging input.
 
 This is a disposable architecture spike, not a product implementation, production workspace, public extension, or authorization to begin product development.
 
@@ -33,11 +33,11 @@ pnpm test
 - Read-only: `activeTab` only; reads the active tab title after the user opens the extension action.
 - Permission-sensitive: `activeTab` + `scripting`; injects a fixed, packaged function only after the user presses a visible button. It reads only page title and origin. No persistent host permission is requested.
 
-The manifest test asserts exact permissions for both Chrome MV3 and Firefox MV3 output and rejects broad host access and unrelated sensitive permissions.
+The manifest test asserts exact permissions for Chrome MV3, Firefox MV3 and Safari MV2 output, verifies icon assets, and rejects broad host access and unrelated sensitive permissions.
 
 ## Explicit limits
 
 - No browser runtime E2E has been executed by this spike.
-- Safari requires a separate macOS/Xcode packaging and signing lane; WXT does not automate Safari publishing.
+- The read-only Safari MV2 output is packaged into a macOS Xcode project in a separate CI lane. Signing, notarization, App Store Connect submission and Safari runtime testing remain unperformed; WXT does not automate Safari publishing.
 - This does not prove the first-seven products' compatibility, performance, privacy or store acceptance.
 - Do not copy this spike into production without a separate reviewed implementation plan.
