@@ -32,8 +32,8 @@ The repository baseline at the time this plan was prepared:
 - The canonical catalogue contains 26 products in six families.
 - Phase 0 repository foundation and Phase 01 repository forensic baseline are closed for their documented repository scope.
 - Phase 02 documentary baseline is reconciled; customer discovery, product-owner sign-offs, product-specific threat models, legal/provider reviews and commercial proof remain outstanding.
-- ADRs 0003–0014 were explicitly accepted by the decision owner and merged through PR #17. Architecture feasibility A1–A7 remain not passed; see [Phase 02 evidence and feasibility review](PHASE-02-EVIDENCE-AND-FEASIBILITY-REVIEW.md).
-- The repository is a documentation/governance foundation, not an implemented application suite. No product runtime, browser extension package, backend API, worker, database, OAuth service or MCP gateway was evidenced in the audit.
+- ADRs 0003–0014 were explicitly accepted by the decision owner and merged through PR #17. Architecture feasibility A1 passed and A2 is partial; A3–A7 remain open. See [Phase 02 evidence and feasibility review](PHASE-02-EVIDENCE-AND-FEASIBILITY-REVIEW.md).
+- The repository remains a documentation/governance foundation, not an implemented application suite. An isolated A1–A2 spike now exists under `spikes/architecture-feasibility/a1-a2/`; no production product runtime, extension, backend API, worker, database, OAuth service or MCP gateway is implemented.
 - A passing repository CI workflow validates repository checks only. It is not product build, runtime, security, privacy, customer or release evidence.
 
 Do not convert a proposed endpoint, stack, deployment topology, price, revenue target, browser target or commercial hypothesis into a verified fact. No paid infrastructure or vendor commitment is authorized by this plan. Apache-2.0 remains the repository license pending a separate legal/IP decision. Tinlance Extensions remains the chosen project identity, subject to separate trademark clearance.
@@ -137,7 +137,7 @@ The original 25-phase numbering and first-seven product order are retained. This
 | 0 | Repository foundation | Governance files, CI baseline, contribution/security policies, repository conventions | **Closed** for repository scope; not application readiness |
 | 1 | Forensic baseline | Commit-specific inventory, risks, gaps, implementation-status distinction | **Closed** for documented audit scope |
 | 2 | Product requirements and validation | Reviewed briefs for 26 products, discovery, permissions/data reviews, prioritization | **Documentary baseline complete / open**; substantive evidence gates outstanding |
-| 3 | Architecture and ADR approval | Target architecture, product/service boundaries, threat model, dependency graph, approved ADR set | **ADRs accepted / feasibility A1–A7 open**; implementation blocker |
+| 3 | Architecture and ADR approval | Target architecture, product/service boundaries, threat model, dependency graph, approved ADR set | **ADRs accepted; A1 pass, A2 partial, A3–A7 open**; implementation blocker |
 | 4 | Monorepo and developer platform | Reproducible workspace, pinned toolchain, local setup, scripts, clean checkout build | Not started |
 | 5 | CI/CD and repository governance | Required checks, branch rules, dependency automation, provenance, release permissions | Baseline exists; application pipeline not implemented |
 | 6 | Design system and UX foundation | Tokens, components, accessibility baseline, extension patterns, web portal UX | Not started |
@@ -146,7 +146,7 @@ The original 25-phase numbering and first-seven product order are retained. This
 | 9 | Backend and data architecture | Service ownership, schemas, migrations, API contracts, queues, evidence and data lifecycle | Not started |
 | 10 | Security and privacy control plane | Threat models, policy, consent, audit, secrets, retention/deletion and security gates | Not started |
 
-**Milestone A exit:** ADRs 0003–0014 are accepted, but Milestone A is not complete. A1–A7 feasibility evidence, Phase 02 customer/owner/legal/security evidence and MCP Gate 0 executable conformance remain outstanding. Do not begin product implementation or production MCP gateway work before these gates pass.
+**Milestone A exit:** ADRs 0003–0014 are accepted; A1 passes and A2 is partially evidenced. A3–A7, Phase 02 customer/owner/legal/security evidence and MCP Gate 0 executable conformance remain outstanding. Do not begin product implementation or production MCP gateway work before these gates pass.
 
 ### Milestone B — Commercial beta
 
@@ -296,7 +296,7 @@ Shared packages should cover:
 - Redacted telemetry/error reporting and evidence utilities.
 - Browser compatibility, packaging, signing and release automation.
 
-WXT with TypeScript, pnpm workspaces and Turborepo are accepted architecture choices under ADRs 0003 and 0005. Their executable feasibility remains unproven until A1/A2 spikes pass.
+WXT with TypeScript, pnpm workspaces and Turborepo are accepted architecture choices under ADRs 0003 and 0005. The isolated A1 toolchain spike passes; A2 browser build/manifest proof is partial pending runtime and Safari packaging evidence.
 
 Security constraints:
 - No remotely hosted executable code in extension packages.
@@ -523,8 +523,8 @@ Required before relevant launch: privacy notice, terms, data-processing disclosu
 
 ### P1 — platform feasibility and design
 
-8. Pass A1 clean-checkout toolchain and representative extension build.
-9. Pass A2 Chromium/Firefox WXT packaging, permission/lifecycle tests and Safari packaging feasibility.
+8. A1 clean-checkout toolchain and representative Next.js/WXT builds passed in isolated spike PR #20; retain as a feasibility fixture.
+9. Complete A2 runtime Chrome/Firefox lifecycle and permission tests plus the Safari Xcode packaging/signing lane.
 10. Pass A3 API, tenant-isolation, migration and worker recovery spike.
 11. Pass A4 product data-flow, threat-model, retention/deletion and telemetry review.
 12. Pass A5 MCP 2026-07-28 conformance, OAuth and client-matrix proof.
@@ -558,7 +558,7 @@ The programme is complete only when:
 | Repository foundation / Phase 0 | Closed for repository scope |
 | Forensic baseline / Phase 01 | Closed for documented audit scope |
 | Phase 02 product requirements | Documentary baseline complete; customer, ownership, legal/provider, security and commercial evidence open |
-| Phase 03 architecture/ADRs | Accepted; A1–A7 feasibility open |
+| Phase 03 architecture/ADRs | Accepted; A1 pass, A2 partial, A3–A7 feasibility open |
 | Frontend implementation | Not started / not evidenced |
 | Backend and data services | Not started / not evidenced |
 | Browser SDK/extensions | Not started / not evidenced |
