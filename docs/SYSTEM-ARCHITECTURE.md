@@ -1,13 +1,13 @@
 # Tinlance Extensions — Master System Architecture
 
-**Document status:** Architecture baseline — proposed, not yet implemented or verified  
-**Owner:** Tinlance Limited  
-**Repository:** https://github.com/LloydCoder/tinlance-extensions  
-**Product identity:** Tinlance Extensions  
-**Tagline:** Intelligence. Security. Automation. Everywhere.  
-**Last updated:** 2026-11-04
+**Document status:** Architecture baseline accepted through ADRs 0003–0014; feasibility and implementation not yet verified
+**Owner:** Tinlance Limited
+**Repository:** https://github.com/LloydCoder/tinlance-extensions
+**Product identity:** Tinlance Extensions
+**Tagline:** Intelligence. Security. Automation. Everywhere.
+**Last updated:** 2026-11-05
 
-> This document is the normative architecture proposal for the Tinlance Extensions ecosystem. A statement in this document is a design requirement, not evidence that the corresponding software, integration, control, listing, or deployment already exists. Implementation status must be established through repository evidence, automated tests, release records, and operational verification.
+> This document is the normative architecture baseline for the Tinlance Extensions ecosystem. ADRs 0003–0014 were accepted by the decision owner on 2026-11-05. Feasibility spikes and Phase 02 evidence gates remain open. A statement in this document is a design requirement, not evidence that the corresponding software, integration, control, listing, or deployment already exists. Implementation status must be established through repository evidence, automated tests, release records, and operational verification.
 
 ## 1. Executive architecture decision
 
@@ -80,7 +80,7 @@ The MCP server is an integration boundary. It is not a replacement for product A
 3. **Integration edge**
    - Public HTTPS MCP endpoint.
    - Streamable HTTP transport as the primary remote transport, subject to the pinned protocol baseline.
-   - Protocol negotiation, client compatibility, request validation, routing, timeouts and bounded response handling.
+   - Revision-specific request validation, client compatibility, routing, timeouts and bounded response handling.
    - No business authorization decisions based solely on client-provided metadata.
 
 4. **Identity and governance**
@@ -203,7 +203,7 @@ The exact folder layout may evolve after the repository baseline audit. Keep one
 
 ### 6.1 Framework and compatibility
 
-- Proposed framework: WXT with TypeScript, subject to ADR 0005 approval and a reproducible compatibility spike.
+- Proposed framework: WXT with TypeScript, approved by ADR 0005; a reproducible compatibility spike remains required.
 - WXT does not automate Safari publishing; Safari requires a separate native wrapper/packaging and signing lane. Do not infer Safari support from Chromium or Firefox builds.
 - Use TypeScript with strict compiler settings.
 - Use a shared browser adapter layer for browser API differences.
@@ -231,28 +231,27 @@ The exact folder layout may evolve after the repository baseline audit. Keep one
 
 Build one shared remote MCP platform with product-specific capability groups. The umbrella listing is **Tinlance Extensions**. Individual products can be separately listed later if there is a concrete distribution or commercial reason.
 
-Proposed endpoint: `https://api.extensions.tinlance.com/mcp`  
+Proposed endpoint: `https://api.extensions.tinlance.com/mcp`
 Proposed documentation: `https://extensions.tinlance.com/developers/mcp`
 
 These are reserved design targets only. Do not publish them or describe them as live until DNS, TLS, routing, authentication, monitoring and external connectivity have been verified.
 
 ### 7.2 MCP protocol baseline
 
-Before implementation, record the exact stable MCP specification revision and supported capability matrix in an ADR. Pin SDK versions and protocol fixtures. The implementation must support protocol version negotiation and must not assume every client supports every optional capability.
+The accepted baseline is the **MCP 2026-07-28 specification** with stateless Streamable HTTP semantics, as recorded in accepted ADRs 0002 and 0012. Pin the exact SDK version and protocol fixtures before implementation. Do not carry forward the older initialization/session assumptions into this revision.
 
 Baseline design requirements:
 
-- Streamable HTTP for remote transport.
-- Correct initialization and capability negotiation.
-- OAuth-based authorization for protected HTTP resources, using current MCP authorization requirements.
-- Protected Resource Metadata and authorization-server discovery as applicable.
-- Client ID Metadata Documents where supported by the pinned specification; document interoperability fallback for clients with older registration behaviour.
-- Explicit handling of origin/host validation and DNS rebinding protections.
-- Bounded request sizes, timeouts, concurrency, output sizes and pagination.
-- Graceful handling of unsupported optional features.
-- Protocol conformance tests against pinned fixtures and representative real clients.
+- Stateless per-request POST transport; no legacy `initialize`/`initialized` handshake or protocol-level `Mcp-Session-Id` dependency for the 2026-07-28 core.
+- Validate the revision's required request metadata and `Mcp-Method` / `Mcp-Name` headers against the JSON-RPC body; reject mismatches.
+- Apply Origin/host validation and DNS-rebinding protections.
+- Implement protected-resource authorization and issuer/resource/audience validation as required by the pinned revision; keep client credentials bound to their issuer.
+- Use bounded request/response sizes, timeouts, concurrency and pagination.
+- Treat Tasks as an optional protocol extension; durable application jobs remain authoritative and independent of an MCP connection.
+- Gracefully handle unsupported optional features and maintain a real-client compatibility matrix.
+- Test conformance against pinned fixtures, authorization failures, tenant isolation, header/body mismatch, replay, resource exhaustion and representative real clients.
 
-Do not implement draft or experimental protocol features as mandatory dependencies. Tasks, elicitation, sampling, MCP Apps, or other optional capabilities must be capability-negotiated and have safe fallbacks.
+Do not make deprecated or optional protocol features mandatory dependencies. The exact compatibility behaviour must follow the pinned specification and SDK release.
 
 ### 7.3 MCP primitives
 
@@ -504,7 +503,7 @@ A release is blocked by unresolved critical/high security findings, tenant isola
 
 ## 12. Architecture decision records required
 
-The current review package proposes ADRs 0003–0014 under `docs/adr/`. They remain proposed until the decision owner records acceptance or rejection. See [Phase 02 Closeout and Phase 03 Architecture Review](PHASE-02-CLOSEOUT-AND-PHASE-03-ARCHITECTURE-REVIEW.md) for the decision matrix and evidence gates.
+The decision owner accepted ADRs 0003–0014 on 2026-11-05; the approval is recorded in each ADR and merged through PR #17. Feasibility A1–A7 remain open. See [Phase 02 Closeout and Phase 03 Architecture Review](PHASE-02-CLOSEOUT-AND-PHASE-03-ARCHITECTURE-REVIEW.md) and [Phase 02 Evidence and Architecture Feasibility Review](PHASE-02-EVIDENCE-AND-FEASIBILITY-REVIEW.md).
 
 Create and maintain ADRs for at least:
 
@@ -540,4 +539,4 @@ The architecture is ready for implementation only when:
 - Browser and AI distribution tracks are separately defined.
 - Build, test, deployment and operational ownership are documented.
 
-**Current status:** This file records the proposed architecture. No implementation, external listing, endpoint, security review, compatibility result or production readiness is implied.
+**Current status:** Architecture decisions 0003–0014 are accepted. This document records the approved baseline, not executable feasibility or implementation. No application implementation, external listing, endpoint, product-specific security review, browser compatibility result or production readiness is implied.

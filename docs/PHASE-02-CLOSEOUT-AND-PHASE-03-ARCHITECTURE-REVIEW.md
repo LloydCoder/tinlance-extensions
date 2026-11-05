@@ -1,18 +1,18 @@
 # Phase 02 Closeout Audit and Phase 03 Architecture Review
 
 **Review date:** 2026-11-05
-**Repository baseline:** `main` after PR #15 merge, commit `98e7a9f23f68604baf1b34ab8617e50b333f487d`
-**Status:** Phase 02 documentary audit completed; Phase 02 exit criteria remain open; Phase 03 ADRs 0003–0014 accepted by the decision owner on 2026-11-05
+**Repository baseline:** `main` after PR #17 merge, commit `74318596f066e8d8728e0fb3f32d2d62c8d2b089`
+**Status:** Phase 02 documentary audit completed; Phase 02 exit criteria remain open; ADRs 0003–0014 accepted and merged by PR #17; feasibility A1–A7 not passed
 **Decision owner:** Tinlance Limited
 **Authority:** This record is a review and recommendation package. It does not authorize application, infrastructure, paid-vendor or production MCP implementation.
 
 ## 1. Executive disposition
 
-The repository now has a consolidated 26-product requirements baseline, a six-family canonical catalogue, a 25-phase roadmap, a competitive desk-research snapshot, a customer-discovery protocol, four portfolio proposal decisions and a proposed system architecture.
+The repository now has a consolidated 26-product requirements baseline, a six-family canonical catalogue, a 25-phase roadmap, a competitive desk-research snapshot, a customer-discovery protocol, four portfolio proposal decisions and an accepted architecture baseline.
 
 The audit does **not** find sufficient evidence to close Phase 02. In particular, no completed customer interviews, design-partner commitments, paid pilots, signed product-owner approvals, completed provider/data-rights reviews or approved product-specific threat models are recorded. These are evidence gates, not documentation tasks that can be marked complete by drafting more plans.
 
-Phase 03 is ready for an architecture decision review, but not yet for an implementation start. The architecture baseline and proposed ADRs are now made explicit and reviewable. The decision owner explicitly approved ADRs 0003–0014 on 2026-11-05. Their status is recorded as **Accepted** in each ADR. The architecture baseline is approved; feasibility and implementation gates remain. An engineering agent must not impersonate owner approval.
+Phase 03 architecture decisions are accepted: the decision owner explicitly approved ADRs 0003–0014 on 2026-11-05 and PR #17 merged the approval record. This accepts the architecture baseline; it does not pass feasibility A1–A7 or authorize implementation. The repository has no executable application stack against which those spikes can yet be run.
 
 ### Current gate result
 
@@ -29,7 +29,7 @@ Phase 03 is ready for an architecture decision review, but not yet for an implem
 | Legal, privacy and provider rights | Fail / open | Contact data, AI-site DOM paths, downloads, monitoring, SERP and commerce dependencies require scoped reviews |
 | Product-specific threat models | Fail / open | Baseline risks are described; reviewed and approved threat models are not evidenced |
 | Commercial proof | Fail / open | No paid pilots, purchase commitments or validated willingness-to-pay evidence |
-| Phase 03 architecture | Review package ready | Proposed ADRs 0003–0014 are submitted; owner acceptance and feasibility spikes remain open |
+| Phase 03 architecture | Accepted baseline; feasibility open | ADRs 0003–0014 accepted and merged; A1–A7 remain open |
 
 **Phase 02 is not closed.** The only completed closeout activity in this change is the documentary reconciliation and gap assessment above.
 
@@ -42,7 +42,7 @@ Phase 03 is ready for an architecture decision review, but not yet for an implem
 | `PHASE-02-COMPETITIVE-VALIDATION.md` | Directional public-source snapshot | Revalidate competitors, feature claims, prices and terms during discovery |
 | `PHASE-02-CUSTOMER-DISCOVERY-PLAYBOOK.md` | Interview protocol and evidence rubric present | Execute interviews; record anonymized evidence and negative findings |
 | `FOUR-PROPOSAL-DECISIONS.md` | Four dispositions explicit | Preserve boundaries and validation gates |
-| `SYSTEM-ARCHITECTURE.md` | Normative proposal, not approved | Review ADRs and close architecture acceptance criteria |
+| `SYSTEM-ARCHITECTURE.md` | Accepted architecture baseline; feasibility open | Execute A1–A7 and preserve the approved authority boundaries |
 | `MASTER-ROADMAP.md` / `FINAL-PHASE-PLAN.md` | 25 phases and 18 MCP work packages | Reconcile statuses after approvals; preserve first seven |
 
 ### Portfolio invariants retained
@@ -75,24 +75,24 @@ Each interview or pilot record must include participant code, segment, user/buye
 
 Phase 02 may pass only when every mandatory row in the gate table has linked evidence and a named reviewer. A target count alone is not a pass criterion.
 
-## 4. Phase 03 recommended architecture decisions
+## 4. Phase 03 accepted architecture decisions
 
-The following recommendations are submitted as proposed ADRs. They are deliberately conservative for a small engineering team: modular boundaries first, independently releasable extensions, no premature microservices, no custom identity provider, no broad permissions, and no infrastructure spend before an approved deployment/cost plan.
+The following decisions were approved by the decision owner and recorded in ADRs 0003–0014. They are deliberately conservative for a small engineering team: modular boundaries first, independently releasable extensions, no premature microservices, no custom identity provider, no broad permissions, and no infrastructure spend before an approved deployment/cost plan.
 
 | ADR | Topic | Recommendation | Status |
 |---|---|---|---|
-| 0003 | Repository/toolchain | TypeScript monorepo, pnpm workspaces, Turborepo; strict checks and reproducible lockfile | Proposed |
-| 0004 | Web frontend | Next.js App Router for public site, workspace, admin and developer portal; shared design system and route-group boundaries | Proposed |
-| 0005 | Browser framework | WXT + TypeScript; separate extension packages and per-browser build/test lanes; Safari is a distinct packaging/signing lane | Proposed |
-| 0006 | Backend | TypeScript modular monolith with versioned APIs and explicit domain modules; split deployable workers only where operationally justified | Proposed |
-| 0007 | Data | PostgreSQL as transactional system of record; object storage for evidence/blobs; explicit lifecycle, tenant keys and deletion | Proposed |
-| 0008 | Identity | Standards-based OIDC/OAuth integration; do not build a custom identity provider; server-side tenant binding | Proposed |
-| 0009 | Authorization | Server-side RBAC + scoped policy/ABAC checks; Agent Platform authoritative for governed execution; entitlements are separate | Proposed |
-| 0010 | Browser/Agent Platform | Typed, origin-bound, scoped request contract; explicit approvals; interrupt/revoke; no cookie/token exposure | Proposed |
-| 0011 | Async jobs | Durable job API with idempotency, cancellation, retries, outbox and bounded workers; protocol Tasks optional | Proposed |
-| 0012 | MCP | Stateless Streamable HTTP targeting MCP 2026-07-28; strict per-request validation; no protocol session assumptions | Proposed |
-| 0013 | Data/security/observability | Data minimization, local-first sensitive processing, metadata-only telemetry by default, auditable lifecycle | Proposed |
-| 0014 | Delivery/supply chain | CI quality gates, pinned actions, provenance/SBOM, signed release artifacts, staged rollout and rollback | Proposed |
+| 0003 | Repository/toolchain | TypeScript monorepo, pnpm workspaces, Turborepo; strict checks and reproducible lockfile | Accepted — PR #17 |
+| 0004 | Web frontend | Next.js App Router for public site, workspace, admin and developer portal; shared design system and route-group boundaries | Accepted — PR #17 |
+| 0005 | Browser framework | WXT + TypeScript; separate extension packages and per-browser build/test lanes; Safari is a distinct packaging/signing lane | Accepted — PR #17 |
+| 0006 | Backend | TypeScript modular monolith with versioned APIs and explicit domain modules; split deployable workers only where operationally justified | Accepted — PR #17 |
+| 0007 | Data | PostgreSQL as transactional system of record; object storage for evidence/blobs; explicit lifecycle, tenant keys and deletion | Accepted — PR #17 |
+| 0008 | Identity | Standards-based OIDC/OAuth integration; do not build a custom identity provider; server-side tenant binding | Accepted — PR #17 |
+| 0009 | Authorization | Server-side RBAC + scoped policy/ABAC checks; Agent Platform authoritative for governed execution; entitlements are separate | Accepted — PR #17 |
+| 0010 | Browser/Agent Platform | Typed, origin-bound, scoped request contract; explicit approvals; interrupt/revoke; no cookie/token exposure | Accepted — PR #17 |
+| 0011 | Async jobs | Durable job API with idempotency, cancellation, retries, outbox and bounded workers; protocol Tasks optional | Accepted — PR #17 |
+| 0012 | MCP | Stateless Streamable HTTP targeting MCP 2026-07-28; strict per-request validation; no protocol session assumptions | Accepted — PR #17 |
+| 0013 | Data/security/observability | Data minimization, local-first sensitive processing, metadata-only telemetry by default, auditable lifecycle | Accepted — PR #17 |
+| 0014 | Delivery/supply chain | CI quality gates, pinned actions, provenance/SBOM, signed release artifacts, staged rollout and rollback | Accepted — PR #17 |
 
 ### Explicitly deferred technology choices
 
@@ -104,7 +104,7 @@ Do not adopt microservices, Kubernetes, a service mesh, a mandatory Redis cluste
 
 | Gate | Required evidence | Blocks |
 |---|---|---|
-| A0 — Owner acceptance | Signed/dated acceptance or requested changes for ADRs 0003–0014 | Architecture approval |
+| A0 — Owner acceptance | Explicit dated approval for ADRs 0003–0014, recorded in each ADR and merged by PR #17 | **Pass — documentary** |
 | A1 — Toolchain spike | Fresh-checkout install, deterministic build, lint/typecheck/test and representative extension build | Workspace bootstrap |
 | A2 — Browser spike | WXT output for Chromium and Firefox; permission review; Safari packaging feasibility documented separately | Browser SDK implementation |
 | A3 — Backend/API spike | API schema, auth middleware, tenant isolation test, migration and worker proof | Backend implementation |
@@ -117,7 +117,7 @@ A green documentation workflow does not satisfy any of A1–A7.
 
 ## 6. MCP protocol correction required in implementation planning
 
-The official MCP 2026-07-28 revision is stateless at the protocol core: it removes the former initialization handshake and protocol-level sessions. Streamable HTTP uses per-request POST semantics and the revision's request metadata/header requirements. Do not implement a 2025 session-based transport by accident. Keep long-running state in explicit application job records/handles. Tasks are an optional protocol extension, not a prerequisite for durable jobs.
+The official MCP 2026-07-28 revision is stateless at the protocol core: it removes the former initialization handshake and protocol-level sessions. Streamable HTTP uses per-request POST semantics, with required `Mcp-Method` and `Mcp-Name` header/body consistency validation. Do not implement a 2025 session-based transport by accident. Keep long-running state in explicit application job records/handles. Tasks are an optional protocol extension, not a prerequisite for durable jobs. A5 remains blocked pending executable fixtures and tests.
 
 References:
 - [MCP 2026-07-28 specification](https://modelcontextprotocol.io/specification/2026-07-28)
@@ -132,15 +132,15 @@ References:
 - [WXT introduction](https://wxt.dev/guide/introduction.html)
 - [WXT publishing guide](https://wxt.dev/guide/essentials/publishing.html)
 
-## 8. Architecture approval record
+## 8. Architecture approval and feasibility record
 
 **Requested decision:** accept, reject or amend each ADR 0003–0014.
 **Decision owner:** Tinlance Limited.
-**Current status:** Pending owner review; no architecture ADR is marked Accepted by this document.
+**Current status:** ADRs 0003–0014 accepted by the decision owner and merged through PR #17 on 2026-11-05. A1–A7 remain open; see [Phase 02 Evidence and Architecture Feasibility Review](PHASE-02-EVIDENCE-AND-FEASIBILITY-REVIEW.md).
 **Implementation authorization:** Not granted.
-**Phase 02 status:** Open; customer, owner, legal/provider and security evidence gates remain outstanding.
+**Phase 02 status:** Open; customer, product-owner, legal/provider, commercial and product-security evidence gates remain outstanding.
 
-After owner acceptance, update each ADR status with date and decision rationale, reconcile the system architecture and roadmap, then run the relevant feasibility spikes. Only after Phase 02 and Phase 03 gates are accepted should application implementation begin.
+The approval record is complete. The remaining work is executable feasibility proof and actual Phase 02 evidence, not another architecture approval round.
 
 ## 9. Definition of done for this review package
 
@@ -156,6 +156,6 @@ After owner acceptance, update each ADR status with date and decision rationale,
 - [ ] Customer discovery completed and evidence linked.
 - [ ] Product-specific threat models and legal/provider reviews approved.
 - [x] Owner accepts ADRs 0003–0014 as written on 2026-11-05.
-- [ ] Architecture feasibility gates A1–A7 passed.
+- [ ] Architecture feasibility gates A1–A7 passed (reviewed 2026-11-05; none passed; see feasibility report).
 
 **Final disposition:** This PR is a governance/architecture review submission. It does not close Phase 02, approve production architecture, start implementation, authorize infrastructure spend or claim product readiness.

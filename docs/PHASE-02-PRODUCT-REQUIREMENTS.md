@@ -1,6 +1,6 @@
 # Tinlance Extensions — Phase 02 Product Requirements and Prioritization
 
-**Status:** Requirements baseline drafted; documentary reconciliation completed 2026-11-05; customer, owner, legal/provider and product-security validation outstanding
+**Status:** Requirements baseline drafted; documentary reconciliation completed 2026-11-05; customer discovery, product-owner sign-offs, legal/provider review, commercial proof and product-security validation outstanding; ADRs 0003–0014 accepted, feasibility A1–A7 open
 **Date:** 2026-11-04
 **Owner:** Tinlance Limited
 **Catalogue:** [26-product canonical catalogue](PRODUCT-CATALOGUE.md)
@@ -25,7 +25,7 @@
 
 **Closeout audit:** [PHASE-02-CLOSEOUT-AND-PHASE-03-ARCHITECTURE-REVIEW.md](PHASE-02-CLOSEOUT-AND-PHASE-03-ARCHITECTURE-REVIEW.md) reconciles the 26 briefs and records outstanding exit evidence. Phase 02 remains open; the documentary audit does not substitute for customer or security/legal validation.
 
-**Phase 02 exit criteria:** all 26 briefs reviewed; owners and acceptance criteria assigned; permissions/data handling reviewed; security-sensitive threat models approved; dependencies mapped; browser/client support deferred until tested; priority segments interviewed; commercial evidence and unresolved decisions recorded; Phase 03 inputs approved.
+**Phase 02 exit criteria:** all 26 briefs reviewed; owners and acceptance criteria assigned; permissions/data handling reviewed; security-sensitive threat models approved; dependencies mapped; browser/client support deferred until tested; priority segments interviewed; commercial evidence and unresolved decisions recorded; Phase 03 inputs approved. See [Phase 02 evidence and feasibility review](PHASE-02-EVIDENCE-AND-FEASIBILITY-REVIEW.md) for the current gate ledger.
 
 ## 2. Common product contract
 
