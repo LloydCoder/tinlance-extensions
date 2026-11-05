@@ -4,7 +4,7 @@ import { join } from "node:path";
 import test from "node:test";
 
 const root = new URL("../", import.meta.url).pathname;
-const targets = ["chrome-mv3", "firefox-mv3"];
+const targets = [\n  { name: "chrome-mv3", manifestVersion: 3 },\n  { name: "firefox-mv3", manifestVersion: 3 }\n];
 const cases = [
   { name: "read-only", directory: "extension-readonly", expected: ["activeTab"] },
   {
@@ -27,7 +27,7 @@ for (const target of targets) {
       );
       const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
 
-      assert.equal(manifest.manifest_version, 3);
+      assert.equal(manifest.manifest_version, target.manifestVersion);
       assert.deepEqual([...manifest.permissions].sort(), [...item.expected].sort());
       assert.equal(manifest.host_permissions, undefined);
       assert.equal(manifest.optional_host_permissions, undefined);
@@ -43,3 +43,19 @@ for (const target of targets) {
     });
   }
 }
+
+test("read-only Safari MV2 manifest keeps least privilege", async () => {
+  const manifestPath = join(
+    root,
+    "apps",
+    "extension-readonly",
+    ".output",
+    "safari-mv2",
+    "manifest.json"
+  );
+  const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
+  assert.equal(manifest.manifest_version, 2);
+  assert.deepEqual([...manifest.permissions].sort(), ["activeTab"]);
+  assert.equal(manifest.host_permissions, undefined);
+  assert.equal(manifest.content_scripts, undefined);
+});
