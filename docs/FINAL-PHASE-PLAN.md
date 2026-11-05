@@ -7,7 +7,7 @@
 **Canonical catalogue:** [26 products](PRODUCT-CATALOGUE.md)
 **Source records:** [Master roadmap](MASTER-ROADMAP.md), [system architecture](SYSTEM-ARCHITECTURE.md), [Phase 02 requirements](PHASE-02-PRODUCT-REQUIREMENTS.md), [four proposal decisions](FOUR-PROPOSAL-DECISIONS.md), [MCP ADR 0002](adr/0002-mcp-protocol-baseline.md)
 
-> This document consolidates programme sequencing and workstream boundaries. It does not claim that product applications, browser packages, APIs, workers, data stores, MCP services, integrations, customer validation, security assurance, or releases exist. A proposed phase becomes complete only when its acceptance evidence is linked, reviewed, and recorded. This plan is submitted for review before application implementation begins.
+> This document consolidates programme sequencing and workstream boundaries. It does not claim that product applications, browser packages, APIs, workers, data stores, MCP services, integrations, customer validation, security assurance, or releases exist. A phase becomes complete only when its acceptance evidence is linked, reviewed, and recorded. This accepted programme baseline does not authorize application implementation.
 
 ## 1. Authority, precedence and change control
 
@@ -254,7 +254,7 @@ Core modules:
 
 ### 7.2 Data architecture
 
-Proposed baseline, subject to ADR approval:
+Accepted logical baseline (concrete vendor selection remains deferred):
 - PostgreSQL for relational platform state.
 - Object storage for evidence snapshots, exports and artifacts.
 - Queue/job infrastructure for monitoring, research and enrichment.
@@ -296,7 +296,7 @@ Shared packages should cover:
 - Redacted telemetry/error reporting and evidence utilities.
 - Browser compatibility, packaging, signing and release automation.
 
-WXT is a candidate pending a reproducible framework spike; pnpm workspaces and Turborepo are candidates pending toolchain/monorepo ADRs. Do not treat these as approved choices until Phase 3 review.
+WXT with TypeScript, pnpm workspaces and Turborepo are accepted architecture choices under ADRs 0003 and 0005. Their executable feasibility remains unproven until A1/A2 spikes pass.
 
 Security constraints:
 - No remotely hosted executable code in extension packages.
@@ -312,7 +312,7 @@ Security constraints:
 
 MCP is a shared remote integration with product-specific capability groups. It is not an independent backend or authority. Proposed endpoint: `https://api.extensions.tinlance.com/mcp`; proposed docs: `https://extensions.tinlance.com/developers/mcp`. Neither endpoint is verified deployed.
 
-The current ADR proposes MCP specification revision 2026-07-28 and Streamable HTTP, subject to compatibility spike and explicit approval. Do not implement a mixed-version protocol.
+The accepted MCP target is specification revision 2026-07-28 with stateless Streamable HTTP (ADRs 0002 and 0012). A5 still requires pinned SDK/fixtures, authentication, negative tests and a real-client compatibility matrix. Do not implement a mixed-version protocol.
 
 ### Gate 0 — Strategy, contracts and authority (design only)
 
@@ -330,7 +330,7 @@ The current ADR proposes MCP specification revision 2026-07-28 and Streamable HT
 
 | WP | Work package | Required evidence |
 |---|---|---|
-| MCP-03 | Gateway and transport | HTTPS, protocol negotiation, Origin validation, bounded requests and conformance |
+| MCP-03 | Gateway and transport | HTTPS, 2026-07-28 stateless per-request POST, required header/body validation, Origin validation, bounded requests and conformance |
 | MCP-04 | OAuth and tenant isolation | Consent, token/audience validation, tenant binding, scopes, revocation and negative tests |
 | MCP-05 | Tool/capability registry | Ownership, lifecycle state, schema fingerprints and reviewed change workflow |
 | MCP-08 | Product adapters | Typed adapters to production-backed services, output validation, redaction and contract tests |
@@ -513,36 +513,27 @@ Required before relevant launch: privacy notice, terms, data-processing disclosu
 
 ### P0 — complete before application implementation
 
-1. Review and finalize Phase 02 requirements for all 26 products; assign accountable owners, acceptance criteria, dependencies and unresolved questions.
-2. Run the 30–40 structured first-wave customer interviews described in the discovery playbook; record positive and disconfirming evidence.
+1. Assign accountable owners/reviewers and obtain dated review decisions for all 26 product briefs.
+2. Conduct real first-wave customer interviews under the discovery playbook; record positive and disconfirming evidence.
 3. Validate FadeReach ICP, source rights, design-partner pipeline and paid-pilot criteria.
 4. Validate Aithyrex buyers, supported-site scope, benchmark and privacy design.
-5. Complete Phase 03 architecture review and approve the required ADR set.
-6. Resolve identity, tenant, authorization, approval and Agent Platform contracts.
-7. Reconcile Phase 02 wording/formatting and cross-links with the canonical catalogue and roadmap.
+5. Complete product-specific threat models, data-flow reviews and scoped legal/provider assessments for the first-seven candidates.
+6. Obtain the actual Agent Platform contract and resolve identity, tenant, authorization, approval and audit interfaces.
+7. Record a Phase 02 owner go/no-go based on linked evidence; do not infer approval from this plan.
 
 ### P1 — platform feasibility and design
 
-8. Run reproducible spikes for workspace/build tooling, web framework, WXT/browser packaging and cross-browser APIs.
-9. Define backend contracts, data model, migration strategy, evidence storage, jobs and API boundaries.
-10. Approve MCP Gate 0: protocol/client compatibility, tool contracts, OAuth/security and Agent Platform no-bypass design.
-11. Establish frontend information architecture, design tokens and accessibility baseline.
-12. Produce product-specific threat models and data lifecycle decisions for the first seven.
+8. Pass A1 clean-checkout toolchain and representative extension build.
+9. Pass A2 Chromium/Firefox WXT packaging, permission/lifecycle tests and Safari packaging feasibility.
+10. Pass A3 API, tenant-isolation, migration and worker recovery spike.
+11. Pass A4 product data-flow, threat-model, retention/deletion and telemetry review.
+12. Pass A5 MCP 2026-07-28 conformance, OAuth and client-matrix proof.
+13. Pass A6 typed Agent Platform contract and negative no-bypass tests.
+14. Obtain explicit A7 provider, residency, cost ceiling, backup/restore and rollback approval before any spend.
 
-### Proposed ADR backlog (not yet approved)
+### Accepted architecture decisions
 
-- ADR-0003: monorepo/workspace/build system.
-- ADR-0004: web frontend and design system.
-- ADR-0005: WXT/browser framework and compatibility strategy.
-- ADR-0006: modular backend/API boundaries.
-- ADR-0007: PostgreSQL, evidence/object storage and data lifecycle.
-- ADR-0008: identity, OAuth, organizations and tenancy.
-- ADR-0009: authorization, entitlements, approvals and policy.
-- ADR-0010: Agent Platform and Browser Bridge contract.
-- ADR-0011: asynchronous jobs, scheduler and workers.
-- ADR-0012: MCP gateway, tool registry and product adapters.
-- ADR-0013: security, privacy, telemetry and audit.
-- ADR-0014: CI/CD, signing and deployment.
+ADRs 0003–0014 are accepted and merged through PR #17. Their acceptance records are in `docs/adr/`. This is an architecture decision record, not proof of implementation. A1–A7 feasibility evidence remains open; see [Phase 02 Evidence and Architecture Feasibility Review](PHASE-02-EVIDENCE-AND-FEASIBILITY-REVIEW.md).
 
 ## 17. Programme definition of done
 
@@ -566,8 +557,8 @@ The programme is complete only when:
 |---|---|
 | Repository foundation / Phase 0 | Closed for repository scope |
 | Forensic baseline / Phase 01 | Closed for documented audit scope |
-| Phase 02 product requirements | Drafted; review and validation open |
-| Phase 03 architecture/ADRs | Open |
+| Phase 02 product requirements | Documentary baseline complete; customer, ownership, legal/provider, security and commercial evidence open |
+| Phase 03 architecture/ADRs | Accepted; A1–A7 feasibility open |
 | Frontend implementation | Not started / not evidenced |
 | Backend and data services | Not started / not evidenced |
 | Browser SDK/extensions | Not started / not evidenced |
@@ -576,4 +567,4 @@ The programme is complete only when:
 | Product security/privacy/legal approvals | Open by product |
 | Commercial beta / production release | Not started / not evidenced |
 
-**Review requested:** validate this consolidated plan, its precedence rules, phase sequencing, first-seven order, workstream boundaries and P0 backlog. After review and merge, use this plan as the programme index while updating the detailed roadmap, product requirements and ADRs through their own reviewable changes. Application implementation begins only after the applicable Phase 02/03 and security/architecture gates are approved.
+**Programme status:** this consolidated plan is the accepted programme baseline. The first-seven order and catalogue remain unchanged. Phase 02 evidence gates and A1–A7 feasibility remain open. Application implementation begins only after the applicable evidence, security, architecture and owner go/no-go gates are accepted.
