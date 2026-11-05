@@ -1,6 +1,6 @@
 # Tinlance Extensions — Final Consolidated Phase Plan
 
-**Document status:** Proposed controlling programme plan for review; not implementation authorization
+**Document status:** Accepted programme baseline; implementation authorization remains gated
 **Date:** 2026-11-05
 **Owner:** Tinlance Limited
 **Repository:** https://github.com/LloydCoder/tinlance-extensions
@@ -31,8 +31,8 @@ The repository baseline at the time this plan was prepared:
 - The four proposal decisions were incorporated through PR #13.
 - The canonical catalogue contains 26 products in six families.
 - Phase 0 repository foundation and Phase 01 repository forensic baseline are closed for their documented repository scope.
-- Phase 02 requirements are drafted; customer discovery, product/legal/provider reviews and approval of Phase 03 architecture remain outstanding.
-- Phase 03 architecture/ADR approval is not complete.
+- Phase 02 documentary baseline is reconciled; customer discovery, product-owner sign-offs, product-specific threat models, legal/provider reviews and commercial proof remain outstanding.
+- ADRs 0003–0014 were explicitly accepted by the decision owner and merged through PR #17. Architecture feasibility A1–A7 remain not passed; see [Phase 02 evidence and feasibility review](PHASE-02-EVIDENCE-AND-FEASIBILITY-REVIEW.md).
 - The repository is a documentation/governance foundation, not an implemented application suite. No product runtime, browser extension package, backend API, worker, database, OAuth service or MCP gateway was evidenced in the audit.
 - A passing repository CI workflow validates repository checks only. It is not product build, runtime, security, privacy, customer or release evidence.
 
@@ -136,8 +136,8 @@ The original 25-phase numbering and first-seven product order are retained. This
 |---:|---|---|---|
 | 0 | Repository foundation | Governance files, CI baseline, contribution/security policies, repository conventions | **Closed** for repository scope; not application readiness |
 | 1 | Forensic baseline | Commit-specific inventory, risks, gaps, implementation-status distinction | **Closed** for documented audit scope |
-| 2 | Product requirements and validation | Reviewed briefs for 26 products, discovery, permissions/data reviews, prioritization | **Drafted / open**; customer and specialist validation outstanding |
-| 3 | Architecture and ADR approval | Target architecture, product/service boundaries, threat model, dependency graph, approved ADR set | **Open**; implementation blocker |
+| 2 | Product requirements and validation | Reviewed briefs for 26 products, discovery, permissions/data reviews, prioritization | **Documentary baseline complete / open**; substantive evidence gates outstanding |
+| 3 | Architecture and ADR approval | Target architecture, product/service boundaries, threat model, dependency graph, approved ADR set | **ADRs accepted / feasibility A1–A7 open**; implementation blocker |
 | 4 | Monorepo and developer platform | Reproducible workspace, pinned toolchain, local setup, scripts, clean checkout build | Not started |
 | 5 | CI/CD and repository governance | Required checks, branch rules, dependency automation, provenance, release permissions | Baseline exists; application pipeline not implemented |
 | 6 | Design system and UX foundation | Tokens, components, accessibility baseline, extension patterns, web portal UX | Not started |
@@ -146,7 +146,7 @@ The original 25-phase numbering and first-seven product order are retained. This
 | 9 | Backend and data architecture | Service ownership, schemas, migrations, API contracts, queues, evidence and data lifecycle | Not started |
 | 10 | Security and privacy control plane | Threat models, policy, consent, audit, secrets, retention/deletion and security gates | Not started |
 
-**Milestone A exit:** approved architecture and ADRs; reproducible developer environment; reviewed identity/tenant and authority boundaries; data and security controls; initial browser and backend contracts. Do not begin product implementation or production MCP gateway work before applicable Phase 2/3 and MCP Gate 0 approvals.
+**Milestone A exit:** ADRs 0003–0014 are accepted, but Milestone A is not complete. A1–A7 feasibility evidence, Phase 02 customer/owner/legal/security evidence and MCP Gate 0 executable conformance remain outstanding. Do not begin product implementation or production MCP gateway work before these gates pass.
 
 ### Milestone B — Commercial beta
 
