@@ -1,5 +1,4 @@
 const { chromium } = require("playwright");
-const fs = require("node:fs/promises");
 const path = require("node:path");
 
 const root = path.resolve(__dirname, "..");
