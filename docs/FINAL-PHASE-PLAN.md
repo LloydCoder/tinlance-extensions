@@ -27,7 +27,7 @@ If records conflict, do not infer a new decision. Raise a documented discrepancy
 The repository baseline at the time this plan was prepared:
 
 - Repository: `LloydCoder/tinlance-extensions`; default branch: `main`.
-- Baseline commit recorded in the preceding forensic audit: `48c5ebe007f9b7e7b4aeb2943a156c1994737d4a`. The branch may advance independently after this snapshot.
+- Baseline for this programme reconciliation: `main` after PR #17, commit `74318596f066e8d8728e0fb3f32d2d62c8d2b089`. The review branch adds documentation corrections only; application implementation remains absent.
 - The four proposal decisions were incorporated through PR #13.
 - The canonical catalogue contains 26 products in six families.
 - Phase 0 repository foundation and Phase 01 repository forensic baseline are closed for their documented repository scope.
