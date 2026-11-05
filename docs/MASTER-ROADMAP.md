@@ -1,8 +1,8 @@
 # Tinlance Extensions — Master Delivery Roadmap
 
-**Document status:** Master roadmap baseline — proposed, not yet implemented or verified  
-**Owner:** Tinlance Limited  
-**Repository:** https://github.com/LloydCoder/tinlance-extensions  
+**Document status:** Master roadmap baseline — proposed, not yet implemented or verified
+**Owner:** Tinlance Limited
+**Repository:** https://github.com/LloydCoder/tinlance-extensions
 **Last updated:** 2026-11-05
 **Consolidated programme plan:** [FINAL-PHASE-PLAN.md](FINAL-PHASE-PLAN.md) (proposed controlling programme index; review required)
 
