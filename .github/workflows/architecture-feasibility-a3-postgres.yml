@@ -1,0 +1,52 @@
+name: Architecture Feasibility A3 PostgreSQL
+
+on:
+  pull_request:
+    paths:
+      - "spikes/architecture-feasibility/a3-backend-api/**"
+      - ".github/workflows/architecture-feasibility-a3-postgres.yml"
+  push:
+    branches: [main]
+    paths:
+      - "spikes/architecture-feasibility/a3-backend-api/**"
+      - ".github/workflows/architecture-feasibility-a3-postgres.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: architecture-feasibility-a3-postgres-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  postgres-integration:
+    name: PostgreSQL tenant isolation and transactional outbox
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16.6
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: tinlance_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d tinlance_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: Apply schema migration
+        env:
+          PGPASSWORD: postgres
+        run: psql "host=127.0.0.1 port=5432 dbname=tinlance_test user=postgres" -v ON_ERROR_STOP=1 -f spikes/architecture-feasibility/a3-backend-api/migrations/001_platform_core.sql
+      - name: Run PostgreSQL isolation and outbox integration assertions
+        env:
+          PGPASSWORD: postgres
+        run: psql "host=127.0.0.1 port=5432 dbname=tinlance_test user=postgres" -v ON_ERROR_STOP=1 -f spikes/architecture-feasibility/a3-backend-api/postgres.integration.sql
