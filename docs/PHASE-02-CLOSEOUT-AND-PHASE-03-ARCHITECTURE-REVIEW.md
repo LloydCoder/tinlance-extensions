@@ -12,7 +12,7 @@ The repository now has a consolidated 26-product requirements baseline, a six-fa
 
 The audit does **not** find sufficient evidence to close Phase 02. In particular, no completed customer interviews, design-partner commitments, paid pilots, signed product-owner approvals, completed provider/data-rights reviews or approved product-specific threat models are recorded. These are evidence gates, not documentation tasks that can be marked complete by drafting more plans.
 
-Phase 03 architecture decisions are accepted: the decision owner explicitly approved ADRs 0003–0014 on 2026-11-05 and PR #17 merged the approval record. This accepts the architecture baseline; it does not authorize product implementation. Isolated A1–A2 feasibility spikes and an A3 API contract spike now exist; A1 passed, A2 is partial, A3 is partial, and A4–A7 remain open.
+Phase 03 architecture decisions are accepted: the decision owner explicitly approved ADRs 0003–0014 on 2026-11-05 and PR #17 merged the approval record. This accepts the architecture baseline; it does not authorize product implementation. Isolated A1–A2 feasibility spikes and A3 API plus PostgreSQL 16 RLS/idempotency/outbox evidence now exist (PR #25 and #27); A1 passed, A2 is partial, A3 remains partial because API/database wiring and worker recovery are unproved, and A4–A7 remain open.
 
 ### Current gate result
 
@@ -113,7 +113,7 @@ Do not adopt microservices, Kubernetes, a service mesh, a mandatory Redis cluste
 | A6 — Agent Platform contract | Typed authorization/approval/audit contract and negative no-bypass tests | Any consequential browser/agent action |
 | A7 — Cost/deployment approval | Provider choice, data location, cost ceiling, backup/restore and rollback plan | Paid infrastructure or production deployment |
 
-A green documentation workflow does not satisfy architecture gates. A1 is passed by the separate executable spike; A2 is partial; A3 has a merged API contract spike but remains partial pending PostgreSQL and durable worker evidence; A4–A7 remain open.
+A green documentation workflow does not satisfy architecture gates. A1 is passed by the separate executable spike; A2 is partial; A3 has merged API and PostgreSQL feasibility evidence (forced RLS, tenant isolation, idempotency and transactional outbox), but remains partial pending API/database wiring and durable worker recovery evidence; A4–A7 remain open.
 
 ## 6. MCP protocol correction required in implementation planning
 
