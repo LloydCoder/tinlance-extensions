@@ -4,7 +4,7 @@
 **Repository baseline:** `main` at `74318596f066e8d8728e0fb3f32d2d62c8d2b089` (PR #17 merge)
 **Review branch:** `phase-02-evidence-feasibility-review`
 **Decision owner:** Tinlance Limited
-**Disposition:** Evidence inventory, standards/competitive research and isolated A1–A2 feasibility spikes completed; Phase 02 remains open; A1 passed and A2 is partial. A3–A7 remain open. This document is a feasibility and evidence review, not implementation authorization.
+**Disposition:** Evidence inventory, standards/competitive research and isolated A1–A2 feasibility spikes completed and an isolated A3 API contract spike merged; Phase 02 remains open; A1 passed, A2 is partial and A3 is partial. A4–A7 remain open. This document is a feasibility and evidence review, not implementation authorization.
 
 ## 1. Executive result
 
@@ -92,13 +92,13 @@ For each product approval, record product ID, version of brief, owner, reviewer,
 | A0 — Owner acceptance | Owner decision for ADRs 0003–0014 | **Pass — documentary** | Explicit approval recorded in all twelve ADRs and merged by PR #17 |
 | A1 — Toolchain spike | Fresh checkout, frozen lockfile install, lint/typecheck/test/build, Next.js App Router build and representative extension builds | **Pass — isolated feasibility spike** | CI on PR #20 and main completed clean install, lint, typecheck, Next.js build, Chrome/Firefox WXT builds and manifest tests; exact pnpm lockfile is committed with this follow-up. This is not a production workspace |
 | A2 — Browser spike | WXT builds, least-privilege manifest tests and runtime compatibility for Chromium/Firefox; Safari packaging proof | **Partial — build and manifest proof** | Chrome MV3 and Firefox MV3 builds pass for read-only (`activeTab`) and user-triggered script (`activeTab`, `scripting`) examples. Runtime browser E2E, service-worker lifecycle, Safari Xcode packaging/signing and store validation remain untested |
-| A3 — Backend/API spike | OpenAPI/API schema, auth middleware, tenant isolation, migration and worker recovery proof | **Blocked — not executed** | No API, schemas, auth middleware, database migrations, queue/worker or integration tests exist |
+| A3 — Backend/API spike | OpenAPI/API schema, auth seam, tenant isolation, migration and worker recovery proof | **Partial — isolated API contract spike merged** | `spikes/architecture-feasibility/a3-backend-api/` provides deny-by-default injected bearer verification, server-resolved tenant context, tenant-scoped repository contract, OpenAPI 3.1 fixture and negative tests. PostgreSQL migrations/RLS, real OIDC, durable queue/outbox and worker crash/recovery tests remain absent |
 | A4 — Data/security review | Data-flow diagrams, D0–D3 inventory, product threat models, retention/deletion and audit/secret boundaries | **Partial** | Classification and generic controls exist; product-level flows, reviewed threat models, deletion tests, telemetry redaction tests and processor reviews do not |
 | A5 — MCP Gate 0 | Exact protocol fixtures, required headers, auth, tool contracts, negative tests and client matrix | **Research-supported; executable proof blocked** | 2026-07-28 protocol details were checked against current MCP materials; no pinned SDK, fixture suite, server, OAuth integration, tool schemas or real-client matrix exists |
 | A6 — Agent Platform contract | Typed authorization/approval/audit contract and negative no-bypass tests | **Blocked — external contract absent** | No Agent Platform schema/SDK/API contract or test fixture is present in this repository; approval authority cannot be simulated or reimplemented here |
 | A7 — Cost/deployment approval | Provider, region/residency, cost ceiling, backup/restore and rollback plan | **Blocked — decision not made** | ADRs deliberately defer vendor selection; no deployment/provider/budget approval exists. No paid resource is authorized |
 
-**A1 passed; A2 is partial; A3–A7 remain open.** A5 research reduces uncertainty but does not satisfy executable conformance criteria. The spike is deliberately isolated and is not product implementation.
+**A1 passed; A2 is partial; A3 is partial; A4–A7 remain open.** A5 research reduces uncertainty but does not satisfy executable conformance criteria. The A3 spike is deliberately isolated and is not production implementation.
 
 ## 5. Current technical findings and required design constraints
 
@@ -149,7 +149,7 @@ EXT-17 and any consequential action remain blocked until the actual Agent Platfo
 | Phase 03 — architecture decisions 0003–0014 | Accepted and merged |
 | A1 — toolchain | Passed by isolated reproducible spike; not production workspace |
 | A2 — browser | Partial: Chrome/Firefox MV3 builds and least-privilege manifests pass; runtime/Safari evidence open |
-| A3 — backend/API | Blocked; no backend artifacts |
+| A3 — backend/API | Partial; isolated API contract spike and negative tenant tests merged; no production backend, PostgreSQL or durable worker |
 | A4 — data/security | Partial; product-specific review and test evidence missing |
 | A5 — MCP | Protocol research complete; implementation conformance evidence missing |
 | A6 — Agent Platform | Blocked on external typed contract |
