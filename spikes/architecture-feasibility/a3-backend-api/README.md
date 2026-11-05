@@ -1,18 +1,25 @@
 # A3 backend/API feasibility spike
 
-This isolated, dependency-free Node.js HTTP spike tests the backend boundary accepted in ADRs 0006, 0008 and 0009. It is not a production API, identity provider, database, queue or MCP server.
+This isolated spike is evidence, not a production API or service.
 
-## Proved in this spike
-- Explicit bearer-token verification is injected; the default verifier denies every request.
-- Tenant identity is derived only from the verified principal, never from request headers or query parameters.
-- Repository reads are tenant-scoped and return 404 for cross-tenant identifiers.
-- Liveness/readiness endpoints, request correlation, JSON response headers and bounded routing behaviour.
-- Executable negative tests for missing/invalid credentials, tenant spoofing and cross-tenant reads.
+## Evidence present
+- Injected bearer verification defaults to deny-all; tenant identity comes from the verified principal.
+- Tenant-scoped repository contract and cross-tenant negative HTTP tests.
+- PostgreSQL migration for tenant records, durable job rows, idempotency keys and transactional outbox.
+- PostgreSQL row-level security (RLS) forced on tenant-owned tables; missing tenant context returns no rows.
+- Integration assertions for tenant isolation, idempotent enqueue/outbox and transaction rollback.
+- OpenAPI 3.1 fixture and liveness/readiness separation.
 
-## Deliberately not proved
-- OIDC/OAuth issuer, audience, JWKS, PKCE, refresh/revocation or production session lifecycle.
-- PostgreSQL schema/migrations, row-level security, object storage or backup/restore.
-- Durable queue/outbox, worker crash recovery, retries, cancellation or idempotency.
-- Rate limiting, reverse proxy, deployment, observability backend, legal/privacy review or provider selection.
+## Important limitations
+- The HTTP fixture still uses an in-memory repository. It is not wired to this PostgreSQL schema.
+- The runtime role is a non-login database role for proving RLS policy behavior; production credential provisioning, connection-pool tenant-context reset and migration ownership remain unimplemented.
+- The SQL integration tests do not yet prove concurrent worker claims, lease expiry/recovery, cancellation, retries, dead-letter handling, outbox publisher delivery, or process crash/restart.
+- No OIDC issuer/JWKS validation, production token lifecycle, rate limiting, deployment, secrets manager, backup/restore, object storage, retention/deletion, or legal/privacy review is included.
 
-The test verifier and in-memory repository are fixtures only. They must never be reused as production authentication or persistence. A3 remains **partial** until PostgreSQL migration/tenant tests and durable worker recovery tests run against real services in CI.
+Run locally against PostgreSQL 16+:
+```sh
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f migrations/001_platform_core.sql
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f postgres.integration.sql
+```
+
+A3 remains **partial** until API/database wiring, worker recovery tests, migration rollback, backup/restore and security review are complete.
