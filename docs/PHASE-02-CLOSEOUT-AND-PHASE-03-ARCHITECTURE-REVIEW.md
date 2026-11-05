@@ -2,7 +2,7 @@
 
 **Review date:** 2026-11-05
 **Repository baseline:** `main` after PR #17 merge, commit `74318596f066e8d8728e0fb3f32d2d62c8d2b089`
-**Status:** Phase 02 documentary audit completed; Phase 02 exit criteria remain open; ADRs 0003–0014 accepted and merged by PR #17; feasibility A1–A7 not passed
+**Status:** Phase 02 documentary audit completed; Phase 02 exit criteria remain open; ADRs 0003–0014 accepted and merged by PR #17; feasibility A1 passed, A2 partial, A3–A7 open
 **Decision owner:** Tinlance Limited
 **Authority:** This record is a review and recommendation package. It does not authorize application, infrastructure, paid-vendor or production MCP implementation.
 
@@ -12,7 +12,7 @@ The repository now has a consolidated 26-product requirements baseline, a six-fa
 
 The audit does **not** find sufficient evidence to close Phase 02. In particular, no completed customer interviews, design-partner commitments, paid pilots, signed product-owner approvals, completed provider/data-rights reviews or approved product-specific threat models are recorded. These are evidence gates, not documentation tasks that can be marked complete by drafting more plans.
 
-Phase 03 architecture decisions are accepted: the decision owner explicitly approved ADRs 0003–0014 on 2026-11-05 and PR #17 merged the approval record. This accepts the architecture baseline; it does not pass feasibility A1–A7 or authorize implementation. The repository has no executable application stack against which those spikes can yet be run.
+Phase 03 architecture decisions are accepted: the decision owner explicitly approved ADRs 0003–0014 on 2026-11-05 and PR #17 merged the approval record. This accepts the architecture baseline; it does not authorize product implementation. Isolated A1–A2 feasibility spikes now exist; A1 passed, A2 is partial, and A3–A7 remain open.
 
 ### Current gate result
 
@@ -29,7 +29,7 @@ Phase 03 architecture decisions are accepted: the decision owner explicitly appr
 | Legal, privacy and provider rights | Fail / open | Contact data, AI-site DOM paths, downloads, monitoring, SERP and commerce dependencies require scoped reviews |
 | Product-specific threat models | Fail / open | Baseline risks are described; reviewed and approved threat models are not evidenced |
 | Commercial proof | Fail / open | No paid pilots, purchase commitments or validated willingness-to-pay evidence |
-| Phase 03 architecture | Accepted baseline; feasibility open | ADRs 0003–0014 accepted and merged; A1–A7 remain open |
+| Phase 03 architecture | Accepted baseline; feasibility partial | ADRs 0003–0014 accepted; A1 passed, A2 partial, A3–A7 open |
 
 **Phase 02 is not closed.** The only completed closeout activity in this change is the documentary reconciliation and gap assessment above.
 
@@ -105,15 +105,15 @@ Do not adopt microservices, Kubernetes, a service mesh, a mandatory Redis cluste
 | Gate | Required evidence | Blocks |
 |---|---|---|
 | A0 — Owner acceptance | Explicit dated approval for ADRs 0003–0014, recorded in each ADR and merged by PR #17 | **Pass — documentary** |
-| A1 — Toolchain spike | Fresh-checkout install, deterministic build, lint/typecheck/test and representative extension build | Workspace bootstrap |
-| A2 — Browser spike | WXT output for Chromium and Firefox; permission review; Safari packaging feasibility documented separately | Browser SDK implementation |
+| A1 — Toolchain spike | Fresh-checkout frozen install, lint/typecheck/test, Next.js build and representative extension builds | **Pass — isolated spike PR #20; lockfile pinned in this PR** |
+| A2 — Browser spike | WXT Chrome/Firefox MV3 builds and manifest permission tests; runtime and Safari packaging/signing proof | **Partial — build/manifest proof; runtime and Safari open** |
 | A3 — Backend/API spike | API schema, auth middleware, tenant isolation test, migration and worker proof | Backend implementation |
 | A4 — Data/security review | Data-flow diagrams, threat models, retention/deletion, secret and audit boundaries | Sensitive-data processing |
 | A5 — MCP Gate 0 | Exact 2026-07-28 protocol fixtures, headers, auth, tool contracts, negative tests and client matrix | MCP gateway implementation |
 | A6 — Agent Platform contract | Typed authorization/approval/audit contract and negative no-bypass tests | Any consequential browser/agent action |
 | A7 — Cost/deployment approval | Provider choice, data location, cost ceiling, backup/restore and rollback plan | Paid infrastructure or production deployment |
 
-A green documentation workflow does not satisfy any of A1–A7.
+A green documentation workflow does not satisfy architecture gates. A1 is passed by the separate executable spike; A2 is only partial; A3–A7 remain open.
 
 ## 6. MCP protocol correction required in implementation planning
 
@@ -136,7 +136,7 @@ References:
 
 **Requested decision:** accept, reject or amend each ADR 0003–0014.
 **Decision owner:** Tinlance Limited.
-**Current status:** ADRs 0003–0014 accepted by the decision owner and merged through PR #17 on 2026-11-05. A1–A7 remain open; see [Phase 02 Evidence and Architecture Feasibility Review](PHASE-02-EVIDENCE-AND-FEASIBILITY-REVIEW.md).
+**Current status:** ADRs 0003–0014 accepted by the decision owner and merged through PR #17 on 2026-11-05. A1 passed and A2 is partial; A3–A7 remain open; see [Phase 02 Evidence and Architecture Feasibility Review](PHASE-02-EVIDENCE-AND-FEASIBILITY-REVIEW.md).
 **Implementation authorization:** Not granted.
 **Phase 02 status:** Open; customer, product-owner, legal/provider, commercial and product-security evidence gates remain outstanding.
 
@@ -156,6 +156,8 @@ The approval record is complete. The remaining work is executable feasibility pr
 - [ ] Customer discovery completed and evidence linked.
 - [ ] Product-specific threat models and legal/provider reviews approved.
 - [x] Owner accepts ADRs 0003–0014 as written on 2026-11-05.
-- [ ] Architecture feasibility gates A1–A7 passed (reviewed 2026-11-05; none passed; see feasibility report).
+- [x] A1 toolchain spike passed in isolated CI with a committed lockfile.
+- [ ] A2 browser gate fully passed (runtime Chrome/Firefox and Safari packaging/signing evidence still required).
+- [ ] A3–A7 feasibility gates passed.
 
 **Final disposition:** This PR is a governance/architecture review submission. It does not close Phase 02, approve production architecture, start implementation, authorize infrastructure spend or claim product readiness.
