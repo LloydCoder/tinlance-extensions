@@ -1,0 +1,58 @@
+name: Architecture Feasibility A1-A2
+
+on:
+  pull_request:
+    paths:
+      - "spikes/architecture-feasibility/a1-a2/**"
+      - ".github/workflows/architecture-feasibility-a1-a2.yml"
+  push:
+    branches: [main]
+    paths:
+      - "spikes/architecture-feasibility/a1-a2/**"
+      - ".github/workflows/architecture-feasibility-a1-a2.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: architecture-feasibility-a1-a2-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  toolchain-and-browser-build:
+    name: A1-A2 clean install, build and permission tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: spikes/architecture-feasibility/a1-a2
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "24.22.2"
+      - name: Install pinned pnpm
+        run: npm install --global pnpm@12.16.1
+      - name: Resolve and install workspace dependencies
+        run: |
+          if [ ! -f pnpm-lock.yaml ]; then
+            pnpm install --lockfile-only --no-frozen-lockfile
+          fi
+          pnpm install --frozen-lockfile
+      - name: Lint all workspace packages
+        run: pnpm lint
+      - name: Type-check all workspace packages
+        run: pnpm typecheck
+      - name: Build Next.js and Chrome/Firefox MV3 packages
+        run: pnpm build
+      - name: Verify generated extension permissions
+        run: pnpm test
+      - name: Publish generated lockfile for review
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: a1-a2-pnpm-lockfile
+          path: spikes/architecture-feasibility/a1-a2/pnpm-lock.yaml
+          if-no-files-found: error
+          retention-days: 3
