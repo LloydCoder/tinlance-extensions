@@ -2,7 +2,7 @@
 
 **Review date:** 2026-11-05
 **Repository baseline:** `main` after PR #17 merge, commit `74318596f066e8d8728e0fb3f32d2d62c8d2b089`
-**Status:** Phase 02 documentary audit completed; Phase 02 exit criteria remain open; ADRs 0003–0014 accepted and merged by PR #17; feasibility A1 passed, A2 partial, A3–A7 open
+**Status:** Phase 02 documentary audit completed; Phase 02 exit criteria remain open; ADRs 0003–0014 accepted and merged by PR #17; feasibility A1 passed, A2 partial, A3 partial, A4–A7 open
 **Decision owner:** Tinlance Limited
 **Authority:** This record is a review and recommendation package. It does not authorize application, infrastructure, paid-vendor or production MCP implementation.
 
@@ -12,7 +12,7 @@ The repository now has a consolidated 26-product requirements baseline, a six-fa
 
 The audit does **not** find sufficient evidence to close Phase 02. In particular, no completed customer interviews, design-partner commitments, paid pilots, signed product-owner approvals, completed provider/data-rights reviews or approved product-specific threat models are recorded. These are evidence gates, not documentation tasks that can be marked complete by drafting more plans.
 
-Phase 03 architecture decisions are accepted: the decision owner explicitly approved ADRs 0003–0014 on 2026-11-05 and PR #17 merged the approval record. This accepts the architecture baseline; it does not authorize product implementation. Isolated A1–A2 feasibility spikes now exist; A1 passed, A2 is partial, and A3–A7 remain open.
+Phase 03 architecture decisions are accepted: the decision owner explicitly approved ADRs 0003–0014 on 2026-11-05 and PR #17 merged the approval record. This accepts the architecture baseline; it does not authorize product implementation. Isolated A1–A2 feasibility spikes and an A3 API contract spike now exist; A1 passed, A2 is partial, A3 is partial, and A4–A7 remain open.
 
 ### Current gate result
 
@@ -29,7 +29,7 @@ Phase 03 architecture decisions are accepted: the decision owner explicitly appr
 | Legal, privacy and provider rights | Fail / open | Contact data, AI-site DOM paths, downloads, monitoring, SERP and commerce dependencies require scoped reviews |
 | Product-specific threat models | Fail / open | Baseline risks are described; reviewed and approved threat models are not evidenced |
 | Commercial proof | Fail / open | No paid pilots, purchase commitments or validated willingness-to-pay evidence |
-| Phase 03 architecture | Accepted baseline; feasibility partial | ADRs 0003–0014 accepted; A1 passed, A2 partial, A3–A7 open |
+| Phase 03 architecture | Accepted baseline; feasibility partial | ADRs 0003–0014 accepted; A1 passed, A2 partial, A3 partial, A4–A7 open |
 
 **Phase 02 is not closed.** The only completed closeout activity in this change is the documentary reconciliation and gap assessment above.
 
@@ -113,7 +113,7 @@ Do not adopt microservices, Kubernetes, a service mesh, a mandatory Redis cluste
 | A6 — Agent Platform contract | Typed authorization/approval/audit contract and negative no-bypass tests | Any consequential browser/agent action |
 | A7 — Cost/deployment approval | Provider choice, data location, cost ceiling, backup/restore and rollback plan | Paid infrastructure or production deployment |
 
-A green documentation workflow does not satisfy architecture gates. A1 is passed by the separate executable spike; A2 is only partial; A3–A7 remain open.
+A green documentation workflow does not satisfy architecture gates. A1 is passed by the separate executable spike; A2 is partial; A3 has a merged API contract spike but remains partial pending PostgreSQL and durable worker evidence; A4–A7 remain open.
 
 ## 6. MCP protocol correction required in implementation planning
 
@@ -136,7 +136,7 @@ References:
 
 **Requested decision:** accept, reject or amend each ADR 0003–0014.
 **Decision owner:** Tinlance Limited.
-**Current status:** ADRs 0003–0014 accepted by the decision owner and merged through PR #17 on 2026-11-05. A1 passed and A2 is partial; A3–A7 remain open; see [Phase 02 Evidence and Architecture Feasibility Review](PHASE-02-EVIDENCE-AND-FEASIBILITY-REVIEW.md).
+**Current status:** ADRs 0003–0014 accepted by the decision owner and merged through PR #17 on 2026-11-05. A1 passed, A2 is partial and A3 is partial; A4–A7 remain open; see [Phase 02 Evidence and Architecture Feasibility Review](PHASE-02-EVIDENCE-AND-FEASIBILITY-REVIEW.md).
 **Implementation authorization:** Not granted.
 **Phase 02 status:** Open; customer, product-owner, legal/provider, commercial and product-security evidence gates remain outstanding.
 
