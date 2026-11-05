@@ -533,7 +533,7 @@ Required before relevant launch: privacy notice, terms, data-processing disclosu
 
 ### Accepted architecture decisions
 
-ADRs 0003–0014 are accepted and merged through PR #17. Their acceptance records are in `docs/adr/`. This is an architecture decision record, not proof of implementation. A1–A7 feasibility evidence remains open; see [Phase 02 Evidence and Architecture Feasibility Review](PHASE-02-EVIDENCE-AND-FEASIBILITY-REVIEW.md).
+ADRs 0003–0014 are accepted and merged through PR #17. Their acceptance records are in `docs/adr/`. This is an architecture decision record, not proof of implementation. A1 passed through the isolated reproducible toolchain spike; A2 is partial; A3–A7 remain open. See [Phase 02 Evidence and Architecture Feasibility Review](PHASE-02-EVIDENCE-AND-FEASIBILITY-REVIEW.md).
 
 ## 17. Programme definition of done
 
@@ -567,4 +567,4 @@ The programme is complete only when:
 | Product security/privacy/legal approvals | Open by product |
 | Commercial beta / production release | Not started / not evidenced |
 
-**Programme status:** this consolidated plan is the accepted programme baseline. The first-seven order and catalogue remain unchanged. Phase 02 evidence gates and A1–A7 feasibility remain open. Application implementation begins only after the applicable evidence, security, architecture and owner go/no-go gates are accepted.
+**Programme status:** this consolidated plan is the accepted programme baseline. The first-seven order and catalogue remain unchanged. Phase 02 substantive evidence remains open; A1 passed, A2 is partial and A3–A7 remain open. Application implementation begins only after the applicable evidence, security, architecture and owner go/no-go gates are accepted.
