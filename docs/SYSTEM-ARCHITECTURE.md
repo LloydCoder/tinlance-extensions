@@ -80,7 +80,7 @@ The MCP server is an integration boundary. It is not a replacement for product A
 3. **Integration edge**
    - Public HTTPS MCP endpoint.
    - Streamable HTTP transport as the primary remote transport, subject to the pinned protocol baseline.
-   - Protocol negotiation, client compatibility, request validation, routing, timeouts and bounded response handling.
+   - Revision-specific request validation, client compatibility, routing, timeouts and bounded response handling.
    - No business authorization decisions based solely on client-provided metadata.
 
 4. **Identity and governance**
@@ -203,7 +203,7 @@ The exact folder layout may evolve after the repository baseline audit. Keep one
 
 ### 6.1 Framework and compatibility
 
-- Proposed framework: WXT with TypeScript, subject to ADR 0005 approval and a reproducible compatibility spike.
+- Proposed framework: WXT with TypeScript, approved by ADR 0005; a reproducible compatibility spike remains required.
 - WXT does not automate Safari publishing; Safari requires a separate native wrapper/packaging and signing lane. Do not infer Safari support from Chromium or Firefox builds.
 - Use TypeScript with strict compiler settings.
 - Use a shared browser adapter layer for browser API differences.
