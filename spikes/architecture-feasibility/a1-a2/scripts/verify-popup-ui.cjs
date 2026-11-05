@@ -18,12 +18,17 @@ async function discoverExtensionId(context, expectedName) {
   await diagnostics.waitForLoadState("domcontentloaded");
   await diagnostics.waitForTimeout(500);
   const body = await diagnostics.locator("body").innerText();
-  const nameIndex = body.indexOf(expectedName);
-  const nearby = nameIndex < 0 ? "" : body.slice(Math.max(0, nameIndex - 2500), nameIndex + expectedName.length + 2500);
-  const ids = [...nearby.matchAll(/\b[a-p]{32}\b/g)].map((match) => match[0]);
+  let records;
+  try {
+    records = JSON.parse(body);
+  } catch (error) {
+    throw new Error(`Chromium extensions diagnostics did not return JSON: ${String(error)}`);
+  }
+  const matching = records.filter((record) => record.name === expectedName);
+  const ids = matching.map((record) => record.id).filter((id) => typeof id === "string");
   await diagnostics.close();
   if (ids.length !== 1) {
-    throw new Error(`Expected one loaded unpacked extension ID in chrome://extensions-internals/, found ${ids.length}; expectedNameIndex=${nameIndex}; body=${body.slice(0, 5000)}`);
+    throw new Error(`Expected one loaded unpacked extension ID in chrome://extensions-internals/, found ${ids.length} for manifest name "${expectedName}"`);
   }
   return ids[0];
 }
