@@ -6,7 +6,7 @@
     "node": ">=24.22.2 <25"
   },
   "scripts": {
-    "build": "turbo run build",
+    "build": "node scripts/prepare-icons.mjs && turbo run build",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "test": "node --test tests/*.test.mjs"

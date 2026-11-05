@@ -4,7 +4,10 @@ import { join } from "node:path";
 import test from "node:test";
 
 const root = new URL("../", import.meta.url).pathname;
-const targets = ["chrome-mv3", "firefox-mv3"];
+const targets = [
+  { name: "chrome-mv3", manifestVersion: 3 },
+  { name: "firefox-mv3", manifestVersion: 3 }
+];
 const cases = [
   { name: "read-only", directory: "extension-readonly", expected: ["activeTab"] },
   {
@@ -14,24 +17,32 @@ const cases = [
   }
 ];
 
+async function assertIcons(manifest, directory, target) {
+  assert.deepEqual(Object.keys(manifest.icons).sort(), ["128", "16", "32", "48"]);
+  for (const icon of Object.values(manifest.icons)) {
+    await readFile(join(root, "apps", directory, ".output", target, icon));
+  }
+}
+
 for (const target of targets) {
   for (const item of cases) {
-    test(`${item.name} ${target} manifest keeps least privilege`, async () => {
+    test(`${item.name} ${target.name} manifest keeps least privilege`, async () => {
       const manifestPath = join(
         root,
         "apps",
         item.directory,
         ".output",
-        target,
+        target.name,
         "manifest.json"
       );
       const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
 
-      assert.equal(manifest.manifest_version, 3);
+      assert.equal(manifest.manifest_version, target.manifestVersion);
       assert.deepEqual([...manifest.permissions].sort(), [...item.expected].sort());
       assert.equal(manifest.host_permissions, undefined);
       assert.equal(manifest.optional_host_permissions, undefined);
       assert.equal(manifest.content_scripts, undefined);
+      await assertIcons(manifest, item.directory, target.name);
 
       for (const forbidden of ["cookies", "history", "webRequest", "debugger", "management"]) {
         assert.equal(
@@ -43,3 +54,20 @@ for (const target of targets) {
     });
   }
 }
+
+test("read-only Safari MV2 manifest keeps least privilege and icons", async () => {
+  const manifestPath = join(
+    root,
+    "apps",
+    "extension-readonly",
+    ".output",
+    "safari-mv2",
+    "manifest.json"
+  );
+  const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
+  assert.equal(manifest.manifest_version, 2);
+  assert.deepEqual([...manifest.permissions].sort(), ["activeTab"]);
+  assert.equal(manifest.host_permissions, undefined);
+  assert.equal(manifest.content_scripts, undefined);
+  await assertIcons(manifest, "extension-readonly", "safari-mv2");
+});

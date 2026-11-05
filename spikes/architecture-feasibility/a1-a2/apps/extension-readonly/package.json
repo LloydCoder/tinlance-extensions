@@ -2,7 +2,7 @@
   "name": "@tinlance/spike-extension-readonly",
   "private": true,
   "scripts": {
-    "build": "wxt build -b chrome --mv3 && wxt build -b firefox --mv3",
+    "build": "wxt build -b chrome --mv3 && wxt build -b firefox --mv3 && wxt build -b safari",
     "lint": "eslint .",
     "typecheck": "wxt prepare && tsc --noEmit"
   },

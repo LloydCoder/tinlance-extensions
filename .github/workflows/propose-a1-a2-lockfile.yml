@@ -25,7 +25,7 @@ jobs:
           ref: main
           fetch-depth: 0
       - name: Download lockfile from successful main feasibility run
-        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
         with:
           name: a1-a2-pnpm-lockfile
           run-id: ${{ github.event.workflow_run.id }}
