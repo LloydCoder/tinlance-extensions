@@ -32,7 +32,7 @@ The repository baseline at the time this plan was prepared:
 - The canonical catalogue contains 26 products in six families.
 - Phase 0 repository foundation and Phase 01 repository forensic baseline are closed for their documented repository scope.
 - Phase 02 documentary baseline is reconciled; customer discovery, product-owner sign-offs, product-specific threat models, legal/provider reviews and commercial proof remain outstanding.
-- ADRs 0003–0014 were explicitly accepted by the decision owner and merged through PR #17. Architecture feasibility A1 passed, A2 is partial, A3 has merged API and PostgreSQL 16 RLS/idempotency/transactional-outbox feasibility evidence but remains partial pending API/database wiring and worker recovery; A4–A7 remain open. See [Phase 02 evidence and feasibility review](PHASE-02-EVIDENCE-AND-FEASIBILITY-REVIEW.md).
+- ADRs 0003–0014 were explicitly accepted by the decision owner and merged through PR #17. Architecture feasibility A1 passed, A2 is partial, A3 has merged API and PostgreSQL 16 RLS/idempotency/transactional-outbox plus tenant-bound worker lease/recovery and stale-worker fencing evidence (PR #28; all three exact-head checks green), but remains partial pending production API/database wiring, multi-process contention, process crash/restart and outbox publisher delivery; A4–A7 remain open. See [Phase 02 evidence and feasibility review](PHASE-02-EVIDENCE-AND-FEASIBILITY-REVIEW.md).
 - The repository remains a documentation/governance foundation, not an implemented application suite. An isolated A1–A2 spike now exists under `spikes/architecture-feasibility/a1-a2/`; no production product runtime, extension, backend API, worker, database, OAuth service or MCP gateway is implemented.
 - A passing repository CI workflow validates repository checks only. It is not product build, runtime, security, privacy, customer or release evidence.
 
@@ -146,7 +146,7 @@ The original 25-phase numbering and first-seven product order are retained. This
 | 9 | Backend and data architecture | Service ownership, schemas, migrations, API contracts, queues, evidence and data lifecycle | Not started |
 | 10 | Security and privacy control plane | Threat models, policy, consent, audit, secrets, retention/deletion and security gates | Not started |
 
-**Milestone A exit:** ADRs 0003–0014 are accepted; A1 passes and A2 is partially evidenced. A3 has PostgreSQL RLS/idempotency/outbox evidence but remains partial pending API/database wiring, worker recovery and operational proof; A4–A7, Phase 02 customer/owner/legal/security evidence and MCP Gate 0 executable conformance remain outstanding. Do not begin product implementation or production MCP gateway work before these gates pass.
+**Milestone A exit:** ADRs 0003–0014 are accepted; A1 passes, A2 is partial and A3 is partial. PR #28 adds green PostgreSQL tenant-bound worker lease/recovery and stale-worker fencing evidence, but production API/database wiring, multi-process contention, process crash/restart and outbox publisher delivery remain open. A4–A7, Phase 02 customer/owner/legal/security evidence and MCP Gate 0 executable conformance remain outstanding. Do not begin product implementation or production MCP gateway work before these gates pass.
 
 ### Milestone B — Commercial beta
 
@@ -525,7 +525,7 @@ Required before relevant launch: privacy notice, terms, data-processing disclosu
 
 8. A1 clean-checkout toolchain and representative Next.js/WXT builds passed in isolated spike PR #20; retain as a feasibility fixture.
 9. Complete A2 runtime Chrome/Firefox lifecycle and permission tests plus the Safari Xcode packaging/signing lane.
-10. Pass A3 API, tenant-isolation, migration and worker recovery spike.
+10. PR #28 completed the isolated A3 PostgreSQL tenant-bound lease/recovery and fencing spike with all checks green; continue A3 with production API/database wiring, multi-process contention, crash/restart, outbox publisher delivery and operational recovery proof.
 11. Pass A4 product data-flow, threat-model, retention/deletion and telemetry review.
 12. Pass A5 MCP 2026-07-28 conformance, OAuth and client-matrix proof.
 13. Pass A6 typed Agent Platform contract and negative no-bypass tests.
@@ -533,7 +533,7 @@ Required before relevant launch: privacy notice, terms, data-processing disclosu
 
 ### Accepted architecture decisions
 
-ADRs 0003–0014 are accepted and merged through PR #17. Their acceptance records are in `docs/adr/`. This is an architecture decision record, not proof of implementation. A1 passed through the isolated reproducible toolchain spike; A2 is partial; A3 has merged PostgreSQL 16 RLS/idempotency/transactional-outbox checks but remains partial pending API/database wiring and durable worker recovery; A4–A7 remain open. See [Phase 02 Evidence and Architecture Feasibility Review](PHASE-02-EVIDENCE-AND-FEASIBILITY-REVIEW.md).
+ADRs 0003–0014 are accepted and merged through PR #17. Their acceptance records are in `docs/adr/`. This is an architecture decision record, not proof of implementation. A1 passed through the isolated reproducible toolchain spike; A2 is partial; A3 has merged PostgreSQL 16 RLS/idempotency/transactional-outbox and tenant-bound worker lease/recovery/fencing evidence (PR #28; all exact-head checks green), but remains partial pending production API/database wiring and operational recovery proof; A4–A7 remain open. See [Phase 02 Evidence and Architecture Feasibility Review](PHASE-02-EVIDENCE-AND-FEASIBILITY-REVIEW.md).
 
 ## 17. Programme definition of done
 
@@ -558,7 +558,7 @@ The programme is complete only when:
 | Repository foundation / Phase 0 | Closed for repository scope |
 | Forensic baseline / Phase 01 | Closed for documented audit scope |
 | Phase 02 product requirements | Documentary baseline complete; customer, ownership, legal/provider, security and commercial evidence open |
-| Phase 03 architecture/ADRs | Accepted; A1 pass, A2 partial, A3 partial (PostgreSQL feasibility checks merged), A4–A7 feasibility open |
+| Phase 03 architecture/ADRs | Accepted; A1 pass, A2 partial, A3 partial (PostgreSQL RLS/idempotency/outbox and tenant-bound worker lease/recovery/fencing evidence merged in PR #28), A4–A7 feasibility open |
 | Frontend implementation | Not started / not evidenced |
 | Backend and data services | Not started / not evidenced |
 | Browser SDK/extensions | Not started / not evidenced |
@@ -567,4 +567,4 @@ The programme is complete only when:
 | Product security/privacy/legal approvals | Open by product |
 | Commercial beta / production release | Not started / not evidenced |
 
-**Programme status:** this consolidated plan is the accepted programme baseline. The first-seven order and catalogue remain unchanged. Phase 02 substantive evidence remains open; A1 passed, A2 is partial, A3 is partial and A4–A7 remain open. Application implementation begins only after the applicable evidence, security, architecture and owner go/no-go gates are accepted.
+**Programme status:** this consolidated plan is the accepted programme baseline. The first-seven order and catalogue remain unchanged. Phase 02 substantive evidence remains open; A1 passed, A2 is partial, A3 is partial (PR #28 adds green PostgreSQL tenant-bound worker lease/recovery and fencing evidence, but production wiring and operational recovery remain unproved) and A4–A7 remain open. Application implementation begins only after the applicable evidence, security, architecture and owner go/no-go gates are accepted.

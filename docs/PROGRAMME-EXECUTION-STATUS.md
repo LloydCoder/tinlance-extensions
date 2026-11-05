@@ -2,7 +2,7 @@
 
 **Audit date:** 2026-11-05
 **Audited branch:** `main`
-**Audited commit:** `cf35c9b663df1cc248ef68acac0980d786fa86e4`
+**Audited commit before PR #28:** `cf35c9b663df1cc248ef68acac0980d786fa86e4`; A3 evidence follow-up merged as `baf03dc972a8fa7a51e47c7642082a150d50665c`
 **Scope:** Repository tree, consolidated phase plan, Phase 02 evidence ledger, accepted architecture records, recent pull requests and GitHub Actions runs.
 **Disposition:** **Programme remains gated. No product implementation phase is authorized by the current evidence.**
 
@@ -10,15 +10,15 @@
 
 The repository has a substantial governance and architecture baseline, plus two isolated feasibility spikes. It is not yet an implemented browser-extension platform, production backend, MCP service, customer portal, or 26-product suite.
 
-The latest observed `main` run for Repository Quality is green at the audited commit. The A3 API feasibility workflow is green on its merged commit. These are repository/spike checks only; they do not demonstrate production readiness.
+PR #28 merged as `baf03dc972a8fa7a51e47c7642082a150d50665c`. On its exact head (`3bcae4eb4fba38692c8511cce2c07bf84aa6d184`), Repository Quality, A3 API contract/tenant-isolation and PostgreSQL tenant-isolation/outbox/worker-recovery checks all completed successfully. These are repository/spike checks only; they do not demonstrate production readiness. A fresh main-branch quality run after the merge is still required.
 
 ## 2. Verified repository state
 
 - Default branch: `main`; repository is not archived.
 - Audited commit: `cf35c9b663df1cc248ef68acac0980d786fa86e4`.
-- Relevant merged changes include PR #23 (SVG brand assets), PR #24 (original PNG branding exports and popup application), and PR #25 (isolated A3 backend/API contract spike).
+- Relevant merged changes include PR #23 (SVG brand assets), PR #24 (original PNG branding exports and popup application), PR #25 (isolated A3 backend/API contract spike), and PR #28 (tenant-bound PostgreSQL worker lease/recovery and stale-worker fencing). PR #27's tenant isolation/idempotency/outbox evidence remains part of the baseline.
 - Latest observed main Repository Quality workflow: [run 42015111208](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42015111208), conclusion `success`.
-- A3 API contract workflow on the merged A3 commit: [run 42014962715](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42014962715), conclusion `success`.
+- PR #28 exact-head checks: [Repository Quality](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42020490026), [A3 API contract](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42020490127), and [PostgreSQL tenant/outbox/worker recovery](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42020489917) — all `success`.
 - The repository tree contains governance documents and the isolated `spikes/architecture-feasibility/a1-a2` and `a3-backend-api` projects. It does not contain the planned production `apps/api`, `apps/worker`, `apps/web`, product extension applications, MCP gateway, or production shared packages.
 - The `main` branch protection API reported `protected: false` at audit time. Required branch protection/ruleset enforcement is therefore not evidenced by the branch metadata.
 
@@ -47,6 +47,8 @@ The repository can prepare interview scripts, decision records, questionnaires a
 The existing spike proves representative Chrome/Firefox MV3 builds and manifest checks. It does not prove browser runtime behavior, service-worker lifecycle, Safari packaging/signing, store review, or an extension-by-extension permission matrix. Add automated runtime tests and a documented browser/version matrix before declaring compatibility.
 
 ### B3 — A3 is a contract fixture, not a production backend
+
+PR #28 adds PostgreSQL 16 executable evidence for tenant-bound worker claims, lease expiry/reclaim, fresh fencing tokens, stale-worker rejection and bounded terminal retry. The spike still has no production PostgreSQL adapter/API wiring, multi-process contention proof, process crash/restart test, outbox publisher delivery, cancellation checkpoints, tenant concurrency/budget enforcement, backup/restore or operational SLOs. A3 remains partial.
 
 The bearer verifier and repository are injected test fixtures; the default verifier denies access. The spike does not provide OIDC, PostgreSQL, migrations, row-level security, object storage, queue/outbox, durable workers, retry/idempotency semantics, or crash recovery. Production authentication or persistence must not be inferred from it.
 

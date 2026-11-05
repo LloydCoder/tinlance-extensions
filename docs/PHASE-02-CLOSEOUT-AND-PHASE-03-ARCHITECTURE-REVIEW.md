@@ -107,13 +107,13 @@ Do not adopt microservices, Kubernetes, a service mesh, a mandatory Redis cluste
 | A0 — Owner acceptance | Explicit dated approval for ADRs 0003–0014, recorded in each ADR and merged by PR #17 | **Pass — documentary** |
 | A1 — Toolchain spike | Fresh-checkout frozen install, lint/typecheck/test, Next.js build and representative extension builds | **Pass — isolated spike PR #20; lockfile pinned in this PR** |
 | A2 — Browser spike | WXT Chrome/Firefox MV3 builds and manifest permission tests; runtime and Safari packaging/signing proof | **Partial — build/manifest proof; runtime and Safari open** |
-| A3 — Backend/API spike | API schema, auth middleware, tenant isolation test, migration and worker proof | Backend implementation |
+| A3 — Backend/API spike | API schema, auth middleware, tenant isolation test, migration and worker proof | **Partial — PR #25/#27/#28 merged; PostgreSQL 16 RLS, idempotency, outbox and tenant-bound lease/fencing tests green.** Production wiring and operational recovery evidence remain open. |
 | A4 — Data/security review | Data-flow diagrams, threat models, retention/deletion, secret and audit boundaries | Sensitive-data processing |
 | A5 — MCP Gate 0 | Exact 2026-07-28 protocol fixtures, headers, auth, tool contracts, negative tests and client matrix | MCP gateway implementation |
 | A6 — Agent Platform contract | Typed authorization/approval/audit contract and negative no-bypass tests | Any consequential browser/agent action |
 | A7 — Cost/deployment approval | Provider choice, data location, cost ceiling, backup/restore and rollback plan | Paid infrastructure or production deployment |
 
-A green documentation workflow does not satisfy architecture gates. A1 is passed by the separate executable spike; A2 is partial; A3 has merged API and PostgreSQL feasibility evidence (forced RLS, tenant isolation, idempotency and transactional outbox), but remains partial pending API/database wiring and durable worker recovery evidence; A4–A7 remain open.
+A green documentation workflow does not satisfy architecture gates. A1 is passed by the separate executable spike; A2 is partial; A3 has merged API and PostgreSQL feasibility evidence (forced RLS, tenant isolation, idempotency, transactional outbox, tenant-bound worker claims, lease recovery and stale-worker fencing; PR #28, all checks green), but remains partial pending production API/database wiring, multi-process contention, crash/restart and outbox publisher delivery evidence; A4–A7 remain open.
 
 ## 6. MCP protocol correction required in implementation planning
 
@@ -136,7 +136,7 @@ References:
 
 **Requested decision:** accept, reject or amend each ADR 0003–0014.
 **Decision owner:** Tinlance Limited.
-**Current status:** ADRs 0003–0014 accepted by the decision owner and merged through PR #17 on 2026-11-05. A1 passed, A2 is partial and A3 is partial; A4–A7 remain open; see [Phase 02 Evidence and Architecture Feasibility Review](PHASE-02-EVIDENCE-AND-FEASIBILITY-REVIEW.md).
+**Current status:** ADRs 0003–0014 accepted by the decision owner and merged through PR #17 on 2026-11-05. A1 passed, A2 is partial and A3 is partial (PR #28 adds green PostgreSQL tenant-bound lease/recovery and fencing evidence); A4–A7 remain open; see [Phase 02 Evidence and Architecture Feasibility Review](PHASE-02-EVIDENCE-AND-FEASIBILITY-REVIEW.md).
 **Implementation authorization:** Not granted.
 **Phase 02 status:** Open; customer, product-owner, legal/provider, commercial and product-security evidence gates remain outstanding.
 
