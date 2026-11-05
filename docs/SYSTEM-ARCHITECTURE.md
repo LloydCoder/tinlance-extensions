@@ -203,7 +203,8 @@ The exact folder layout may evolve after the repository baseline audit. Keep one
 
 ### 6.1 Framework and compatibility
 
-- Evaluate WXT as the shared WebExtensions framework in a documented compatibility spike.
+- Proposed framework: WXT with TypeScript, subject to ADR 0005 approval and a reproducible compatibility spike.
+- WXT does not automate Safari publishing; Safari requires a separate native wrapper/packaging and signing lane. Do not infer Safari support from Chromium or Firefox builds.
 - Use TypeScript with strict compiler settings.
 - Use a shared browser adapter layer for browser API differences.
 - Keep browser-specific capabilities behind explicit adapters and capability checks.
@@ -502,6 +503,8 @@ Required test layers:
 A release is blocked by unresolved critical/high security findings, tenant isolation failures, authorization bypass, unreviewed destructive tools, broken revocation, data-loss risk, or an unverified production endpoint.
 
 ## 12. Architecture decision records required
+
+The current review package proposes ADRs 0003–0014 under `docs/adr/`. They remain proposed until the decision owner records acceptance or rejection. See [Phase 02 Closeout and Phase 03 Architecture Review](PHASE-02-CLOSEOUT-AND-PHASE-03-ARCHITECTURE-REVIEW.md) for the decision matrix and evidence gates.
 
 Create and maintain ADRs for at least:
 
