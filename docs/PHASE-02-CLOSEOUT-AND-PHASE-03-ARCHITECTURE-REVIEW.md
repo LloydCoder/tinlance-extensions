@@ -8,7 +8,7 @@
 
 ## 1. Executive disposition
 
-The repository now has a consolidated 26-product requirements baseline, a six-family canonical catalogue, a 25-phase roadmap, a competitive desk-research snapshot, a customer-discovery protocol, four portfolio proposal decisions and a proposed system architecture.
+The repository now has a consolidated 26-product requirements baseline, a six-family canonical catalogue, a 25-phase roadmap, a competitive desk-research snapshot, a customer-discovery protocol, four portfolio proposal decisions and an accepted architecture baseline.
 
 The audit does **not** find sufficient evidence to close Phase 02. In particular, no completed customer interviews, design-partner commitments, paid pilots, signed product-owner approvals, completed provider/data-rights reviews or approved product-specific threat models are recorded. These are evidence gates, not documentation tasks that can be marked complete by drafting more plans.
 
@@ -42,7 +42,7 @@ Phase 03 architecture decisions are accepted: the decision owner explicitly appr
 | `PHASE-02-COMPETITIVE-VALIDATION.md` | Directional public-source snapshot | Revalidate competitors, feature claims, prices and terms during discovery |
 | `PHASE-02-CUSTOMER-DISCOVERY-PLAYBOOK.md` | Interview protocol and evidence rubric present | Execute interviews; record anonymized evidence and negative findings |
 | `FOUR-PROPOSAL-DECISIONS.md` | Four dispositions explicit | Preserve boundaries and validation gates |
-| `SYSTEM-ARCHITECTURE.md` | Normative proposal, not approved | Review ADRs and close architecture acceptance criteria |
+| `SYSTEM-ARCHITECTURE.md` | Accepted architecture baseline; feasibility open | Execute A1–A7 and preserve the approved authority boundaries |
 | `MASTER-ROADMAP.md` / `FINAL-PHASE-PLAN.md` | 25 phases and 18 MCP work packages | Reconcile statuses after approvals; preserve first seven |
 
 ### Portfolio invariants retained
@@ -75,9 +75,9 @@ Each interview or pilot record must include participant code, segment, user/buye
 
 Phase 02 may pass only when every mandatory row in the gate table has linked evidence and a named reviewer. A target count alone is not a pass criterion.
 
-## 4. Phase 03 recommended architecture decisions
+## 4. Phase 03 accepted architecture decisions
 
-The following recommendations are submitted as proposed ADRs. They are deliberately conservative for a small engineering team: modular boundaries first, independently releasable extensions, no premature microservices, no custom identity provider, no broad permissions, and no infrastructure spend before an approved deployment/cost plan.
+The following decisions were approved by the decision owner and recorded in ADRs 0003–0014. They are deliberately conservative for a small engineering team: modular boundaries first, independently releasable extensions, no premature microservices, no custom identity provider, no broad permissions, and no infrastructure spend before an approved deployment/cost plan.
 
 | ADR | Topic | Recommendation | Status |
 |---|---|---|---|
@@ -104,7 +104,7 @@ Do not adopt microservices, Kubernetes, a service mesh, a mandatory Redis cluste
 
 | Gate | Required evidence | Blocks |
 |---|---|---|
-| A0 — Owner acceptance | Signed/dated acceptance or requested changes for ADRs 0003–0014 | Architecture approval |
+| A0 — Owner acceptance | Explicit dated approval for ADRs 0003–0014, recorded in each ADR and merged by PR #17 | **Pass — documentary** |
 | A1 — Toolchain spike | Fresh-checkout install, deterministic build, lint/typecheck/test and representative extension build | Workspace bootstrap |
 | A2 — Browser spike | WXT output for Chromium and Firefox; permission review; Safari packaging feasibility documented separately | Browser SDK implementation |
 | A3 — Backend/API spike | API schema, auth middleware, tenant isolation test, migration and worker proof | Backend implementation |
@@ -117,7 +117,7 @@ A green documentation workflow does not satisfy any of A1–A7.
 
 ## 6. MCP protocol correction required in implementation planning
 
-The official MCP 2026-07-28 revision is stateless at the protocol core: it removes the former initialization handshake and protocol-level sessions. Streamable HTTP uses per-request POST semantics and the revision's request metadata/header requirements. Do not implement a 2025 session-based transport by accident. Keep long-running state in explicit application job records/handles. Tasks are an optional protocol extension, not a prerequisite for durable jobs.
+The official MCP 2026-07-28 revision is stateless at the protocol core: it removes the former initialization handshake and protocol-level sessions. Streamable HTTP uses per-request POST semantics, with required `Mcp-Method` and `Mcp-Name` header/body consistency validation. Do not implement a 2025 session-based transport by accident. Keep long-running state in explicit application job records/handles. Tasks are an optional protocol extension, not a prerequisite for durable jobs. A5 remains blocked pending executable fixtures and tests.
 
 References:
 - [MCP 2026-07-28 specification](https://modelcontextprotocol.io/specification/2026-07-28)
@@ -132,7 +132,7 @@ References:
 - [WXT introduction](https://wxt.dev/guide/introduction.html)
 - [WXT publishing guide](https://wxt.dev/guide/essentials/publishing.html)
 
-## 8. Architecture approval record
+## 8. Architecture approval and feasibility record
 
 **Requested decision:** accept, reject or amend each ADR 0003–0014.
 **Decision owner:** Tinlance Limited.
