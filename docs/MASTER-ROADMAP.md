@@ -4,7 +4,7 @@
 **Owner:** Tinlance Limited  
 **Repository:** https://github.com/LloydCoder/tinlance-extensions  
 **Last updated:** 2026-11-05
-**Consolidated programme plan:** [FINAL-PHASE-PLAN.md](FINAL-PHASE-PLAN.md) (proposed controlling programme index; review required)
+**Consolidated programme plan:** [FINAL-PHASE-PLAN.md](FINAL-PHASE-PLAN.md) (accepted controlling programme index)
 
 > This roadmap is a controlled delivery plan, not a status report. A phase or work package is complete only when its evidence, acceptance criteria and review record exist. A green build alone does not prove product readiness.
 
@@ -80,7 +80,7 @@ Scope:
 
 **Working baseline:** [PHASE-02-PRODUCT-REQUIREMENTS.md](PHASE-02-PRODUCT-REQUIREMENTS.md)
 
-The Phase 02 document defines product briefs for all 26 catalogue entries, MVP boundaries, permission/data assumptions, security acceptance criteria, shared dependencies, commercial hypotheses, prioritization scores and validation gates.
+The Phase 02 document defines product briefs for all 26 catalogue entries, MVP boundaries, permission/data assumptions, security acceptance criteria, shared dependencies, commercial hypotheses, prioritization scores and validation gates. The documentary baseline is reconciled; substantive evidence remains open.
 
 **Current status:** documentary requirements baseline reconciled; Phase 02 remains open because customer discovery, product-owner sign-offs, legal/provider reviews, product-specific threat-model approvals and commercial evidence remain outstanding. ADRs 0003–0014 are accepted; architecture feasibility A1–A7 are not passed. See [Phase 02 Evidence and Architecture Feasibility Review](PHASE-02-EVIDENCE-AND-FEASIBILITY-REVIEW.md).
 
@@ -93,9 +93,9 @@ Phase 02 must:
 - record technical spikes and browser/API compatibility unknowns;
 - approve the ranked portfolio and any proposed change to the initial seven-product release order.
 
-**Phase 02 exit:** all 26 briefs are reviewed; priority-segment discovery and commercial evidence are recorded; high-risk product gates have owners and treatments; permission/data and security reviews are approved; dependency graph and ranked release plan are signed off; Phase 03 has stable inputs.
+**Phase 02 exit:** all 26 briefs have dated owner/reviewer dispositions; priority-segment discovery and commercial evidence are recorded; high-risk product gates have owners and treatments; permission/data and security reviews are approved; dependency graph and ranked release plan are signed off; residual risks are accepted and the decision owner records go/no-go. The 2026-11-05 evidence review records these substantive gates as open.
 
-**Milestone A exit:** the architecture and repository are sufficiently defined and reproducible to build products without creating duplicate authority, security or data models. MCP implementation must not begin before the MCP-specific P0 design gates in section 4 are approved.
+**Milestone A exit:** ADRs 0003–0014 are accepted, but A1–A7 and Phase 02 substantive evidence must pass before application implementation. MCP gateway work also requires executable MCP Gate 0 conformance and the Agent Platform no-bypass contract.
 
 ### Product and commercial beta — Milestone B
 
