@@ -1,7 +1,6 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "types": ["wxt/globals"]
   },
   "include": [".wxt/types/**/*.d.ts", "**/*.ts"],
   "exclude": ["node_modules", ".output"]
