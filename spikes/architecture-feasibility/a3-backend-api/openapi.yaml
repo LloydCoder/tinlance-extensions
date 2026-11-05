@@ -1,0 +1,59 @@
+openapi: 3.1.0
+info:
+  title: Tinlance Extensions API Feasibility Contract
+  version: 0.1.0
+  description: Isolated A3 contract fixture; not a production API commitment.
+servers:
+  - url: http://localhost:8787
+paths:
+  /health/live:
+    get:
+      operationId: liveness
+      security: []
+      responses:
+        "200":
+          description: Process is alive
+  /health/ready:
+    get:
+      operationId: readiness
+      security: []
+      responses:
+        "200":
+          description: Dependencies ready
+        "503":
+          description: Dependency not ready
+  /v1/me:
+    get:
+      operationId: getCurrentPrincipal
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Verified subject and server-resolved tenant context
+        "401":
+          description: Missing or invalid credentials
+  /v1/records/{recordId}:
+    get:
+      operationId: getTenantRecord
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: recordId
+          required: true
+          schema:
+            type: string
+            maxLength: 128
+      responses:
+        "200":
+          description: Tenant-owned record
+        "401":
+          description: Missing or invalid credentials
+        "404":
+          description: Missing or not owned by the authenticated tenant
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: Opaque access token
