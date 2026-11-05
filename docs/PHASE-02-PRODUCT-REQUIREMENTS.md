@@ -19,9 +19,13 @@
 6. Tinlance Agent Platform remains the sole authority for identity-bound authorization, policy, approvals and consequential execution. Auctaryn supplies agent-runtime security signals/containment integration; Agent Browser Bridge supplies a browser execution surface.
 7. All pricing, demand and scoring below are planning hypotheses pending customer discovery, competitor analysis and paid-pilot evidence.
 
-**Competitive evidence:** [PHASE-02-COMPETITIVE-VALIDATION.md](PHASE-02-COMPETITIVE-VALIDATION.md) records the public-source competitor snapshot and implications. It is desk research, not customer validation.\n\n**Primary research protocol:** [PHASE-02-CUSTOMER-DISCOVERY-PLAYBOOK.md](PHASE-02-CUSTOMER-DISCOVERY-PLAYBOOK.md) defines interview segments, questions, evidence capture and pilot entry criteria. No interviews are claimed as completed.\n\n**Phase 02 exit criteria:** all 26 briefs reviewed; owners and acceptance criteria assigned; permissions/data handling reviewed; security-sensitive threat models approved; dependencies mapped; browser/client support deferred until tested; priority segments interviewed; commercial evidence and unresolved decisions recorded; Phase 03 inputs approved.
+**Competitive evidence:** [PHASE-02-COMPETITIVE-VALIDATION.md](PHASE-02-COMPETITIVE-VALIDATION.md) records the public-source competitor snapshot and implications. It is desk research, not customer validation.
 
-## 2. Common product contrac
+**Primary research protocol:** [PHASE-02-CUSTOMER-DISCOVERY-PLAYBOOK.md](PHASE-02-CUSTOMER-DISCOVERY-PLAYBOOK.md) defines interview segments, questions, evidence capture and pilot entry criteria. No interviews are claimed as completed.
+
+**Phase 02 exit criteria:** all 26 briefs reviewed; owners and acceptance criteria assigned; permissions/data handling reviewed; security-sensitive threat models approved; dependencies mapped; browser/client support deferred until tested; priority segments interviewed; commercial evidence and unresolved decisions recorded; Phase 03 inputs approved.
+
+## 2. Common product contract
 
 Each brief defines the first user, core job, MVP, permission/data boundary, security controls, acceptance evidence, dependencies and commercial hypothesis.
 
