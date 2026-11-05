@@ -4,7 +4,7 @@
 **Repository baseline:** `main` at `74318596f066e8d8728e0fb3f32d2d62c8d2b089` (PR #17 merge)
 **Review branch:** `phase-02-evidence-feasibility-review`
 **Decision owner:** Tinlance Limited
-**Disposition:** Evidence inventory and standards research completed; Phase 02 remains open; A1–A7 are not passed. This document is a feasibility and evidence review, not implementation authorization.
+**Disposition:** Evidence inventory, standards/competitive research and isolated A1–A2 feasibility spikes completed; Phase 02 remains open; A1 passed and A2 is partial. A3–A7 remain open. This document is a feasibility and evidence review, not implementation authorization.
 
 ## 1. Executive result
 
@@ -12,7 +12,7 @@ This milestone reconciles the accepted architecture decisions against the actual
 
 **The architecture baseline is accepted. The architecture is not yet proven feasible by executable spikes. Phase 02 is not closed. No application implementation or paid infrastructure work is authorized by this review.**
 
-Repository inspection at the baseline commit shows a governance/documentation repository: policy and architecture documents, one Python repository validator, one Python test module and a read-only GitHub Actions quality workflow. It contains no `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `turbo.json`, Next.js application, WXT extension package, API, worker, database migration, MCP server, Agent Platform contract package or deployment configuration. The existing green repository workflow therefore cannot prove A1–A6.
+At the initial review baseline the repository contained governance/documentation, a Python repository validator, one Python test module and a read-only quality workflow. Follow-up PR #20 added a strictly isolated spike under `spikes/architecture-feasibility/a1-a2/`, with its own pnpm workspace, lockfile, Turbo config, minimal Next.js App Router build and two WXT extension build cases. It did not add a production workspace or product implementation. The original Python workflow still validates repository contracts only; the dedicated A1–A2 workflow supplies separate executable evidence.
 
 The repository has no open pull requests at the time of this review. PR #17 is merged; its twelve ADRs are accepted. The README, master architecture, final phase plan and closeout report had not all been reconciled to that accepted state; this milestone corrects those status contradictions and links this report.
 
@@ -90,15 +90,15 @@ For each product approval, record product ID, version of brief, owner, reviewer,
 | Gate | Required proof | Result | Finding / blocker |
 |---|---|---|---|
 | A0 — Owner acceptance | Owner decision for ADRs 0003–0014 | **Pass — documentary** | Explicit approval recorded in all twelve ADRs and merged by PR #17 |
-| A1 — Toolchain spike | Fresh checkout, pinned Node/pnpm, lockfile install, lint/typecheck/test/build, independent extension package build | **Blocked — not executed** | No Node workspace/package manifests, lockfile, Turbo config or extension packages exist in the repository |
-| A2 — Browser spike | WXT builds and permission review for Chromium and Firefox; Safari packaging proof | **Research-supported; executable proof blocked** | WXT documents Chrome/Firefox/Edge packaging; Safari requires a separate Xcode/native wrapper path and is not automatically published by WXT. No Tinlance extension package exists to build or test |
+| A1 — Toolchain spike | Fresh checkout, frozen lockfile install, lint/typecheck/test/build, Next.js App Router build and representative extension builds | **Pass — isolated feasibility spike** | CI on PR #20 and main completed clean install, lint, typecheck, Next.js build, Chrome/Firefox WXT builds and manifest tests; exact pnpm lockfile is committed with this follow-up. This is not a production workspace |
+| A2 — Browser spike | WXT builds, least-privilege manifest tests and runtime compatibility for Chromium/Firefox; Safari packaging proof | **Partial — build and manifest proof** | Chrome MV3 and Firefox MV3 builds pass for read-only (`activeTab`) and user-triggered script (`activeTab`, `scripting`) examples. Runtime browser E2E, service-worker lifecycle, Safari Xcode packaging/signing and store validation remain untested |
 | A3 — Backend/API spike | OpenAPI/API schema, auth middleware, tenant isolation, migration and worker recovery proof | **Blocked — not executed** | No API, schemas, auth middleware, database migrations, queue/worker or integration tests exist |
 | A4 — Data/security review | Data-flow diagrams, D0–D3 inventory, product threat models, retention/deletion and audit/secret boundaries | **Partial** | Classification and generic controls exist; product-level flows, reviewed threat models, deletion tests, telemetry redaction tests and processor reviews do not |
 | A5 — MCP Gate 0 | Exact protocol fixtures, required headers, auth, tool contracts, negative tests and client matrix | **Research-supported; executable proof blocked** | 2026-07-28 protocol details were checked against current MCP materials; no pinned SDK, fixture suite, server, OAuth integration, tool schemas or real-client matrix exists |
 | A6 — Agent Platform contract | Typed authorization/approval/audit contract and negative no-bypass tests | **Blocked — external contract absent** | No Agent Platform schema/SDK/API contract or test fixture is present in this repository; approval authority cannot be simulated or reimplemented here |
 | A7 — Cost/deployment approval | Provider, region/residency, cost ceiling, backup/restore and rollback plan | **Blocked — decision not made** | ADRs deliberately defer vendor selection; no deployment/provider/budget approval exists. No paid resource is authorized |
 
-**A1–A7 are not passed.** Research-supported findings in A2 and A5 reduce uncertainty but do not satisfy their executable acceptance criteria.
+**A1 passed; A2 is partial; A3–A7 remain open.** A5 research reduces uncertainty but does not satisfy executable conformance criteria. The spike is deliberately isolated and is not product implementation.
 
 ## 5. Current technical findings and required design constraints
 
@@ -147,8 +147,8 @@ EXT-17 and any consequential action remain blocked until the actual Agent Platfo
 | Phase 01 — forensic baseline | Closed for documented repository scope |
 | Phase 02 — product requirements and validation | Open; documentary baseline exists, substantive evidence gates remain |
 | Phase 03 — architecture decisions 0003–0014 | Accepted and merged |
-| A1 — toolchain | Blocked; no executable workspace |
-| A2 — browser | Research-supported; no executable extension package |
+| A1 — toolchain | Passed by isolated reproducible spike; not production workspace |
+| A2 — browser | Partial: Chrome/Firefox MV3 builds and least-privilege manifests pass; runtime/Safari evidence open |
 | A3 — backend/API | Blocked; no backend artifacts |
 | A4 — data/security | Partial; product-specific review and test evidence missing |
 | A5 — MCP | Protocol research complete; implementation conformance evidence missing |
@@ -164,8 +164,8 @@ EXT-17 and any consequential action remain blocked until the actual Agent Platfo
 | 2 | Recruit and conduct first discovery wave; include negative findings | Tinlance programme owner / interview lead | Anonymized interview records and synthesis |
 | 3 | Select two or three MVP opportunities using evidence, legal/data supply and cost-to-serve | Decision owner | Signed prioritization and go/no-go |
 | 4 | Produce first-seven threat models and product data-flow maps; complete provider/legal reviews for selected MVPs | Security/privacy and legal reviewers | Reviewed threat models and written review records |
-| 5 | Run A1 clean-checkout toolchain spike in a dedicated review PR | Engineering owner | Reproducible install/build/test logs and artifacts |
-| 6 | Run A2 representative read-only and permission-sensitive WXT builds for Chromium/Firefox; document Safari packaging | Engineering owner | Build artifacts, permission matrix, lifecycle and compatibility tests |
+| 5 | Preserve A1 as a pinned isolated feasibility fixture; do not promote it into production without Phase 02 go/no-go | Engineering owner | Committed lockfile, frozen-install workflow and passing CI |
+| 6 | Complete A2 runtime tests in Chrome/Firefox and execute the separate Safari Xcode packaging lane | Engineering owner | Browser runtime evidence, lifecycle tests, Safari packaging artifact and signing plan |
 | 7 | Run A3 API/tenant/migration/worker spike only after the identity and data contracts are reviewed | Backend owner | OpenAPI/schema, negative tenant tests, migration and worker recovery evidence |
 | 8 | Close A4 with data maps, retention/deletion and security tests | Security/privacy owner | Threat-model approvals and automated/manual evidence |
 | 9 | Close A5 with pinned MCP SDK/fixtures, auth and negative conformance tests | MCP owner | Protocol conformance report and client matrix |
@@ -204,6 +204,12 @@ Authoritative/current technical references checked on 2026-11-05:
 24. Chrome Web Store Program Policies: https://developer.chrome.com/docs/webstore/program-policies/policies/
 25. Chrome Web Store Manifest V3 requirements: https://developer.chrome.com/docs/webstore/program-policies/mv3-requirements
 26. Browserbase browser infrastructure overview: https://dev.browserbase.com/
+27. Node.js official release schedule: https://github.com/nodejs/Release
+28. pnpm installation and platform support: https://pnpm.io/installation
+29. Turborepo release history: https://github.com/vercel/turborepo/releases
+30. Next.js support policy: https://nextjs.org/support-policy
+31. WXT browser targeting guide: https://wxt.dev/guide/essentials/target-different-browsers
+32. WXT publishing and Safari packaging guide: https://wxt.dev/guide/essentials/publishing
 
 ## 9. Approval and non-authorization
 
