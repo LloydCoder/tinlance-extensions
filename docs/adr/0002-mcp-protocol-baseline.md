@@ -22,6 +22,10 @@ The official specification published 2026-07-28 updates Streamable HTTP material
 7. Treat MCP client support as a compatibility matrix, not a universal guarantee. Maintain tests for each supported client and selected protocol revision.
 8. Re-evaluate the protocol baseline when the official specification changes; update compatibility tests and migration notes before changing the pinned revision.
 
+## Required 2026-07-28 transport semantics
+
+For the pinned 2026-07-28 target, implementation must follow the stateless core rather than legacy session-based examples: do not implement the former initialization/initialized handshake or `Mcp-Session-Id` protocol session model. Use the request-scoped Streamable HTTP flow and the mandatory version/metadata and method/name header requirements defined by the pinned revision. Keep cross-request application state in explicit, server-minted application handles and durable job records. Treat the Tasks capability as an optional extension, not a required core dependency.
+
 ## Explicit non-decisions
 
 - This ADR does not implement an MCP endpoint, OAuth server, tool registry, product adapter, browser bridge, or client listing.
@@ -30,7 +34,7 @@ The official specification published 2026-07-28 updates Streamable HTTP material
 
 ## Gate 0 evidence required
 
-- Compatibility spike against official protocol examples and a maintained SDK.
+- Compatibility spike against the official 2026-07-28 specification, including stateless request semantics, mandatory headers, version handling and a maintained SDK.
 - Review of transport version negotiation and error handling.
 - OAuth/resource-server threat model and negative tests.
 - Tool contract catalogue with side-effect and risk annotations.
