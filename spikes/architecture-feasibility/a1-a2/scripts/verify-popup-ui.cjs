@@ -75,7 +75,15 @@ async function discoverExtensionId(context, expectedName) {
       ) {
         throw new Error(`Brand token mismatch: ${JSON.stringify(colors)}`);
       }
-      await page.screenshot({ path: path.join(output, `${item.label}.png`), fullPage: true });
+      // Extension pages can reject full-page capture in headless Chromium. Keep the
+      // deterministic viewport capture; the popup is intentionally a fixed-size surface.
+      await page.setViewportSize({ width: 420, height: 560 });
+      await page.screenshot({
+        path: path.join(output, `${item.label}.png`),
+        fullPage: false,
+        animations: "disabled",
+        timeout: 15000
+      });
       console.log(JSON.stringify({
         case: item.label,
         extensionId,
