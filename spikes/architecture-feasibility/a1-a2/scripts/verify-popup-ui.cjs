@@ -18,7 +18,9 @@ async function discoverExtensionId(context, expectedName) {
   await diagnostics.waitForLoadState("domcontentloaded");
   await diagnostics.waitForTimeout(500);
   const body = await diagnostics.locator("body").innerText();
-  const ids = [...body.matchAll(/\b[a-p]{32}\b/g)].map((match) => match[0]);
+  const nameIndex = body.indexOf(expectedName);
+  const nearby = nameIndex < 0 ? "" : body.slice(Math.max(0, nameIndex - 2500), nameIndex + expectedName.length + 2500);
+  const ids = [...nearby.matchAll(/\\b[a-p]{32}\\b/g)].map((match) => match[0]);
   await diagnostics.close();
   if (ids.length !== 1) {
     throw new Error(`Expected one loaded unpacked extension ID in chrome://extensions-internals/, found ${ids.length}: ${ids.join(",")}`);
