@@ -10,10 +10,10 @@ CREATE INDEX jobs_reclaim_idx ON jobs (lease_expires_at, available_at)
 -- A worker receives a fresh fencing token for every lease. A stale worker
 -- cannot complete or fail a job after the lease has been reclaimed.
 CREATE FUNCTION claim_next_job(p_lease_seconds integer DEFAULT 60)
-RETURNS SETOF jobs
+RETURNS SETOF public.jobs
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = pg_catalog, public
+SET search_path = pg_catalog
 AS $$
 BEGIN
   IF p_lease_seconds < 5 OR p_lease_seconds > 3600 THEN
@@ -46,7 +46,7 @@ CREATE FUNCTION finish_job(p_job_id uuid, p_lease_token uuid)
 RETURNS boolean
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = pg_catalog, public
+SET search_path = pg_catalog
 AS $$
 DECLARE changed integer;
 BEGIN
@@ -69,7 +69,7 @@ CREATE FUNCTION fail_job(
 RETURNS text
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = pg_catalog, public
+SET search_path = pg_catalog
 AS $$
 DECLARE result_status text;
 BEGIN
