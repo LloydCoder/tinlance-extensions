@@ -17,6 +17,13 @@ const cases = [
   }
 ];
 
+async function assertIcons(manifest, directory, target) {
+  assert.deepEqual(Object.keys(manifest.icons).sort(), ["128", "16", "32", "48"]);
+  for (const icon of Object.values(manifest.icons)) {
+    await readFile(join(root, "apps", directory, ".output", target, icon));
+  }
+}
+
 for (const target of targets) {
   for (const item of cases) {
     test(`${item.name} ${target.name} manifest keeps least privilege`, async () => {
@@ -35,14 +42,7 @@ for (const target of targets) {
       assert.equal(manifest.host_permissions, undefined);
       assert.equal(manifest.optional_host_permissions, undefined);
       assert.equal(manifest.content_scripts, undefined);
-  assert.deepEqual(Object.keys(manifest.icons).sort(), ["128", "16", "32", "48"]);
-  for (const icon of Object.values(manifest.icons)) {
-    await readFile(join(root, "apps", "extension-readonly", ".output", "safari-mv2", icon));
-  }
-      assert.deepEqual(Object.keys(manifest.icons).sort(), ["128", "16", "32", "48"]);
-      for (const icon of Object.values(manifest.icons)) {
-        await readFile(join(root, "apps", item.directory, ".output", target.name, icon));
-      }
+      await assertIcons(manifest, item.directory, target.name);
 
       for (const forbidden of ["cookies", "history", "webRequest", "debugger", "management"]) {
         assert.equal(
@@ -55,7 +55,7 @@ for (const target of targets) {
   }
 }
 
-test("read-only Safari MV2 manifest keeps least privilege", async () => {
+test("read-only Safari MV2 manifest keeps least privilege and icons", async () => {
   const manifestPath = join(
     root,
     "apps",
@@ -69,4 +69,5 @@ test("read-only Safari MV2 manifest keeps least privilege", async () => {
   assert.deepEqual([...manifest.permissions].sort(), ["activeTab"]);
   assert.equal(manifest.host_permissions, undefined);
   assert.equal(manifest.content_scripts, undefined);
+  await assertIcons(manifest, "extension-readonly", "safari-mv2");
 });
