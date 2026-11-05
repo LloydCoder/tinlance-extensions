@@ -5,11 +5,11 @@ const path = require("node:path");
 const root = path.resolve(__dirname, "..");
 const output = path.join(root, "artifacts", "brand-ui");
 const cases = [
-  { directory: "extension-readonly", target: "chrome-mv3", label: "read-only" },
-  { directory: "extension-permission-sensitive", target: "chrome-mv3", label: "permission-sensitive" }
+  { directory: "extension-readonly", target: "chrome-mv3", label: "read-only", name: "Tinlance Read-only Browser Spike" },
+  { directory: "extension-permission-sensitive", target: "chrome-mv3", label: "permission-sensitive", name: "Tinlance Permission-sensitive Browser Spike" }
 ];
 
-async function discoverExtensionId(context) {
+async function discoverExtensionId(context, expectedName) {
   // A popup-only extension has no background service worker. Discover its ID
   // from Chromium's own extensions diagnostics page instead of waiting for a
   // service worker that the manifest intentionally does not declare.
@@ -41,7 +41,7 @@ async function discoverExtensionId(context) {
       ]
     });
     try {
-      const extensionId = await discoverExtensionId(context);
+      const extensionId = await discoverExtensionId(context, item.name);
       const page = await context.newPage();
       await page.goto(`chrome-extension://${extensionId}/popup.html`);
       await page.locator("header.brand").waitFor({ state: "visible" });
