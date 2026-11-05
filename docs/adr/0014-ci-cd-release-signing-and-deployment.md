@@ -1,8 +1,9 @@
 # ADR 0014: CI/CD, release signing and deployment
 
-- **Status:** Proposed — owner approval required
+- **Status:** Accepted — approved by the decision owner on 2026-11-05
 - **Date:** 2026-11-05
 - **Decision owner:** Tinlance Limited
+- **Approval record:** Explicit owner confirmation in the Tinlance Extensions project conversation on 2026-11-05.
 
 ## Context
 
