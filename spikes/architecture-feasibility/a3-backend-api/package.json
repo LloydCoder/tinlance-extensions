@@ -1,0 +1,11 @@
+{
+  "name": "@tinlance/spike-a3-backend-api",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=24.22.2 <25"
+  }
+}
