@@ -2,7 +2,7 @@
 
 **Review date:** 2026-11-05
 **Repository baseline:** `main` after PR #15 merge, commit `98e7a9f23f68604baf1b34ab8617e50b333f487d`
-**Status:** Documentary audit completed; Phase 02 exit criteria **not passed**; Phase 03 ADR package submitted for owner review
+**Status:** Phase 02 documentary audit completed; Phase 02 exit criteria remain open; Phase 03 ADRs 0003–0014 accepted by the decision owner on 2026-11-05
 **Decision owner:** Tinlance Limited
 **Authority:** This record is a review and recommendation package. It does not authorize application, infrastructure, paid-vendor or production MCP implementation.
 
@@ -12,7 +12,7 @@ The repository now has a consolidated 26-product requirements baseline, a six-fa
 
 The audit does **not** find sufficient evidence to close Phase 02. In particular, no completed customer interviews, design-partner commitments, paid pilots, signed product-owner approvals, completed provider/data-rights reviews or approved product-specific threat models are recorded. These are evidence gates, not documentation tasks that can be marked complete by drafting more plans.
 
-Phase 03 is ready for an architecture decision review, but not yet for an implementation start. The architecture baseline and proposed ADRs are now made explicit and reviewable. The ADRs remain **Proposed** until the decision owner records acceptance or rejection. An engineering agent must not impersonate owner approval.
+Phase 03 is ready for an architecture decision review, but not yet for an implementation start. The architecture baseline and proposed ADRs are now made explicit and reviewable. The decision owner explicitly approved ADRs 0003–0014 on 2026-11-05. Their status is recorded as **Accepted** in each ADR. The architecture baseline is approved; feasibility and implementation gates remain. An engineering agent must not impersonate owner approval.
 
 ### Current gate result
 
@@ -155,7 +155,7 @@ After owner acceptance, update each ADR status with date and decision rationale,
 - [ ] Product owners assigned and briefs accepted.
 - [ ] Customer discovery completed and evidence linked.
 - [ ] Product-specific threat models and legal/provider reviews approved.
-- [ ] Owner accepts or amends ADRs 0003–0014.
+- [x] Owner accepts ADRs 0003–0014 as written on 2026-11-05.
 - [ ] Architecture feasibility gates A1–A7 passed.
 
 **Final disposition:** This PR is a governance/architecture review submission. It does not close Phase 02, approve production architecture, start implementation, authorize infrastructure spend or claim product readiness.

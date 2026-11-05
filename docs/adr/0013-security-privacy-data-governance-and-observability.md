@@ -1,8 +1,9 @@
 # ADR 0013: Security, privacy, data governance and observability
 
-- **Status:** Proposed — owner approval required
+- **Status:** Accepted — approved by the decision owner on 2026-11-05
 - **Date:** 2026-11-05
 - **Decision owner:** Tinlance Limited
+- **Approval record:** Explicit owner confirmation in the Tinlance Extensions project conversation on 2026-11-05.
 
 ## Context
 
