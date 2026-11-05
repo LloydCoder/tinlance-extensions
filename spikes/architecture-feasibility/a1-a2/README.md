@@ -33,7 +33,7 @@ pnpm test
 - Read-only: `activeTab` only; reads the active tab title after the user opens the extension action.
 - Permission-sensitive: `activeTab` + `scripting`; injects a fixed, packaged function only after the user presses a visible button. It reads only page title and origin. No persistent host permission is requested.
 
-The manifest test asserts exact permissions for Chrome MV3, Firefox MV3 and Safari MV2 output, verifies icon assets, and rejects broad host access and unrelated sensitive permissions.
+The manifest test asserts exact permissions for Chrome MV3, Firefox MV3 and Safari MV2 output, verifies the official 16/32/48 px PNG files are copied byte-for-byte from the brand asset directory, and rejects broad host access and unrelated sensitive permissions. Both popup surfaces use the supplied Ink/Lime/Paper/Mute palette, original mark artwork, a system-font stack, and visible keyboard focus; no remote font or runtime asset fetch is required.
 
 ## Explicit limits
 
