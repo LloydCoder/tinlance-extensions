@@ -45,7 +45,7 @@ jobs:
         run: pnpm lint
       - name: Type-check all workspace packages
         run: pnpm typecheck
-      - name: Build Next.js and Chrome/Firefox MV3 packages
+      - name: Build Next.js, Chrome/Firefox MV3 and Safari packages
         run: pnpm build
       - name: Verify generated extension permissions
         run: pnpm test
@@ -56,3 +56,46 @@ jobs:
           path: spikes/architecture-feasibility/a1-a2/pnpm-lock.yaml
           if-no-files-found: error
           retention-days: 3
+      - name: Publish Safari extension input
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+        with:
+          name: safari-readonly-extension
+          path: spikes/architecture-feasibility/a1-a2/apps/extension-readonly/.output/safari-mv2/
+          if-no-files-found: error
+          retention-days: 3
+
+  safari-package:
+    name: A2 Safari Xcode packaging feasibility
+    needs: toolchain-and-browser-build
+    runs-on: macos-latest
+    timeout-minutes: 15
+    steps:
+      - name: Download WXT Safari output
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
+        with:
+          name: safari-readonly-extension
+          path: ${{ runner.temp }}/safari-readonly-extension
+      - name: Package Safari extension and validate Xcode project
+        run: |
+          set -Eeuo pipefail
+          xcrun --find safari-web-extension-packager
+          xcrun safari-web-extension-packager \
+            --project-location "${{ runner.temp }}/TinlanceReadOnlySpike" \
+            --app-name "TinlanceReadOnlySpike" \
+            --bundle-identifier "com.tinlance.extensions.spike.readonly" \
+            --swift \
+            --macos-only \
+            --copy-resources \
+            --no-open \
+            --no-prompt \
+            "${{ runner.temp }}/safari-readonly-extension"
+          project="$(find "${{ runner.temp }}/TinlanceReadOnlySpike" -maxdepth 4 -name '*.xcodeproj' -print -quit)"
+          test -n "$project"
+          xcodebuild -list -project "$project"
+      - name: Preserve generated Safari Xcode project for review
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+        with:
+          name: safari-xcode-project-feasibility
+          path: ${{ runner.temp }}/TinlanceReadOnlySpike/
+          if-no-files-found: error
+          retention-days: 7
