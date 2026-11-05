@@ -25,7 +25,7 @@ for (const target of targets) {
         "apps",
         item.directory,
         ".output",
-        target,
+        target.name,
         "manifest.json"
       );
       const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
