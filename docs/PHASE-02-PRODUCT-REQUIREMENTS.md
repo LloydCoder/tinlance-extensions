@@ -1,6 +1,6 @@
 # Tinlance Extensions — Phase 02 Product Requirements and Prioritization
 
-**Status:** Requirements baseline drafted; review and customer validation outstanding
+**Status:** Requirements baseline drafted; documentary reconciliation completed 2026-11-05; customer, owner, legal/provider and product-security validation outstanding
 **Date:** 2026-11-04
 **Owner:** Tinlance Limited
 **Catalogue:** [26-product canonical catalogue](PRODUCT-CATALOGUE.md)
@@ -22,6 +22,8 @@
 **Competitive evidence:** [PHASE-02-COMPETITIVE-VALIDATION.md](PHASE-02-COMPETITIVE-VALIDATION.md) records the public-source competitor snapshot and implications. It is desk research, not customer validation.
 
 **Primary research protocol:** [PHASE-02-CUSTOMER-DISCOVERY-PLAYBOOK.md](PHASE-02-CUSTOMER-DISCOVERY-PLAYBOOK.md) defines interview segments, questions, evidence capture and pilot entry criteria. No interviews are claimed as completed.
+
+**Closeout audit:** [PHASE-02-CLOSEOUT-AND-PHASE-03-ARCHITECTURE-REVIEW.md](PHASE-02-CLOSEOUT-AND-PHASE-03-ARCHITECTURE-REVIEW.md) reconciles the 26 briefs and records outstanding exit evidence. Phase 02 remains open; the documentary audit does not substitute for customer or security/legal validation.
 
 **Phase 02 exit criteria:** all 26 briefs reviewed; owners and acceptance criteria assigned; permissions/data handling reviewed; security-sensitive threat models approved; dependencies mapped; browser/client support deferred until tested; priority segments interviewed; commercial evidence and unresolved decisions recorded; Phase 03 inputs approved.
 
@@ -83,7 +85,7 @@ Default data rule: collect the minimum; process locally where practical; raw D1�
 - **Controls/acceptance:** no automatic opening/execution; unknown reputation is not “clean”; test large files, redirects, duplicate names and offline state; explicit consent and retention terms before any file upload.
 - **Dependencies/commercial:** ThreatFade file reputation and download adapter. Paid organization policy/enrichment hypothesis; scanning capability and economics must be verified first.
 
-#### EXT-07 — Compliance Assistan
+#### EXT-07 — Compliance Assistant
 - **User/job:** SMB compliance leads, agencies and auditors need structured evidence against a selected control framework.
 - **MVP:** choose framework/version and target; map observable website evidence to controls; record source, timestamp, confidence, gap and reviewer note; export draft evidence pack.
 - **Permissions/data:** activeTab and explicit scope; D1/D2 evidence, potentially D3 if user enters regulated material.
@@ -150,7 +152,7 @@ Default data rule: collect the minimum; process locally where practical; raw D1�
 - **Controls/acceptance:** no credential harvesting, private-profile bypass or indiscriminate bulk scraping; data minimization, deletion/suppression, provider compliance and lawful basis.
 - **Dependencies/commercial:** contact schema, data providers and privacy review. Paid enrichment/team lists hypothesis; high legal/provider gate.
 
-#### EXT-16 — FadeReach Outreach Assistan
+#### EXT-16 — FadeReach Outreach Assistant
 - **User/job:** founders and sales reps need relevant, source-aware outreach drafts.
 - **MVP:** select prospect; draft editable message using approved context; show sources/uncertainty; copy/save draft.
 - **Permissions/data:** no mailbox permission required for MVP; D2 prospect/draft data.
@@ -196,7 +198,7 @@ Default data rule: collect the minimum; process locally where practical; raw D1�
 - **Controls/acceptance:** safe rendering/no HTML execution; input depth/size limits; malicious-string tests; no payload network transmission.
 - **Dependencies/commercial:** shared UI and local validator. Free utility; paid bundle only if demand validates.
 
-#### EXT-22 — StackDetec
+#### EXT-22 — StackDetect
 - **User/job:** developers, agencies and technical sales need evidence-based technology identification.
 - **MVP:** user-triggered inspection of headers, HTML/resource markers and public metadata; group detections; show evidence/confidence.
 - **Permissions/data:** activeTab and optional host access; D0/D1.
