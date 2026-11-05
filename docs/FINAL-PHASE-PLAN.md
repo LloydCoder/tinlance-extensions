@@ -32,7 +32,7 @@ The repository baseline at the time this plan was prepared:
 - The canonical catalogue contains 26 products in six families.
 - Phase 0 repository foundation and Phase 01 repository forensic baseline are closed for their documented repository scope.
 - Phase 02 documentary baseline is reconciled; customer discovery, product-owner sign-offs, product-specific threat models, legal/provider reviews and commercial proof remain outstanding.
-- ADRs 0003–0014 were explicitly accepted by the decision owner and merged through PR #17. Architecture feasibility A1 passed, A2 is partial, A3 has merged API and PostgreSQL 16 RLS/idempotency/transactional-outbox feasibility evidence but remains partial pending API/database wiring and worker recovery; A4–A7 remain open. See [Phase 02 evidence and feasibility review](PHASE-02-EVIDENCE-AND-FEASIBILITY-REVIEW.md).
+- ADRs 0003–0014 were explicitly accepted by the decision owner and merged through PR #17. Architecture feasibility A1 passed, A2 is partial, A3 has merged API and PostgreSQL 16 RLS/idempotency/transactional-outbox plus tenant-bound worker lease/recovery and stale-worker fencing evidence (PR #28; all three exact-head checks green), but remains partial pending production API/database wiring, multi-process contention, process crash/restart and outbox publisher delivery; A4–A7 remain open. See [Phase 02 evidence and feasibility review](PHASE-02-EVIDENCE-AND-FEASIBILITY-REVIEW.md).
 - The repository remains a documentation/governance foundation, not an implemented application suite. An isolated A1–A2 spike now exists under `spikes/architecture-feasibility/a1-a2/`; no production product runtime, extension, backend API, worker, database, OAuth service or MCP gateway is implemented.
 - A passing repository CI workflow validates repository checks only. It is not product build, runtime, security, privacy, customer or release evidence.
 
@@ -525,7 +525,7 @@ Required before relevant launch: privacy notice, terms, data-processing disclosu
 
 8. A1 clean-checkout toolchain and representative Next.js/WXT builds passed in isolated spike PR #20; retain as a feasibility fixture.
 9. Complete A2 runtime Chrome/Firefox lifecycle and permission tests plus the Safari Xcode packaging/signing lane.
-10. Pass A3 API, tenant-isolation, migration and worker recovery spike.
+10. PR #28 completed the isolated A3 PostgreSQL tenant-bound lease/recovery and fencing spike with all checks green; continue A3 with production API/database wiring, multi-process contention, crash/restart, outbox publisher delivery and operational recovery proof.
 11. Pass A4 product data-flow, threat-model, retention/deletion and telemetry review.
 12. Pass A5 MCP 2026-07-28 conformance, OAuth and client-matrix proof.
 13. Pass A6 typed Agent Platform contract and negative no-bypass tests.
