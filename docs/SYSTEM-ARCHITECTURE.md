@@ -1,10 +1,10 @@
 # Tinlance Extensions — Master System Architecture
 
-**Document status:** Architecture baseline accepted through ADRs 0003–0014; feasibility and implementation not yet verified  
-**Owner:** Tinlance Limited  
-**Repository:** https://github.com/LloydCoder/tinlance-extensions  
-**Product identity:** Tinlance Extensions  
-**Tagline:** Intelligence. Security. Automation. Everywhere.  
+**Document status:** Architecture baseline accepted through ADRs 0003–0014; feasibility and implementation not yet verified
+**Owner:** Tinlance Limited
+**Repository:** https://github.com/LloydCoder/tinlance-extensions
+**Product identity:** Tinlance Extensions
+**Tagline:** Intelligence. Security. Automation. Everywhere.
 **Last updated:** 2026-11-05
 
 > This document is the normative architecture baseline for the Tinlance Extensions ecosystem. ADRs 0003–0014 were accepted by the decision owner on 2026-11-05. Feasibility spikes and Phase 02 evidence gates remain open. A statement in this document is a design requirement, not evidence that the corresponding software, integration, control, listing, or deployment already exists. Implementation status must be established through repository evidence, automated tests, release records, and operational verification.
@@ -231,7 +231,7 @@ The exact folder layout may evolve after the repository baseline audit. Keep one
 
 Build one shared remote MCP platform with product-specific capability groups. The umbrella listing is **Tinlance Extensions**. Individual products can be separately listed later if there is a concrete distribution or commercial reason.
 
-Proposed endpoint: `https://api.extensions.tinlance.com/mcp`  
+Proposed endpoint: `https://api.extensions.tinlance.com/mcp`
 Proposed documentation: `https://extensions.tinlance.com/developers/mcp`
 
 These are reserved design targets only. Do not publish them or describe them as live until DNS, TLS, routing, authentication, monitoring and external connectivity have been verified.
