@@ -1,0 +1,12 @@
+{
+  "name": "@tinlance/spike-extension-permission-sensitive",
+  "private": true,
+  "scripts": {
+    "build": "wxt build -b chrome --mv3 && wxt build -b firefox --mv3",
+    "lint": "eslint .",
+    "typecheck": "wxt prepare && tsc --noEmit"
+  },
+  "devDependencies": {
+    "wxt": "0.21.5"
+  }
+}

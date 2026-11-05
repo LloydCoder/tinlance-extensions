@@ -1,0 +1,23 @@
+{
+  "name": "@tinlance/architecture-feasibility-a1-a2",
+  "private": true,
+  "packageManager": "pnpm@12.16.1",
+  "engines": {
+    "node": ">=24.22.2 <25"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "node --test tests/*.test.mjs"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.39.1",
+    "@typescript-eslint/eslint-plugin": "8.47.0",
+    "@typescript-eslint/parser": "8.47.0",
+    "eslint": "9.39.1",
+    "globals": "16.5.0",
+    "turbo": "2.11.10",
+    "typescript": "5.9.3"
+  }
+}

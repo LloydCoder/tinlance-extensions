@@ -1,0 +1,7 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+  },
+  "include": [".wxt/types/**/*.d.ts", "**/*.ts"],
+  "exclude": ["node_modules", ".output"]
+}
