@@ -35,6 +35,14 @@ for (const target of targets) {
       assert.equal(manifest.host_permissions, undefined);
       assert.equal(manifest.optional_host_permissions, undefined);
       assert.equal(manifest.content_scripts, undefined);
+  assert.deepEqual(Object.keys(manifest.icons).sort(), ["128", "16", "32", "48"]);
+  for (const icon of Object.values(manifest.icons)) {
+    await readFile(join(root, "apps", "extension-readonly", ".output", "safari-mv2", icon));
+  }
+      assert.deepEqual(Object.keys(manifest.icons).sort(), ["128", "16", "32", "48"]);
+      for (const icon of Object.values(manifest.icons)) {
+        await readFile(join(root, "apps", item.directory, ".output", target.name, icon));
+      }
 
       for (const forbidden of ["cookies", "history", "webRequest", "debugger", "management"]) {
         assert.equal(
