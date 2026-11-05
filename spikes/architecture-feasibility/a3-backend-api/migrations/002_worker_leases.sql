@@ -7,15 +7,20 @@ ALTER TABLE jobs ADD CONSTRAINT jobs_running_requires_token
 CREATE INDEX jobs_reclaim_idx ON jobs (lease_expires_at, available_at)
   WHERE status = 'running';
 
--- A worker receives a fresh fencing token for every lease. A stale worker
--- cannot complete or fail a job after the lease has been reclaimed.
+-- SECURITY DEFINER bypasses table RLS, so every operation must explicitly
+-- bind to the transaction-local tenant context established by trusted auth.
 CREATE FUNCTION claim_next_job(p_lease_seconds integer DEFAULT 60)
 RETURNS SETOF public.jobs
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = pg_catalog
 AS $$
+DECLARE v_tenant_id text;
 BEGIN
+  v_tenant_id := nullif(current_setting('app.tenant_id', true), '');
+  IF v_tenant_id IS NULL THEN
+    RAISE EXCEPTION 'tenant context is required';
+  END IF;
   IF p_lease_seconds < 5 OR p_lease_seconds > 3600 THEN
     RAISE EXCEPTION 'lease duration must be between 5 and 3600 seconds';
   END IF;
@@ -24,8 +29,9 @@ BEGIN
   WITH candidate AS (
     SELECT id
     FROM public.jobs
-    WHERE (status = 'queued' AND available_at <= now())
-       OR (status = 'running' AND lease_expires_at <= now())
+    WHERE tenant_id = v_tenant_id
+      AND ((status = 'queued' AND available_at <= now())
+        OR (status = 'running' AND lease_expires_at <= now()))
     ORDER BY available_at, created_at
     FOR UPDATE SKIP LOCKED
     LIMIT 1
@@ -37,7 +43,7 @@ BEGIN
          lease_token = gen_random_uuid(),
          updated_at = now()
     FROM candidate
-   WHERE j.id = candidate.id
+   WHERE j.id = candidate.id AND j.tenant_id = v_tenant_id
   RETURNING j.*;
 END;
 $$;
@@ -48,12 +54,14 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = pg_catalog
 AS $$
-DECLARE changed integer;
+DECLARE changed integer; v_tenant_id text;
 BEGIN
+  v_tenant_id := nullif(current_setting('app.tenant_id', true), '');
+  IF v_tenant_id IS NULL THEN RAISE EXCEPTION 'tenant context is required'; END IF;
   UPDATE public.jobs
      SET status = 'succeeded', lease_expires_at = NULL,
          lease_token = NULL, updated_at = now()
-   WHERE id = p_job_id AND status = 'running'
+   WHERE id = p_job_id AND tenant_id = v_tenant_id AND status = 'running'
      AND lease_token = p_lease_token AND lease_expires_at > now();
   GET DIAGNOSTICS changed = ROW_COUNT;
   RETURN changed = 1;
@@ -71,8 +79,10 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = pg_catalog
 AS $$
-DECLARE result_status text;
+DECLARE result_status text; v_tenant_id text;
 BEGIN
+  v_tenant_id := nullif(current_setting('app.tenant_id', true), '');
+  IF v_tenant_id IS NULL THEN RAISE EXCEPTION 'tenant context is required'; END IF;
   IF p_retry_delay_seconds < 0 OR p_retry_delay_seconds > 86400
      OR p_max_attempts < 1 OR p_max_attempts > 100 THEN
     RAISE EXCEPTION 'invalid retry policy';
@@ -84,7 +94,7 @@ BEGIN
                              THEN available_at
                              ELSE now() + make_interval(secs => p_retry_delay_seconds) END,
          lease_expires_at = NULL, lease_token = NULL, updated_at = now()
-   WHERE id = p_job_id AND status = 'running'
+   WHERE id = p_job_id AND tenant_id = v_tenant_id AND status = 'running'
      AND lease_token = p_lease_token AND lease_expires_at > now()
   RETURNING status INTO result_status;
 
