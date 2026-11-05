@@ -4,7 +4,10 @@ import { join } from "node:path";
 import test from "node:test";
 
 const root = new URL("../", import.meta.url).pathname;
-const targets = [\n  { name: "chrome-mv3", manifestVersion: 3 },\n  { name: "firefox-mv3", manifestVersion: 3 }\n];
+const targets = [
+  { name: "chrome-mv3", manifestVersion: 3 },
+  { name: "firefox-mv3", manifestVersion: 3 }
+];
 const cases = [
   { name: "read-only", directory: "extension-readonly", expected: ["activeTab"] },
   {
@@ -16,7 +19,7 @@ const cases = [
 
 for (const target of targets) {
   for (const item of cases) {
-    test(`${item.name} ${target} manifest keeps least privilege`, async () => {
+    test(`${item.name} ${target.name} manifest keeps least privilege`, async () => {
       const manifestPath = join(
         root,
         "apps",
