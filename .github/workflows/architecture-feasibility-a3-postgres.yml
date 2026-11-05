@@ -20,7 +20,7 @@ concurrency:
 
 jobs:
   postgres-integration:
-    name: PostgreSQL tenant isolation and transactional outbox
+    name: PostgreSQL tenant isolation, outbox and worker recovery
     runs-on: ubuntu-latest
     timeout-minutes: 10
     services:
@@ -42,11 +42,19 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - name: Install PostgreSQL client
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
-      - name: Apply schema migration
+      - name: Apply core schema migration
         env:
           PGPASSWORD: postgres
         run: psql "host=127.0.0.1 port=5432 dbname=tinlance_test user=postgres" -v ON_ERROR_STOP=1 -f spikes/architecture-feasibility/a3-backend-api/migrations/001_platform_core.sql
-      - name: Run PostgreSQL isolation and outbox integration assertions
+      - name: Verify tenant isolation and transactional outbox
         env:
           PGPASSWORD: postgres
         run: psql "host=127.0.0.1 port=5432 dbname=tinlance_test user=postgres" -v ON_ERROR_STOP=1 -f spikes/architecture-feasibility/a3-backend-api/postgres.integration.sql
+      - name: Apply durable worker lease migration
+        env:
+          PGPASSWORD: postgres
+        run: psql "host=127.0.0.1 port=5432 dbname=tinlance_test user=postgres" -v ON_ERROR_STOP=1 -f spikes/architecture-feasibility/a3-backend-api/migrations/002_worker_leases.sql
+      - name: Verify worker lease recovery and fencing
+        env:
+          PGPASSWORD: postgres
+        run: psql "host=127.0.0.1 port=5432 dbname=tinlance_test user=postgres" -v ON_ERROR_STOP=1 -f spikes/architecture-feasibility/a3-backend-api/postgres.worker.integration.sql
