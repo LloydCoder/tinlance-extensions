@@ -82,7 +82,7 @@ Scope:
 
 The Phase 02 document defines product briefs for all 26 catalogue entries, MVP boundaries, permission/data assumptions, security acceptance criteria, shared dependencies, commercial hypotheses, prioritization scores and validation gates. The documentary baseline is reconciled; substantive evidence remains open.
 
-**Current status:** documentary requirements baseline reconciled; Phase 02 remains open because customer discovery, product-owner sign-offs, legal/provider reviews, product-specific threat-model approvals and commercial evidence remain outstanding. ADRs 0003–0014 are accepted; architecture feasibility A1–A7 are not passed. See [Phase 02 Evidence and Architecture Feasibility Review](PHASE-02-EVIDENCE-AND-FEASIBILITY-REVIEW.md).
+**Current status:** documentary requirements baseline reconciled; Phase 02 remains open because customer discovery, product-owner sign-offs, legal/provider reviews, product-specific threat-model approvals and commercial evidence remain outstanding. ADRs 0003–0014 are accepted; A1 passed through the isolated workspace spike, A2 is partial, and A3–A7 remain open. See [Phase 02 Evidence and Architecture Feasibility Review](PHASE-02-EVIDENCE-AND-FEASIBILITY-REVIEW.md).
 
 Phase 02 must:
 - secure a named owner and reviewed brief for every catalogue product;
@@ -95,7 +95,7 @@ Phase 02 must:
 
 **Phase 02 exit:** all 26 briefs have dated owner/reviewer dispositions; priority-segment discovery and commercial evidence are recorded; high-risk product gates have owners and treatments; permission/data and security reviews are approved; dependency graph and ranked release plan are signed off; residual risks are accepted and the decision owner records go/no-go. The 2026-11-05 evidence review records these substantive gates as open.
 
-**Milestone A exit:** ADRs 0003–0014 are accepted, but A1–A7 and Phase 02 substantive evidence must pass before application implementation. MCP gateway work also requires executable MCP Gate 0 conformance and the Agent Platform no-bypass contract.
+**Milestone A exit:** ADRs 0003–0014 are accepted; A1 passes and A2 is partial, but A3–A7 and Phase 02 substantive evidence must pass before application implementation. MCP gateway work also requires executable MCP Gate 0 conformance and the Agent Platform no-bypass contract.
 
 ### Product and commercial beta — Milestone B
 
@@ -339,8 +339,8 @@ Use this table in project tracking; do not mark a package complete without evide
 ## 10. Immediate next actions
 
 1. Complete Phase 02 evidence: product-owner decisions, discovery, product threat models, legal/provider reviews and commercial evidence.
-2. Run A1 clean-checkout workspace and representative package spike.
-3. Run A2 Chromium/Firefox WXT builds and Safari packaging feasibility proof.
+2. A1 isolated clean-checkout workspace and representative builds passed; preserve the spike and frozen lockfile as regression evidence.
+3. Complete A2 Chrome/Firefox runtime/lifecycle testing and Safari Xcode packaging/signing proof.
 4. Run A3 backend/API, tenant-isolation, migration and worker recovery spike.
 5. Close A4 with product data flows, threat models, retention/deletion and telemetry tests.
 6. Complete A5 MCP 2026-07-28 pinned-fixture, auth, header/body mismatch and client conformance proof.
@@ -348,4 +348,4 @@ Use this table in project tracking; do not mark a package complete without evide
 8. Decide A7 deployment/provider/residency/budget only after cost and operational requirements are evidenced.
 9. Do not begin product implementation, provision paid infrastructure or submit public listings until applicable gates are approved.
 
-**Current status:** The roadmap is documented as a proposal. No phase or MCP work package is marked implemented, tested, submitted, approved or released by virtue of this document.
+**Current status:** The roadmap is the accepted programme baseline. No product phase or MCP work package is marked implemented, tested, submitted, approved or released by virtue of this document. The separate A1 toolchain feasibility spike has passed; A2 remains partial.
