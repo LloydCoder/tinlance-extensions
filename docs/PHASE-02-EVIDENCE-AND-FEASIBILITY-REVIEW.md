@@ -46,6 +46,39 @@ A green documentation workflow, accepted ADR, vendor marketing page, interview t
 
 **No customer interviews, design-partner commitments, paid pilots, legal opinions, provider approvals or product-specific threat-model approvals are claimed in this milestone.** They require actual participants, counterparties and accountable human review.
 
+### 3.1 Competitive and platform-policy desk research (2026-11-05)
+
+This is public-source desk research, not customer validation, a legal opinion, a vendor approval or a performance benchmark. Vendor capability statements are attributed to the vendor and must be independently tested before they become product claims.
+
+| Priority product | Public alternatives / evidence | Competitive implication | Phase 02 consequence |
+|---|---|---|---|
+| EXT-01 Site Security Auditor | MDN HTTP Observatory and SecurityHeaders provide public security-header checks and grades. MDN explicitly warns that a high grade does not establish that a site is secure and lists major vulnerability classes it does not test. | Basic header/TLS posture scanning is already commoditized. A scorecard alone is not differentiation. | Focus on reproducible evidence, confidence, scope limits, safe passive checks and remediation context; distinguish observable configuration from exploitability. Do not claim a comprehensive security audit. |
+| EXT-09 Tinlyt Page Extractor | Firecrawl offers scrape, crawl, map, search, interactive browser actions and monitoring; its public pricing is credit-based and varies by operation and browser time. | Generic URL-to-Markdown extraction is a crowded API category with usage-based cost. A provider dependency could dominate unit economics. | Differentiate through user-selected extraction, source provenance, stable structured output, evidence preservation and integration with Tinlyt Verify/Research. Benchmark extraction quality and per-successful-result cost; keep provider choice open pending terms and cost review. |
+| EXT-02 Aithyrex Guard | Nightfall markets browser/endpoint/SaaS AI data-loss controls, prompt/upload inspection, policy and agent/MCP coverage. Harmonic markets browser-based GenAI controls, identity/account context, embedded AI discovery and managed deployment. | Enterprise AI DLP is an established, well-funded category. A browser-only extension cannot credibly claim broad enterprise DLP or endpoint coverage. | Position the initial scope as a transparent, local-first guard for explicitly supported browser AI paths. Validate browser-managed deployment, false-positive burden, local detector quality and buyer demand. Preserve explicit unsupported-path disclosures; do not claim universal AI coverage or EDR/DLP replacement. |
+| EXT-10 Tinlyt Verify | ClaimBuster exposes claim-worthiness scoring and fact-check matching APIs; Factiverse markets claim detection and evidence assessment against customer-selected trusted sources across multiple languages. | Claim spotting and evidence retrieval already exist as specialist products and research systems. Automated verdicts remain difficult and domain-dependent. | Differentiate with claim decomposition, source lineage, supporting and conflicting evidence, freshness, uncertainty and analyst workflow integration. Never convert model score or absence of a fact-check into a true/false verdict. |
+| EXT-11 Tinlyt Monitor | Visualping supports visual/text/code and selected-element monitoring; Distill provides local browser/app and cloud monitors; Hexowatch markets content, visual, technology, price and WHOIS monitoring. | General page-change alerting is highly commoditized; consumer pricing and feature overlap are extensive. | Validate a higher-value segment where provenance, structured field changes, audit history, source reliability, alert precision and cross-product evidence matter. Measure false-alert rate and total cost per monitored source. |
+| EXT-13 FadeReach Prospect Capture | Apollo and Clay offer established sales intelligence/enrichment workflows. Apollo publishes seat/credit plans; Clay separates workflow actions from data credits and aggregates data providers. Apollo's terms restrict automated scraping, API resale/third-party access and use of its API with LinkedIn automation. LinkedIn's User Agreement and help pages prohibit unauthorized scraping, copying and third-party automation/extensions. | Prospect capture is not a defensible standalone moat; data access, quality, freshness, rights, CRM workflow and provider economics are the hard parts. Platform policy is a first-order constraint. | Start with user-provided records, company-owned/public sources where permitted, CRM-authorized data and licensed provider APIs. Do not scrape LinkedIn profiles, automate LinkedIn activity, bypass controls, resell provider API access or expose Apollo API access to third parties. Require source-specific rights, regional lawful-basis, suppression/deletion and contract review before EXT-15 ContactIntel. |
+| EXT-17 Agent Browser Bridge | Browserbase markets managed browser sessions, search/fetch and observability for agents. Its own material emphasizes isolation, browser infrastructure and session operations. | Managed remote browser infrastructure is a direct adjacent category; browser automation alone is not differentiation. | Differentiate around the user-controlled paired browser, origin/tab/frame scoping, explicit approvals, cancellation/revocation and Tinlance Agent Platform authority. No anti-bot evasion, CAPTCHA bypass, credential-wall circumvention or hidden automation. Validate the actual Agent Platform contract before consequential actions. |
+
+#### Platform-policy implications
+
+1. **Chrome Web Store single-purpose and data-use rules:** each extension needs a narrow, clearly disclosed primary purpose. Permissions must be the narrowest needed; user data must be limited to the disclosed purpose, with accurate privacy policy and affirmative informed consent where required. The Store prohibits duplicate experiences across a developer's related extensions and requires user confirmation for messages sent on the user's behalf. This reinforces the 26-product single-purpose architecture; it is not a guarantee of store acceptance.
+2. **Manifest V3:** executable logic must be packaged and reviewable. Remote data/configuration may be fetched within policy, but remote executable JavaScript or complex remote command interpreters are not a viable extension update mechanism.
+3. **LinkedIn:** current User Agreement and automated-activity guidance prohibit scraping/copying profiles and data, unauthorized bots, and browser extensions that scrape, modify or automate the LinkedIn site. FadeReach requirements must explicitly exclude those behaviours.
+4. **Apollo:** current terms grant a restricted internal-business-use licence, prohibit automated scraping except where expressly included or approved, prohibit API use with LinkedIn automations, prohibit API resale/sublicensing/third-party access and restrict third-party use of Apollo data for AI/ML training. The terms also place legal-use responsibility on the customer and disclaim accuracy/completeness/currency guarantees. Do not treat a paid Apollo account as a blanket data redistribution licence.
+5. **Vendor pricing is not a Tinlance cost model:** observed public plans are dynamic and use materially different units (seat, credit, action, page, browser-minute, check). Do not use a competitor's entry price as Tinlance's gross-margin assumption. Model cost per successful, usable output and include retries, failed fetches, enrichment no-matches, browser time, data licensing, storage, support and payment fees.
+
+#### Desk-research conclusions
+
+- The first-seven order is still a programme constraint, not a validated market ranking. Desk research does not justify reordering it.
+- EXT-01, EXT-09 and EXT-11 have strong commodity pressure; their MVPs need a narrower buyer/job and an evidence-based workflow advantage.
+- EXT-02 has credible enterprise competition and must be validated as a constrained browser control rather than universal enterprise DLP.
+- EXT-10 should sell analyst efficiency and evidence traceability, not a claim that an LLM can determine truth reliably.
+- EXT-13 is gated primarily by lawful source supply, data quality and provider economics; LinkedIn scraping/automation is explicitly excluded.
+- EXT-17 requires a trust/authority differentiation and a real Agent Platform contract; general browser automation is already supplied by specialist vendors.
+
+This research closes only part of the competitive desk-research gap. It does not replace buyer interviews, provider contracting, counsel review or paid-pilot evidence.
+
 ### Phase 02 evidence packet requirements
 
 For each interview, record a participant code (not identity), segment, role, consent, recent workflow, frequency, impact, current workaround/spend, buyer/budget path, disconfirming evidence, constraints, evidence strength and next action. Do not store customer secrets, raw private prompts, unnecessary personal data or confidential source records in the repository.
@@ -154,6 +187,23 @@ Authoritative/current technical references checked on 2026-11-05:
 7. Next.js self-hosting guide, last updated 2026-03-25: https://nextjs.org/docs/app/guides/self-hosting
 8. IETF RFC 9700 — OAuth 2.0 Security Best Current Practice: https://www.rfc-editor.org/rfc/rfc9700.html
 9. IETF RFC 10017 — OAuth 2.0 for Browser-Based Applications (August 2026): https://www.rfc-editor.org/rfc/rfc10017.html
+10. MDN HTTP Observatory FAQ and scope limitations: https://developer.mozilla.org/en-US/observatory/docs/faq
+11. SecurityHeaders FAQ and grade meaning: https://api.securityheaders.com/faq
+12. Firecrawl product and pricing: https://www.firecrawl.dev/scrape and https://www.firecrawl.dev/pricing
+13. Nightfall AI data security platform: https://www.nightfall.ai/platform
+14. Harmonic browser-based GenAI security: https://www.harmonic.security/solutions/browser-based-genai-security
+15. ClaimBuster project and API: https://claimbuster.org/ and https://idir.claimbuster.org/api/
+16. Factiverse text verification solution: https://www.factiverse.ai/solutions/text
+17. Visualping monitoring capabilities: https://help.visualping.io/en/articles/4438913
+18. Distill monitoring and pricing: https://distill.io/docs/web-monitor/what-is-distill/ and https://distill.io/pricing/
+19. Hexowatch monitoring and pricing: https://hexowatch.com/ and https://hexowatch.com/pricing
+20. Apollo pricing and current Terms of Service: https://www.apollo.io/pricing and https://www.apollo.io/terms
+21. Clay pricing and usage model: https://www.clay.com/pricing and https://university.clay.com/docs/actions-data-credits
+22. LinkedIn User Agreement: https://www.linkedin.com/legal/user-agreement
+23. LinkedIn automated activity policy: https://www.linkedin.com/help/linkedin/answer/a1340567/automated-activity-on-linkedin
+24. Chrome Web Store Program Policies: https://developer.chrome.com/docs/webstore/program-policies/policies/
+25. Chrome Web Store Manifest V3 requirements: https://developer.chrome.com/docs/webstore/program-policies/mv3-requirements
+26. Browserbase browser infrastructure overview: https://dev.browserbase.com/
 
 ## 9. Approval and non-authorization
 
