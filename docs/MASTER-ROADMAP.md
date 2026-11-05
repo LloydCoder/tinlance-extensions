@@ -82,7 +82,7 @@ Scope:
 
 The Phase 02 document defines product briefs for all 26 catalogue entries, MVP boundaries, permission/data assumptions, security acceptance criteria, shared dependencies, commercial hypotheses, prioritization scores and validation gates. The documentary baseline is reconciled; substantive evidence remains open.
 
-**Current status:** documentary requirements baseline reconciled; Phase 02 remains open because customer discovery, product-owner sign-offs, legal/provider reviews, product-specific threat-model approvals and commercial evidence remain outstanding. ADRs 0003–0014 are accepted; A1 passed through the isolated workspace spike, A2 is partial, and A3–A7 remain open. See [Phase 02 Evidence and Architecture Feasibility Review](PHASE-02-EVIDENCE-AND-FEASIBILITY-REVIEW.md).
+**Current status:** documentary requirements baseline reconciled; Phase 02 remains open because customer discovery, product-owner sign-offs, legal/provider reviews, product-specific threat-model approvals and commercial evidence remain outstanding. ADRs 0003–0014 are accepted; A1 passed through the isolated workspace spike, A2 is partial, A3 has a merged API contract spike but remains partial, and A4–A7 remain open. See [Phase 02 Evidence and Architecture Feasibility Review](PHASE-02-EVIDENCE-AND-FEASIBILITY-REVIEW.md).
 
 Phase 02 must:
 - secure a named owner and reviewed brief for every catalogue product;
@@ -95,7 +95,7 @@ Phase 02 must:
 
 **Phase 02 exit:** all 26 briefs have dated owner/reviewer dispositions; priority-segment discovery and commercial evidence are recorded; high-risk product gates have owners and treatments; permission/data and security reviews are approved; dependency graph and ranked release plan are signed off; residual risks are accepted and the decision owner records go/no-go. The 2026-11-05 evidence review records these substantive gates as open.
 
-**Milestone A exit:** ADRs 0003–0014 are accepted; A1 passes and A2 is partial, but A3–A7 and Phase 02 substantive evidence must pass before application implementation. MCP gateway work also requires executable MCP Gate 0 conformance and the Agent Platform no-bypass contract.
+**Milestone A exit:** ADRs 0003–0014 are accepted; A1 passes, A2 is partial and A3 is partial, while A4–A7 and Phase 02 substantive evidence must pass before application implementation. MCP gateway work also requires executable MCP Gate 0 conformance and the Agent Platform no-bypass contract.
 
 ### Product and commercial beta — Milestone B
 
