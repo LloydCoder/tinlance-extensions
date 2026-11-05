@@ -16,25 +16,22 @@ const cases = [
     expected: ["activeTab", "scripting"]
   }
 ];
+const officialIconSizes = ["16", "32", "48"];
 
-async function assertIcons(manifest, directory, target) {
-  assert.deepEqual(Object.keys(manifest.icons).sort(), ["128", "16", "32", "48"]);
-  for (const icon of Object.values(manifest.icons)) {
-    await readFile(join(root, "apps", directory, ".output", target, icon));
+async function assertOfficialIcons(manifest, directory, target) {
+  assert.deepEqual(Object.keys(manifest.icons).sort(), officialIconSizes);
+  for (const size of officialIconSizes) {
+    const filename = `icon-${size}.png`;
+    const official = await readFile(join(root, "..", "..", "..", "assets", "brand", "tinlance-extensions", "png", filename));
+    const built = await readFile(join(root, "apps", directory, ".output", target, filename));
+    assert.deepEqual(built, official, `${directory}/${target} must package the original ${filename}`);
   }
 }
 
 for (const target of targets) {
   for (const item of cases) {
-    test(`${item.name} ${target.name} manifest keeps least privilege`, async () => {
-      const manifestPath = join(
-        root,
-        "apps",
-        item.directory,
-        ".output",
-        target.name,
-        "manifest.json"
-      );
+    test(`${item.name} ${target.name} manifest keeps least privilege and official branding`, async () => {
+      const manifestPath = join(root, "apps", item.directory, ".output", target.name, "manifest.json");
       const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
 
       assert.equal(manifest.manifest_version, target.manifestVersion);
@@ -42,32 +39,21 @@ for (const target of targets) {
       assert.equal(manifest.host_permissions, undefined);
       assert.equal(manifest.optional_host_permissions, undefined);
       assert.equal(manifest.content_scripts, undefined);
-      await assertIcons(manifest, item.directory, target.name);
+      await assertOfficialIcons(manifest, item.directory, target.name);
 
       for (const forbidden of ["cookies", "history", "webRequest", "debugger", "management"]) {
-        assert.equal(
-          manifest.permissions.includes(forbidden),
-          false,
-          `unexpected ${forbidden} permission`
-        );
+        assert.equal(manifest.permissions.includes(forbidden), false, `unexpected ${forbidden} permission`);
       }
     });
   }
 }
 
-test("read-only Safari MV2 manifest keeps least privilege and icons", async () => {
-  const manifestPath = join(
-    root,
-    "apps",
-    "extension-readonly",
-    ".output",
-    "safari-mv2",
-    "manifest.json"
-  );
+test("read-only Safari MV2 manifest keeps least privilege and original icon exports", async () => {
+  const manifestPath = join(root, "apps", "extension-readonly", ".output", "safari-mv2", "manifest.json");
   const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
   assert.equal(manifest.manifest_version, 2);
   assert.deepEqual([...manifest.permissions].sort(), ["activeTab"]);
   assert.equal(manifest.host_permissions, undefined);
   assert.equal(manifest.content_scripts, undefined);
-  await assertIcons(manifest, "extension-readonly", "safari-mv2");
+  await assertOfficialIcons(manifest, "extension-readonly", "safari-mv2");
 });

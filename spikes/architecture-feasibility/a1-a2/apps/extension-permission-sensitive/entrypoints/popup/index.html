@@ -3,14 +3,27 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Permission-sensitive spike</title>
+    <meta name="theme-color" content="#0A0C0B" />
+    <title>Tinlance Extensions</title>
+    <link rel="stylesheet" href="./popup.css" />
   </head>
   <body>
-    <main>
-      <h1>Explicit tab inspection</h1>
-      <p>Nothing is read until you press the button.</p>
-      <button id="inspect" type="button">Read page title and origin</button>
-      <output id="result" aria-live="polite"></output>
+    <main class="popup">
+      <header class="brand">
+        <img class="brand__mark" src="/icon-32.png" width="32" height="32" alt="" />
+        <div>
+          <p class="brand__eyebrow">TINLANCE</p>
+          <h1>Extensions</h1>
+        </div>
+      </header>
+      <section class="panel" aria-labelledby="panel-title">
+        <p class="eyebrow">EXPLICIT INSPECTION</p>
+        <h2 id="panel-title">Inspect active tab</h2>
+        <p class="muted">Nothing is read until you choose to inspect this page.</p>
+        <button id="inspect" type="button">Read page title and origin</button>
+        <output id="result" aria-live="polite"></output>
+      </section>
+      <footer>Intelligence and security, in your browser.</footer>
     </main>
     <script type="module" src="./main.ts"></script>
   </body>

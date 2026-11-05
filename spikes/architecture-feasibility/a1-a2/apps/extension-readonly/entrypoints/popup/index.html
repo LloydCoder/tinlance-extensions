@@ -3,13 +3,26 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Read-only spike</title>
+    <meta name="theme-color" content="#0A0C0B" />
+    <title>Tinlance Extensions</title>
+    <link rel="stylesheet" href="./popup.css" />
   </head>
   <body>
-    <main>
-      <h1>Read-only tab context</h1>
-      <p id="status">Reading only the active tab after the extension action.</p>
-      <output id="tab"></output>
+    <main class="popup">
+      <header class="brand">
+        <img class="brand__mark" src="/icon-32.png" width="32" height="32" alt="" />
+        <div>
+          <p class="brand__eyebrow">TINLANCE</p>
+          <h1>Extensions</h1>
+        </div>
+      </header>
+      <section class="panel" aria-labelledby="panel-title">
+        <p class="eyebrow">READ-ONLY ACCESS</p>
+        <h2 id="panel-title">Active tab context</h2>
+        <p id="status" class="muted">Reading only the active tab after the extension action.</p>
+        <output id="tab" class="result" aria-live="polite"></output>
+      </section>
+      <footer>Intelligence and security, in your browser.</footer>
     </main>
     <script type="module" src="./main.ts"></script>
   </body>
