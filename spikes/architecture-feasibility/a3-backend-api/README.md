@@ -8,6 +8,8 @@ This isolated spike is evidence, not a production API or service.
 - PostgreSQL migration for tenant records, durable job rows, idempotency keys and transactional outbox.
 - PostgreSQL row-level security (RLS) forced on tenant-owned tables; missing tenant context returns no rows.
 - Integration assertions for tenant isolation, idempotent enqueue/outbox and transaction rollback.
+- Durable worker lease functions with bounded lease duration, `FOR UPDATE SKIP LOCKED` claims, lease-expiry reclaim, per-claim fencing tokens, stale-worker rejection, bounded retries and terminal failure.
+- PostgreSQL integration assertions for worker crash/lease-expiry recovery and fencing-token safety.
 - OpenAPI 3.1 fixture and liveness/readiness separation.
 
 ## Important limitations
