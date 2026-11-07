@@ -31,15 +31,15 @@ async function focusFixtureAndInvokeShortcut() {
   execFileSync("xdotool", ["windowactivate", "--sync", windowId], { timeout: 10000 });
   execFileSync("xdotool", ["windowraise", windowId], { timeout: 10000 });
   execFileSync("xdotool", ["windowfocus", "--sync", windowId], { timeout: 10000 });
+  const focusedId = execFileSync("xdotool", [
+    "getwindowfocus"
+  ], { encoding: "utf8" }).trim();
   const focused = execFileSync("xdotool", [
     "getwindowfocus", "getwindowname"
   ], { encoding: "utf8" }).trim();
-  const focusedClass = execFileSync("xdotool", [
-    "getwindowfocus", "getwindowclassname"
-  ], { encoding: "utf8" }).trim();
-  const fixtureWindowFocused = focused.includes(fixtureTitle) ||
-    (browserName === "Opera Stable" && focusedClass.toLowerCase().includes("opera"));
-  assert.ok(fixtureWindowFocused, browserName + ": fixture browser did not receive keyboard focus (" + focused + "; class=" + focusedClass + ")");
+  const fixtureWindowFocused = focusedId === windowId &&
+    (focused.includes(fixtureTitle) || browserName === "Opera Stable");
+  assert.ok(fixtureWindowFocused, browserName + ": fixture browser did not receive keyboard focus (" + focused + "; focusedId=" + focusedId + "; expectedId=" + windowId + ")");
   execFileSync("xdotool", ["key", "--clearmodifiers", "--delay", "100", "alt+shift+y"]);
 }
 
