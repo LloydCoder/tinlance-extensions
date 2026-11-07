@@ -36,6 +36,7 @@ test("dead-letter replay is tenant-scoped, authorized and durably audited", {
       "UPDATE outbox_events SET attempts = 3, last_error_code = 'upstream_unavailable', dead_lettered_at = now() WHERE id = ANY($1::uuid[])",
       [[eventA, eventB]]
     );
+    await adminPool.query("UPDATE outbox_events SET replay_count = 1 WHERE id = $1", [eventB]);
     await adminPool.query(
       "INSERT INTO outbox_replay_audit(tenant_id, event_id, replay_number, actor_id, request_id) VALUES ($1, $2, 1, 'tenant-b-operator', $3)",
       [tenantB, eventB, randomUUID()]
