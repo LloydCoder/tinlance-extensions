@@ -3,6 +3,7 @@ import { writeSync } from "node:fs";
 import { createPostgresWorker } from "./worker.mjs";
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 1 });
+const adminPool = new Pool({ connectionString: process.env.ADMIN_DATABASE_URL, max: 1 });
 const tenantId = process.env.WORKER_TENANT_ID;
 const mode = process.env.WORKER_MODE ?? "complete";
 const leaseSeconds = Number(process.env.WORKER_LEASE_SECONDS ?? "5");
@@ -19,7 +20,7 @@ const worker = createPostgresWorker({
         writeSync(1, `CLAIMED:${job.id}\n`);
         process.exit(73);
       }
-      await pool.query(
+      await adminPool.query(
         "INSERT INTO worker_test_effects(tenant_id, job_id, effect) VALUES ($1, $2, $3) ON CONFLICT (tenant_id, job_id) DO NOTHING",
         [tenantId, job.id, "once"]
       );
@@ -47,5 +48,5 @@ try {
   const result = await worker.runOnce();
   process.stdout.write(`RESULT:${result.status}:${result.jobId ?? ""}\n`);
 } finally {
-  await pool.end();
+  await Promise.all([pool.end(), adminPool.end()]);
 }

@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 
 const databaseUrl = process.env.DATABASE_URL;
+const adminDatabaseUrl = process.env.ADMIN_DATABASE_URL;
 const here = dirname(fileURLToPath(import.meta.url));
 const fixture = resolve(here, "outbox-test-process.mjs");
 
@@ -51,10 +52,10 @@ async function insertOutboxEvent(pool, tenantId, suffix) {
 }
 
 test("outbox publisher delivers at least once with idempotency, retries, dead letters and lease heartbeat", {
-  skip: !databaseUrl
+  skip: !databaseUrl || !adminDatabaseUrl
 }, async (t) => {
   const { Pool } = await import("pg");
-  const pool = new Pool({ connectionString: databaseUrl, max: 2 });
+  const pool = new Pool({ connectionString: adminDatabaseUrl, max: 2 });
   const suffix = randomUUID().replaceAll("-", "");
   const tenantId = `outbox-process-${suffix}`;
 
