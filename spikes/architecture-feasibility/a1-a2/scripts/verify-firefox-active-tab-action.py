@@ -124,7 +124,27 @@ def main() -> int:
         profile = Path(driver.capabilities["moz:profile"])
         addon_uuid = extension_uuid(profile, addon_id)
         popup_handle = driver.current_window_handle
-        driver.get(f"moz-extension://{addon_uuid}/popup.html")
+        popup_url = f"moz-extension://{addon_uuid}/popup.html"
+        driver.get("about:blank")
+        browser_windows = subprocess.run(
+            ["xdotool", "search", "--onlyvisible", "--name", "Mozilla Firefox"],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.splitlines()
+        if not browser_windows:
+            raise AssertionError("Could not locate the Firefox window to open the extension page")
+        browser_window = browser_windows[0]
+        subprocess.run(["xdotool", "windowactivate", "--sync", browser_window], check=True)
+        subprocess.run(["xdotool", "windowfocus", "--sync", browser_window], check=True)
+        subprocess.run(["xdotool", "key", "--clearmodifiers", "ctrl+l"], check=True)
+        subprocess.run(
+            ["xdotool", "type", "--clearmodifiers", "--delay", "2", "--", popup_url],
+            check=True,
+        )
+        subprocess.run(["xdotool", "key", "Return"], check=True)
+        WebDriverWait(driver, 10).until(lambda browser: browser.current_url == popup_url)
+        popup_handle = driver.current_window_handle
 
         command = driver.execute_async_script(
             "const done = arguments[arguments.length - 1]; "
