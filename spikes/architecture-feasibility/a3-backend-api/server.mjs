@@ -78,7 +78,7 @@ export function createApiServer({
         if (typeof repository.cancelJobForTenant !== "function") {
           return json(res, 503, { error: "not_ready", requestId }, requestId);
         }
-        const cancelled = await repository.cancelJobForTenant(jobId, principal.tenantId);
+        const cancelled = await repository.cancelJobForTenant(jobId, principal.tenantId, principal.subject, requestId);
         if (!cancelled) return json(res, 404, { error: "not_found", requestId }, requestId);
         return json(res, 200, { status: "cancelled" }, requestId);
       }
