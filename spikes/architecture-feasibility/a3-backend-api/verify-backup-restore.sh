@@ -46,8 +46,14 @@ RETURNING id AS replay_event_id \gset
 UPDATE public.outbox_events
    SET attempts = 3, replay_count = 1, last_error_code = 'restore.test', dead_lettered_at = now()
  WHERE id = :'replay_event_id';
-INSERT INTO public.outbox_replay_audit(tenant_id, event_id, replay_number, actor_id, request_id)
-VALUES (:'tenant_id', :'replay_event_id', 1, 'restore-actor', :'request_id');
+INSERT INTO public.outbox_replay_audit(
+  tenant_id, event_id, replay_number, actor_id,
+  previous_attempts, previous_error_code, previous_dead_lettered_at, request_id
+)
+SELECT tenant_id, id, 1, 'restore-actor',
+       attempts, last_error_code, dead_lettered_at, :'request_id'
+  FROM public.outbox_events
+ WHERE id = :'replay_event_id';
 SQL
 
 # Custom format is compressed and supports pg_restore inspection and selective
