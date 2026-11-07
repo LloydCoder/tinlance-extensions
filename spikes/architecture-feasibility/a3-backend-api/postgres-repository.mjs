@@ -92,7 +92,7 @@ export function createPostgresRepository({ pool }) {
 
     async replayDeadLetterForTenant(eventId, tenantId, actorId, requestId) {
       if (typeof eventId !== "string" || !EVENT_ID_PATTERN.test(eventId)) return false;
-      if (typeof actorId !== "string" || actorId.length < 1 || actorId.length > 256 || /[\\u0000-\\u001f\\u007f]/.test(actorId)) return false;
+      if (typeof actorId !== "string" || actorId.length < 1 || actorId.length > 256 || /[\u0000-\u001f\u007f]/.test(actorId)) return false;
       if (typeof requestId !== "string" || !EVENT_ID_PATTERN.test(requestId)) return false;
 
       return withTenantTransaction(tenantId, async (client) => {
