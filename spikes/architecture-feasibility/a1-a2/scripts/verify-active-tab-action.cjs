@@ -81,7 +81,11 @@ async function waitForActionPopup(context, extensionId, timeoutMs = 10000) {
     assert.ok(windowIds.length > 0, "the headed Chromium fixture window must be discoverable through X11");
 
     execFileSync("xdotool", ["windowfocus", "--sync", windowIds[0]]);
-    execFileSync("xdotool", ["key", "--clearmodifiers", "ctrl+shift+y"]);
+    const focusedWindow = execFileSync("xdotool", ["getwindowfocus", "getwindowname"], { encoding: "utf8" }).trim();
+    console.log(JSON.stringify({ actionShortcut: shortcut, windowId: windowIds[0], focusedWindow }));
+    execFileSync("xdotool", ["key", "--clearmodifiers", "--delay", "100", "ctrl+shift+y"]);
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    console.log(JSON.stringify({ pagesAfterActionShortcut: context.pages().map((candidate) => candidate.url()) }));
 
     const popup = await waitForActionPopup(context, extensionId);
     await popup.locator("#inspect").click();
