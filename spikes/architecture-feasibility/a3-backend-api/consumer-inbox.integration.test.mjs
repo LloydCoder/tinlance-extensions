@@ -86,6 +86,10 @@ test("durable consumer inbox deduplicates concurrent deliveries within tenant tr
       try {
         await beginTenantTransaction(rolledBack, tenantA);
         assert.equal(await acceptEvent(rolledBack, "rollback.consumer", rollbackEventId), true);
+        await rolledBack.query(
+          "INSERT INTO public.tenant_records(id, tenant_id, payload) VALUES ($1, $2, $3::jsonb)",
+          [`consumer-effect-${rollbackEventId}`, tenantA, JSON.stringify({ eventId: rollbackEventId })]
+        );
         await rolledBack.query("ROLLBACK");
       } finally {
         rolledBack.release();
@@ -95,9 +99,27 @@ test("durable consumer inbox deduplicates concurrent deliveries within tenant tr
       try {
         await beginTenantTransaction(retry, tenantA);
         assert.equal(await acceptEvent(retry, "rollback.consumer", rollbackEventId), true);
+        await retry.query(
+          "INSERT INTO public.tenant_records(id, tenant_id, payload) VALUES ($1, $2, $3::jsonb)",
+          [`consumer-effect-${rollbackEventId}`, tenantA, JSON.stringify({ eventId: rollbackEventId })]
+        );
         await retry.query("COMMIT");
       } finally {
         retry.release();
+      }
+    });
+
+    await t.test("same idempotency key with a different payload is rejected", async () => {
+      const client = await pool.connect();
+      try {
+        await beginTenantTransaction(client, tenantA);
+        await assert.rejects(
+          acceptEvent(client, "test.receiver", eventId, { kind: "tampered.event" }),
+          /idempotency key payload mismatch/
+        );
+        await client.query("ROLLBACK");
+      } finally {
+        client.release();
       }
     });
 
