@@ -58,15 +58,27 @@ BEGIN
   END IF;
 END $$;
 
--- A tenant cannot publish another tenant's event, even if it knows its ID/token.
-DO $$
+-- Obtain a real lease in the other tenant, then prove the first tenant
+-- cannot publish it even when it supplies the correct event ID and lease token.
+SELECT set_config('app.tenant_id','other-outbox-tenant',false);
+DO $
 DECLARE other_event outbox_events%ROWTYPE;
+BEGIN
+  SELECT * INTO other_event FROM claim_outbox_events(60,10);
+  IF other_event.id IS NULL OR other_event.tenant_id <> 'other-outbox-tenant' THEN
+    RAISE EXCEPTION 'other tenant fixture could not claim its own event';
+  END IF;
+  CREATE TEMP TABLE other_outbox_lease AS
+    SELECT other_event.id AS id, other_event.lease_token AS lease_token;
+END $;
+SELECT set_config('app.tenant_id','outbox-tenant',false);
+DO $
+DECLARE other_lease record;
         published boolean;
 BEGIN
-  SELECT * INTO other_event FROM outbox_events
-   WHERE tenant_id='other-outbox-tenant' AND event_type='test.event';
-  published := mark_outbox_published(other_event.id, gen_random_uuid());
+  SELECT * INTO other_lease FROM other_outbox_lease;
+  published := mark_outbox_published(other_lease.id, other_lease.lease_token);
   IF published THEN RAISE EXCEPTION 'cross-tenant outbox publish was accepted'; END IF;
-END $$;
+END $;
 
 \echo 'A3 tenant-bound transactional outbox claim/reclaim/publish checks passed'
