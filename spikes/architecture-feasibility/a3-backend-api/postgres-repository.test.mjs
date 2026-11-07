@@ -131,6 +131,6 @@ test("invalid replay audit identities are rejected before acquiring a connection
 
   assert.equal(await repository.replayDeadLetterForTenant(eventId, "tenant-a", "operator-42", "invalid"), false);
   assert.equal(await repository.replayDeadLetterForTenant(eventId, "tenant-a", "", requestId), false);
-  assert.equal(await repository.replayDeadLetterForTenant(eventId, "tenant-a", "operator\\nforged", requestId), false);
+  assert.equal(await repository.replayDeadLetterForTenant(eventId, "tenant-a", "operator\nforged", requestId), false);
   assert.equal(connectionAttempts, 0);
 });
