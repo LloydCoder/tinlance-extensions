@@ -6,7 +6,8 @@ export default defineConfig({
     description: "Validates a user-initiated active-tab script capability with no persistent host access.",
     permissions: ["activeTab", "scripting"],
     commands: {
-      _execute_action: {
+      "inspect-active-tab": {
+        description: "Inspect the active tab after an explicit keyboard action.",
         suggested_key: {
           default: "Alt+Shift+Y",
           mac: "Command+Shift+Y"
