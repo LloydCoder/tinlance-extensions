@@ -54,9 +54,11 @@ if [[ "$worker_a_id" == "$worker_b_id" ]]; then
 fi
 
 remaining="$(psql "$DATABASE_URL" -X -qAt -v ON_ERROR_STOP=1 <<SQL
+BEGIN;
 SET ROLE tinlance_app_runtime;
 SELECT set_config('app.tenant_id', '$tenant_id', true);
 SELECT count(*) FROM claim_next_job(60);
+COMMIT;
 SQL
 )"
 remaining="$(printf '%s\n' "$remaining" | grep -E '^[0-9]+$' | tail -n 1)"
