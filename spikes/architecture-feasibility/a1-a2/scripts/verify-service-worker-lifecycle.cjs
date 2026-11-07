@@ -4,7 +4,6 @@ const path = require("node:path");
 
 const root = path.resolve(__dirname, "..");
 const extensionPath = path.join(root, "apps", "extension-readonly", ".output", "chrome-mv3");
-const extensionName = "Tinlance Read-only Browser Spike";
 const messageType = "tinlance:a2-lifecycle-probe";
 
 async function waitForTargetState(cdp, predicate, expected, timeoutMs = 5000) {
@@ -44,7 +43,7 @@ async function waitForTargetState(cdp, predicate, expected, timeoutMs = 5000) {
       return chrome.runtime.sendMessage({ type });
     }, messageType);
     assert.equal(first?.ok, true, "the first runtime message must reach the extension worker");
-    assert.equal(typeof first.startedAt, "number");
+    assert.equal(typeof first.workerInstanceId, "string");
 
     cdp = await context.browser().newBrowserCDPSession();
     const workerTarget = (await cdp.send("Target.getTargets")).targetInfos.find((target) =>
@@ -68,10 +67,10 @@ async function waitForTargetState(cdp, predicate, expected, timeoutMs = 5000) {
     await restartedEvent;
 
     assert.equal(second?.ok, true, "a message event must wake the terminated worker");
-    assert.equal(typeof second.startedAt, "number");
+    assert.equal(typeof second.workerInstanceId, "string");
     assert.notEqual(
-      second.startedAt,
-      first.startedAt,
+      second.workerInstanceId,
+      first.workerInstanceId,
       "the restarted worker must have a fresh global initialization timestamp"
     );
 
@@ -85,9 +84,9 @@ async function waitForTargetState(cdp, predicate, expected, timeoutMs = 5000) {
     console.log(JSON.stringify({
       case: "chromium-mv3-service-worker-restart",
       extensionId,
-      firstWorkerStartedAt: first.startedAt,
-      restartedWorkerStartedAt: second.startedAt,
-      workerRestarted: second.startedAt !== first.startedAt
+      firstWorkerInstanceId: first.workerInstanceId,
+      restartedWorkerInstanceId: second.workerInstanceId,
+      workerRestarted: second.workerInstanceId !== first.workerInstanceId
     }));
   } finally {
     if (cdp) await cdp.detach();
