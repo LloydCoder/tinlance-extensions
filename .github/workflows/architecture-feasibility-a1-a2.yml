@@ -179,6 +179,9 @@ jobs:
           - name: Brave Stable
             browser: brave
             binary: /usr/bin/brave-browser
+          - name: Opera Stable
+            browser: opera
+            binary: /usr/bin/opera
     steps:
       - name: Check out source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -205,6 +208,14 @@ jobs:
           echo "deb [arch=amd64 signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg] https://brave-browser-apt-release.s3.brave.com/ stable main" | sudo tee /etc/apt/sources.list.d/brave-browser-release.list
           sudo apt-get update
           sudo apt-get install -y brave-browser
+      - name: Install Opera Stable
+        if: matrix.browser == 'opera'
+        run: |
+          set -Eeuo pipefail
+          curl --fail --silent --show-error --location https://deb.opera.com/archive.key | gpg --dearmor | sudo tee /usr/share/keyrings/opera-archive-keyring.gpg >/dev/null
+          echo "deb [arch=amd64 signed-by=/usr/share/keyrings/opera-archive-keyring.gpg] https://deb.opera.com/opera-stable/ stable non-free" | sudo tee /etc/apt/sources.list.d/opera-stable.list
+          sudo apt-get update
+          sudo apt-get install -y opera-stable
       - name: Install X11 runtime dependencies
         run: sudo apt-get install -y xdotool openbox
       - name: Download permission-sensitive MV3 extension
@@ -222,54 +233,3 @@ jobs:
           export NODE_PATH="$(npm root --global)"
           "${{ matrix.binary }}" --version
           xvfb-run -a bash -lc 'openbox --sm-disable >/tmp/openbox-derived-browser.log 2>&1 & sleep 1; node spikes/architecture-feasibility/a1-a2/scripts/verify-derived-chromium-browser.cjs'
-
-  opera-runtime:
-    name: A2 Opera Stable MV3 permission runtime
-    needs: toolchain-and-browser-build
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-    steps:
-      - name: Check out source
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-      - name: Install Opera Stable
-        run: |
-          set -Eeuo pipefail
-          curl --fail --silent --show-error --location https://deb.opera.com/archive.key | gpg --dearmor | sudo tee /usr/share/keyrings/opera-archive-keyring.gpg >/dev/null
-          echo "deb [arch=amd64 signed-by=/usr/share/keyrings/opera-archive-keyring.gpg] https://deb.opera.com/opera-stable/ stable non-free" | sudo tee /etc/apt/sources.list.d/opera-stable.list
-          sudo apt-get update
-          sudo apt-get install -y opera-stable
-      - name: Install X11 and Python runtime dependencies
-        run: sudo apt-get install -y xdotool openbox unzip
-      - name: Download permission-sensitive MV3 extension
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
-        with:
-          name: chromium-permission-sensitive-extension
-          path: ${{ runner.temp }}/chromium-permission-sensitive-extension
-      - name: Install pinned OperaDriver with checksum verification
-        id: install-operadriver
-        run: |
-          set -Eeuo pipefail
-          mkdir -p "$RUNNER_TEMP/operadriver-bin"
-          curl --fail --silent --show-error --location \
-            "https://github.com/operasoftware/operachromiumdriver/releases/download/v.155.0.8059.85/operadriver_linux64.zip" \
-            --output "$RUNNER_TEMP/operadriver-v155.0.8059.85-linux64.zip"
-          echo "e0687a1cdd3f2349e5bed716362856f43109f6306e696f3156bc7b98ec73f12d  $RUNNER_TEMP/operadriver-v155.0.8059.85-linux64.zip" | sha256sum --check -
-          unzip -q "$RUNNER_TEMP/operadriver-v155.0.8059.85-linux64.zip" -d "$RUNNER_TEMP/operadriver-bin"
-          driver_path="$(find "$RUNNER_TEMP/operadriver-bin" -type f -name operadriver -print -quit)"
-          test -n "$driver_path"
-          chmod 0755 "$driver_path"
-          echo "path=$driver_path" >> "$GITHUB_OUTPUT"
-      - name: Install pinned Selenium runtime
-        run: |
-          python3 -m venv "$RUNNER_TEMP/opera-test-venv"
-          "$RUNNER_TEMP/opera-test-venv/bin/pip" install --disable-pip-version-check --no-cache-dir selenium==4.52.0
-      - name: Verify Opera MV3 activeTab keyboard action
-        env:
-          OPERA_BINARY: /usr/bin/opera
-          OPERADRIVER_BINARY: ${{ steps.install-operadriver.outputs.path }}
-          EXTENSION_PATH: ${{ runner.temp }}/chromium-permission-sensitive-extension
-        run: |
-          set -Eeuo pipefail
-          opera --version
-          "${{ steps.install-operadriver.outputs.path }}" --version
-          xvfb-run -a bash -lc 'openbox --sm-disable >/tmp/openbox-opera.log 2>&1 & sleep 1; "$RUNNER_TEMP/opera-test-venv/bin/python" spikes/architecture-feasibility/a1-a2/scripts/verify-opera-active-tab-action.py'
