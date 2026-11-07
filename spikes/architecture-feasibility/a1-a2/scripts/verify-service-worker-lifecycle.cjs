@@ -60,18 +60,16 @@ async function waitForTargetState(cdp, predicate, expected, timeoutMs = 5000) {
       false
     );
 
-    const restartedEvent = context.waitForEvent("serviceworker", { timeout: 10000 });
     const second = await popup.evaluate(async (type) => {
       return chrome.runtime.sendMessage({ type });
     }, messageType);
-    await restartedEvent;
 
     assert.equal(second?.ok, true, "a message event must wake the terminated worker");
     assert.equal(typeof second.workerInstanceId, "string");
     assert.notEqual(
       second.workerInstanceId,
       first.workerInstanceId,
-      "the restarted worker must have a fresh global initialization timestamp"
+      "the restarted worker must have a fresh per-instance identity"
     );
 
     await waitForTargetState(
