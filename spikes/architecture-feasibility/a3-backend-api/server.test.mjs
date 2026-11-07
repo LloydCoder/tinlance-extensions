@@ -255,3 +255,14 @@ test("operational replay endpoints reject request bodies", async () => {
     assert.equal(calls.length, 0);
   });
 });
+
+test("dead-letter replay authorization defaults to deny", async () => {
+  await withServer(async (base) => {
+    const response = await fetch(`${base}/v1/outbox/dead-letters/${deadLetterEventId}/replay`, {
+      method: "POST",
+      headers: { authorization: "Bearer valid-test-token-0001" }
+    });
+    assert.equal(response.status, 403);
+    assert.equal((await response.json()).error, "forbidden");
+  });
+});
