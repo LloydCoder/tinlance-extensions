@@ -9,6 +9,7 @@ suffix="$(openssl rand -hex 6)"
 tenant_id="restore-${suffix}"
 record_id="restore-${suffix}"
 event_id="00000000-0000-4000-8000-${suffix}"
+request_id="20000000-0000-4000-8000-${suffix}"
 restore_db="tinlance_restore_${suffix}"
 archive="${work_dir}/database.dump"
 
@@ -30,12 +31,23 @@ trap cleanup EXIT
 
 # Seed a unique tenant-owned row so the restore assertion proves data recovery,
 # not merely that pg_restore returned a zero exit code.
-psql "$ADMIN_DATABASE_URL" -v ON_ERROR_STOP=1 -v tenant_id="$tenant_id" -v record_id="$record_id" -v event_id="$event_id" <<'SQL'
+psql "$ADMIN_DATABASE_URL" -v ON_ERROR_STOP=1 -v tenant_id="$tenant_id" -v record_id="$record_id" -v event_id="$event_id" -v request_id="$request_id" <<'SQL'
 INSERT INTO public.tenants(id) VALUES (:'tenant_id');
 INSERT INTO public.tenant_records(id, tenant_id, payload)
 VALUES (:'record_id', :'tenant_id', '{"restore":"verified"}'::jsonb);
 INSERT INTO public.consumer_inbox(tenant_id, consumer_name, event_id, payload)
 VALUES (:'tenant_id', 'restore.receiver', :'event_id', '{"restore":"inbox"}'::jsonb);
+INSERT INTO public.jobs(tenant_id, idempotency_key, job_type)
+VALUES (:'tenant_id', 'restore-job-' || :'tenant_id', 'restore.test')
+RETURNING id AS job_id \gset
+INSERT INTO public.outbox_events(tenant_id, aggregate_id, event_type, payload)
+VALUES (:'tenant_id', :'job_id', 'restore.dead-letter', '{"restore":"replay"}'::jsonb)
+RETURNING id AS replay_event_id \gset
+UPDATE public.outbox_events
+   SET attempts = 3, replay_count = 1, last_error_code = 'restore.test', dead_lettered_at = now()
+ WHERE id = :'replay_event_id';
+INSERT INTO public.outbox_replay_audit(tenant_id, event_id, replay_number, actor_id, request_id)
+VALUES (:'tenant_id', :'replay_event_id', 1, 'restore-actor', :'request_id');
 SQL
 
 # Custom format is compressed and supports pg_restore inspection and selective
@@ -45,6 +57,7 @@ test -s "$archive"
 pg_restore --list "$archive" > "${work_dir}/toc.list"
 grep -q "tenant_records" "${work_dir}/toc.list"
 grep -q "consumer_inbox" "${work_dir}/toc.list"
+grep -q "outbox_replay_audit" "${work_dir}/toc.list"
 
 createdb --maintenance-db="$ADMIN_DATABASE_URL" --template=template0 "$restore_db"
 pg_restore --exit-on-error --no-owner --dbname="$restore_admin_url" "$archive"
@@ -73,11 +86,12 @@ WHERE proname IN (
   'claim_outbox_events',
   'renew_outbox_lease',
   'fail_outbox_event',
-  'accept_consumer_event'
+  'accept_consumer_event',
+  'replay_dead_letter_event'
 );
 SQL
 )"
-if [[ "$restored_functions" -lt "6" ]]; then
+if [[ "$restored_functions" -lt "7" ]]; then
   echo "expected all worker/outbox/cancellation functions after restore, found: $restored_functions" >&2
   exit 1
 fi
@@ -85,13 +99,13 @@ fi
 forced_rls_tables="$(psql "$restore_admin_url" -v ON_ERROR_STOP=1 -At <<'SQL'
 SELECT count(*) FROM pg_class
 WHERE relkind = 'r'
-  AND relname IN ('tenant_records', 'jobs', 'outbox_events', 'consumer_inbox')
+  AND relname IN ('tenant_records', 'jobs', 'outbox_events', 'consumer_inbox', 'outbox_replay_audit')
   AND relrowsecurity
   AND relforcerowsecurity;
 SQL
 )"
-if [[ "$forced_rls_tables" != "4" ]]; then
-  echo "expected forced RLS on all four tenant tables after restore, found: $forced_rls_tables" >&2
+if [[ "$forced_rls_tables" != "5" ]]; then
+  echo "expected forced RLS on all five tenant tables after restore, found: $forced_rls_tables" >&2
   exit 1
 fi
 
@@ -112,8 +126,12 @@ BEGIN
   IF visible_count <> 1 THEN
     RAISE EXCEPTION 'restored application login did not observe exactly one inbox event: %', visible_count;
   END IF;
+  SELECT count(*) INTO visible_count FROM public.outbox_replay_audit;
+  IF visible_count <> 1 THEN
+    RAISE EXCEPTION 'restored application login did not observe exactly one replay audit row: %', visible_count;
+  END IF;
 END $$;
 ROLLBACK;
 SQL
 
-echo "PostgreSQL custom-format backup and fresh-database restore passed; tenant RLS, application login, worker, outbox, consumer inbox and cancellation contracts were restored."
+echo "PostgreSQL custom-format backup and fresh-database restore passed; tenant RLS, application login, worker, outbox, consumer inbox, replay audit and cancellation contracts were restored."
