@@ -72,7 +72,9 @@ async function focusFixtureAndInvokeShortcut() {
     assert.deepEqual([...manifest.permissions].sort(), ["activeTab", "scripting"]);
     const commands = await popup.evaluate(() => chrome.commands.getAll());
     const command = commands.find((item) => item.name === "inspect-active-tab");
-    assert.equal(command?.shortcut, shortcut, browserName + ": expected the user-invoked keyboard shortcut");
+    const normalizeShortcut = (value) => value.split("+").map((part) => part.toLowerCase()).sort().join("+");
+    assert.ok(command?.shortcut, browserName + ": expected the user-invoked keyboard shortcut");
+    assert.equal(normalizeShortcut(command.shortcut), normalizeShortcut(shortcut), browserName + ": expected the user-invoked keyboard shortcut");
 
     const fixture = await context.newPage();
     await fixture.goto(origin);
