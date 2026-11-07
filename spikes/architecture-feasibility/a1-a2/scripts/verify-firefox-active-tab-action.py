@@ -126,9 +126,11 @@ def main() -> int:
         popup_handle = driver.current_window_handle
         driver.get(f"moz-extension://{addon_uuid}/popup.html")
 
-        command = driver.execute_script(
-            "return browser.commands.getAll().then(items => "
-            "items.find(item => item.name === 'inspect-active-tab'))"
+        command = driver.execute_async_script(
+            "const done = arguments[arguments.length - 1]; "
+            "browser.commands.getAll().then(items => "
+            "done(items.find(item => item.name === 'inspect-active-tab') || null))"
+            ".catch(error => done({ error: String(error) }));"
         )
         if not command or command.get("shortcut") != "Alt+Shift+Y":
             raise AssertionError(f"Firefox did not register the expected shortcut: {command!r}")
