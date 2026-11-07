@@ -36,6 +36,9 @@ for (const target of targets) {
 
       assert.equal(manifest.manifest_version, target.manifestVersion);
       assert.deepEqual([...manifest.permissions].sort(), [...item.expected].sort());
+      if (item.name === "permission-sensitive") {
+        assert.equal(manifest.commands?._execute_action?.suggested_key?.default, "Ctrl+Shift+Y");
+      }
       assert.equal(manifest.host_permissions, undefined);
       assert.equal(manifest.optional_host_permissions, undefined);
       assert.equal(manifest.content_scripts, undefined);
