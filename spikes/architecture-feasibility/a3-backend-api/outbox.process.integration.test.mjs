@@ -60,7 +60,6 @@ test("outbox publisher delivers at least once with idempotency, retries, dead le
   const tenantId = `outbox-process-${suffix}`;
 
   try {
-    await pool.query("CREATE TABLE IF NOT EXISTS outbox_test_receipts (tenant_id text NOT NULL, idempotency_key text NOT NULL, event_id uuid NOT NULL, PRIMARY KEY (tenant_id, idempotency_key))");
     await pool.query("INSERT INTO tenants(id) VALUES ($1)", [tenantId]);
 
     await t.test("crash after external delivery is retried with the same idempotency key", async () => {
@@ -73,6 +72,10 @@ test("outbox publisher delivers at least once with idempotency, retries, dead le
       assert.equal(afterCrash.rows[0].published_at, null);
       assert.equal(afterCrash.rows[0].attempts, 1);
       assert.ok(afterCrash.rows[0].lease_token);
+      const deliveredInbox = await pool.query("SELECT count(*)::int AS count FROM consumer_inbox WHERE tenant_id = $1 AND consumer_name = $2 AND event_id = $3", [tenantId, "test.receiver", eventId]);
+      const deliveredEffect = await pool.query("SELECT count(*)::int AS count FROM tenant_records WHERE tenant_id = $1 AND id = $2", [tenantId, `consumer-effect-${eventId}`]);
+      assert.equal(deliveredInbox.rows[0].count, 1);
+      assert.equal(deliveredEffect.rows[0].count, 1);
 
       await pool.query("UPDATE outbox_events SET lease_expires_at = now() - interval '1 second' WHERE id = $1", [eventId]);
       const restarted = await runChild("complete", tenantId);
@@ -82,8 +85,10 @@ test("outbox publisher delivers at least once with idempotency, retries, dead le
       const event = await pool.query("SELECT published_at, attempts FROM outbox_events WHERE id = $1", [eventId]);
       assert.ok(event.rows[0].published_at);
       assert.equal(event.rows[0].attempts, 2);
-      const receipts = await pool.query("SELECT count(*)::int AS count FROM outbox_test_receipts WHERE tenant_id = $1 AND event_id = $2", [tenantId, eventId]);
-      assert.equal(receipts.rows[0].count, 1);
+      const inbox = await pool.query("SELECT count(*)::int AS count FROM consumer_inbox WHERE tenant_id = $1 AND consumer_name = $2 AND event_id = $3", [tenantId, "test.receiver", eventId]);
+      const effects = await pool.query("SELECT count(*)::int AS count FROM tenant_records WHERE tenant_id = $1 AND id = $2", [tenantId, `consumer-effect-${eventId}`]);
+      assert.equal(inbox.rows[0].count, 1);
+      assert.equal(effects.rows[0].count, 1);
     });
 
     await t.test("failed delivery is retried then dead-lettered at the configured attempt ceiling", async () => {
@@ -103,6 +108,10 @@ test("outbox publisher delivers at least once with idempotency, retries, dead le
       assert.equal(dead.rows[0].attempts, 2);
       assert.ok(dead.rows[0].dead_lettered_at);
       assert.equal(dead.rows[0].published_at, null);
+      const noInbox = await pool.query("SELECT count(*)::int AS count FROM consumer_inbox WHERE tenant_id = $1 AND consumer_name = $2 AND event_id = $3", [tenantId, "test.receiver", eventId]);
+      const noEffect = await pool.query("SELECT count(*)::int AS count FROM tenant_records WHERE tenant_id = $1 AND id = $2", [tenantId, `consumer-effect-${eventId}`]);
+      assert.equal(noInbox.rows[0].count, 0);
+      assert.equal(noEffect.rows[0].count, 0);
     });
 
     await t.test("lease heartbeat preserves ownership during a long external delivery", async () => {
@@ -113,9 +122,12 @@ test("outbox publisher delivers at least once with idempotency, retries, dead le
       const event = await pool.query("SELECT published_at, attempts FROM outbox_events WHERE id = $1", [eventId]);
       assert.ok(event.rows[0].published_at);
       assert.equal(event.rows[0].attempts, 1);
+      const inbox = await pool.query("SELECT count(*)::int AS count FROM consumer_inbox WHERE tenant_id = $1 AND consumer_name = $2 AND event_id = $3", [tenantId, "test.receiver", eventId]);
+      const effects = await pool.query("SELECT count(*)::int AS count FROM tenant_records WHERE tenant_id = $1 AND id = $2", [tenantId, `consumer-effect-${eventId}`]);
+      assert.equal(inbox.rows[0].count, 1);
+      assert.equal(effects.rows[0].count, 1);
     });
   } finally {
-    await pool.query("DELETE FROM outbox_test_receipts WHERE tenant_id = $1", [tenantId]);
     await pool.query("DELETE FROM tenants WHERE id = $1", [tenantId]);
     await pool.end();
   }
