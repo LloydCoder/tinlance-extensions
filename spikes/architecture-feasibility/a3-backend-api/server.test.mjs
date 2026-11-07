@@ -160,3 +160,82 @@ test("job cancellation fails closed when the authorization policy denies the pri
     assert.equal(calls.length, 0);
   }, true, false);
 });
+
+const deadLetterEventId = "c4f6d9e2-1c3b-4a5d-8e7f-9012bc345679";
+
+async function withReplayServer(fn, replayResult = true, authorize = true) {
+  const calls = [];
+  const repository = {
+    async findRecordForTenant() { return null; },
+    async replayDeadLetterForTenant(eventId, tenantId, actorId, requestId) {
+      calls.push({ eventId, tenantId, actorId, requestId });
+      return replayResult;
+    }
+  };
+  const server = createApiServer({
+    repository,
+    verifyBearer: async (token) => token === "valid-test-token-0001"
+      ? { subject: "operator-a", tenantId: "tenant-a" }
+      : null,
+    authorizeOutboxReplay: async () => authorize
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address();
+  try { await fn(`http://127.0.0.1:${address.port}`, calls); }
+  finally { await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve())); }
+}
+
+test("authorized dead-letter replay records actor and request correlation", async () => {
+  await withReplayServer(async (base, calls) => {
+    const response = await fetch(`${base}/v1/outbox/dead-letters/${deadLetterEventId}/replay`, {
+      method: "POST",
+      headers: { authorization: "Bearer valid-test-token-0001" }
+    });
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), { status: "requeued" });
+    assert.deepEqual(calls, [{
+      eventId: deadLetterEventId,
+      tenantId: "tenant-a",
+      actorId: "operator-a",
+      requestId: response.headers.get("x-request-id")
+    }]);
+  });
+});
+
+test("dead-letter replay fails closed when the authorization policy denies", async () => {
+  await withReplayServer(async (base, calls) => {
+    const response = await fetch(`${base}/v1/outbox/dead-letters/${deadLetterEventId}/replay`, {
+      method: "POST",
+      headers: { authorization: "Bearer valid-test-token-0001" }
+    });
+    assert.equal(response.status, 403);
+    assert.equal((await response.json()).error, "forbidden");
+    assert.equal(calls.length, 0);
+  }, true, false);
+});
+
+test("missing and cross-tenant dead letters share the same replay response", async () => {
+  await withReplayServer(async (base, calls) => {
+    const response = await fetch(`${base}/v1/outbox/dead-letters/${deadLetterEventId}/replay`, {
+      method: "POST",
+      headers: { authorization: "Bearer valid-test-token-0001" }
+    });
+    assert.equal(response.status, 404);
+    assert.equal((await response.json()).error, "not_found");
+    assert.equal(calls.length, 1);
+  }, false);
+});
+
+test("dead-letter replay requires authentication and POST", async () => {
+  await withReplayServer(async (base, calls) => {
+    const path = `${base}/v1/outbox/dead-letters/${deadLetterEventId}/replay`;
+    assert.equal((await fetch(path, { method: "POST" })).status, 401);
+    const unsupported = await fetch(path, {
+      method: "DELETE",
+      headers: { authorization: "Bearer valid-test-token-0001" }
+    });
+    assert.equal(unsupported.status, 405);
+    assert.equal(unsupported.headers.get("allow"), "POST");
+    assert.equal(calls.length, 0);
+  });
+});
