@@ -8,7 +8,7 @@ const root = path.resolve(__dirname, "..");
 const extensionPath = path.join(root, "apps", "extension-permission-sensitive", ".output", "chrome-mv3");
 const extensionName = "Tinlance Permission-sensitive Browser Spike";
 const fixtureTitle = "Tinlance A2 ActiveTab Permission Fixture";
-const shortcut = "Ctrl+Shift+Y";
+const shortcut = "Alt+Shift+Y";
 
 async function discoverExtensionId(context) {
   const diagnostics = await context.newPage();
@@ -96,7 +96,7 @@ async function waitForActionPopup(context, extensionId, timeoutMs = 10000) {
     execFileSync("xdotool", ["windowfocus", "--sync", windowIds[0]]);
     const focusedWindow = execFileSync("xdotool", ["getwindowfocus", "getwindowname"], { encoding: "utf8" }).trim();
     console.log(JSON.stringify({ actionShortcut: shortcut, windowId: windowIds[0], focusedWindow }));
-    execFileSync("xdotool", ["key", "--clearmodifiers", "--delay", "100", "ctrl+shift+y"]);
+    execFileSync("xdotool", ["key", "--clearmodifiers", "--delay", "100", "alt+shift+y"]);
     await new Promise((resolve) => setTimeout(resolve, 500));
     const shortcutEvents = await page.evaluate(() => window.__tinlanceShortcutEvents);
     console.log(JSON.stringify({
