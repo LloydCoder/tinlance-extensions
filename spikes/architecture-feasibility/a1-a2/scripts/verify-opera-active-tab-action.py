@@ -9,7 +9,6 @@ import shutil
 import subprocess
 import sys
 import threading
-import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -103,7 +102,7 @@ def main() -> int:
         if not command or command.get("shortcut") != SHORTCUT:
             raise AssertionError(f"Opera did not register the expected shortcut: {command!r}")
 
-        fixture_handle = driver.switch_to.new_window("tab")
+        driver.switch_to.new_window("tab")
         driver.get(origin)
         if driver.title != FIXTURE_TITLE:
             raise AssertionError(f"Unexpected Opera fixture title: {driver.title!r}")
