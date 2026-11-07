@@ -139,7 +139,7 @@ The original 25-phase numbering and first-seven product order are retained. This
 | 2 | Product requirements and validation | Reviewed briefs for 26 products, discovery, permissions/data reviews, prioritization | **Documentary baseline complete / open**; substantive evidence gates outstanding |
 | 3 | Architecture and ADR approval | Target architecture, product/service boundaries, threat model, dependency graph, approved ADR set | **ADRs accepted; A1 pass, A2 partial, A3 partial, A4–A7 open**; implementation blocker |
 | 4 | Monorepo and developer platform | Reproducible workspace, pinned toolchain, local setup, scripts, clean checkout build | Not started |
-| 5 | CI/CD and repository governance | Required checks, branch rules, dependency automation, provenance, release permissions | Baseline exists; application pipeline not implemented |
+| 5 | CI/CD and repository governance | Required checks, branch rules, dependency automation, provenance, release permissions | Repository Quality and A1–A2 workflows exist; `main` is currently unprotected with no repository rulesets; application pipeline not implemented |
 | 6 | Design system and UX foundation | Tokens, components, accessibility baseline, extension patterns, web portal UX | Not started |
 | 7 | Browser SDK and compatibility foundation | Browser adapters, messaging, storage, permissions, compatibility harness | Not started |
 | 8 | Identity, authentication and tenancy | Accounts, sessions, organizations, tenant isolation, scopes and authorization primitives | Not started |
