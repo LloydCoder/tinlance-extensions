@@ -15,9 +15,14 @@ assert.ok(browserBinary && fs.existsSync(browserBinary), "BROWSER_BINARY must po
 assert.ok(extensionPath && fs.existsSync(extensionPath), "EXTENSION_PATH must point to the built unpacked MV3 extension");
 
 async function focusFixtureAndInvokeShortcut() {
-  let ids = execFileSync("xdotool", [
-    "search", "--onlyvisible", "--name", fixtureTitle
-  ], { encoding: "utf8" }).trim().split("\n").filter(Boolean);
+  let ids = [];
+  try {
+    ids = execFileSync("xdotool", [
+      "search", "--onlyvisible", "--name", fixtureTitle
+    ], { encoding: "utf8" }).trim().split("\n").filter(Boolean);
+  } catch (error) {
+    if (browserName !== "Opera Stable") throw error;
+  }
   if (ids.length === 0 && browserName === "Opera Stable") {
     // Opera's Linux WM title can remain generic instead of following the active
     // tab title. The fixture title was already asserted through WebDriver;
