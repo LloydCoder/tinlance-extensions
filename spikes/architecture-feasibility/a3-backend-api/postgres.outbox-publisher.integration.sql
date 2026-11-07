@@ -61,7 +61,7 @@ END $$;
 -- Obtain a real lease in the other tenant, then prove the first tenant
 -- cannot publish it even when it supplies the correct event ID and lease token.
 SELECT set_config('app.tenant_id','other-outbox-tenant',false);
-DO $
+DO $$
 DECLARE other_event outbox_events%ROWTYPE;
 BEGIN
   SELECT * INTO other_event FROM claim_outbox_events(60,10);
@@ -70,15 +70,15 @@ BEGIN
   END IF;
   INSERT INTO other_outbox_lease(id, lease_token)
   VALUES (other_event.id, other_event.lease_token);
-END $;
+END $$;
 SELECT set_config('app.tenant_id','outbox-tenant',false);
-DO $
+DO $$
 DECLARE other_lease record;
         published boolean;
 BEGIN
   SELECT * INTO other_lease FROM other_outbox_lease;
   published := mark_outbox_published(other_lease.id, other_lease.lease_token);
   IF published THEN RAISE EXCEPTION 'cross-tenant outbox publish was accepted'; END IF;
-END $;
+END $$;
 
 \echo 'A3 tenant-bound transactional outbox claim/reclaim/publish checks passed'
