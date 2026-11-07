@@ -73,6 +73,29 @@ jobs:
         run: |
           export NODE_PATH="$(npm root --global)"
           xvfb-run -a bash -lc 'openbox --sm-disable >/tmp/openbox.log 2>&1 & sleep 1; node scripts/verify-active-tab-action.cjs'
+      - name: Set up Firefox
+        id: setup-firefox
+        uses: browser-actions/setup-firefox@68bf44c713a76eba74dad465d58b0a62d06b4ac5
+        with:
+          firefox-version: latest
+      - name: Set up pinned geckodriver
+        uses: browser-actions/setup-geckodriver@617ad6f7b2f162033adf38138d619be5101af52e
+        with:
+          geckodriver-version: "0.37.1"
+          token: ${{ github.token }}
+      - name: Install pinned Selenium runtime
+        run: |
+          python3 -m venv "$RUNNER_TEMP/firefox-test-venv"
+          "$RUNNER_TEMP/firefox-test-venv/bin/pip" install --disable-pip-version-check --no-cache-dir selenium==4.52.0
+      - name: Package permission-sensitive extension for Firefox
+        run: |
+          set -Eeuo pipefail
+          (cd apps/extension-permission-sensitive/.output/firefox-mv3 && zip -qr "$RUNNER_TEMP/tinlance-permission-sensitive-firefox.xpi" .)
+      - name: Verify Firefox MV3 activeTab keyboard action
+        env:
+          FIREFOX_BINARY: ${{ steps.setup-firefox.outputs.firefox-path }}
+        run: |
+          xvfb-run -a bash -lc 'openbox --sm-disable >/tmp/openbox-firefox.log 2>&1 & sleep 1; "$RUNNER_TEMP/firefox-test-venv/bin/python" scripts/verify-firefox-active-tab-action.py "$RUNNER_TEMP/tinlance-permission-sensitive-firefox.xpi"'
       - name: Publish generated lockfile for review
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
