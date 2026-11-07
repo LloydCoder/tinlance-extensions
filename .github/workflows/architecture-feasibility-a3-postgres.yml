@@ -95,6 +95,10 @@ jobs:
         env:
           PGPASSWORD: postgres
         run: psql "host=127.0.0.1 port=5432 dbname=tinlance_test user=postgres" -v ON_ERROR_STOP=1 -f spikes/architecture-feasibility/a3-backend-api/migrations/008_consumer_inbox.sql
+      - name: Apply audited dead-letter replay migration
+        env:
+          PGPASSWORD: postgres
+        run: psql "host=127.0.0.1 port=5432 dbname=tinlance_test user=postgres" -v ON_ERROR_STOP=1 -f spikes/architecture-feasibility/a3-backend-api/migrations/009_dead_letter_replay_audit.sql
       - name: Provision restricted application login role for integration
         env:
           PGPASSWORD: postgres
@@ -114,6 +118,12 @@ jobs:
           ADMIN_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/tinlance_test
         working-directory: spikes/architecture-feasibility/a3-backend-api
         run: node --test postgres.repository.integration.test.mjs
+      - name: Exercise tenant-authorized dead-letter replay and audit
+        env:
+          DATABASE_URL: postgresql://tinlance_app_login:${{ env.APP_DB_PASSWORD }}@127.0.0.1:5432/tinlance_test
+          ADMIN_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/tinlance_test
+        working-directory: spikes/architecture-feasibility/a3-backend-api
+        run: node --test dead-letter-replay.integration.test.mjs
       - name: Exercise durable consumer inbox idempotency and concurrent delivery
         env:
           DATABASE_URL: postgresql://tinlance_app_login:${{ env.APP_DB_PASSWORD }}@127.0.0.1:5432/tinlance_test
