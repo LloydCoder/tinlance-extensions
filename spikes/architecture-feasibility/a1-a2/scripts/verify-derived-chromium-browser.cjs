@@ -93,6 +93,8 @@ async function focusFixtureAndInvokeShortcut() {
     const manifest = await popup.evaluate(() => chrome.runtime.getManifest());
     assert.equal(manifest.manifest_version, 3);
     assert.deepEqual([...manifest.permissions].sort(), ["activeTab", "scripting"]);
+    assert.deepEqual(manifest.host_permissions ?? [], [], browserName + ": persistent host permissions are not permitted");
+    assert.deepEqual(manifest.optional_host_permissions ?? [], [], browserName + ": optional host permissions are not permitted");
     const commands = await popup.evaluate(() => chrome.commands.getAll());
     const command = commands.find((item) => item.name === "inspect-active-tab");
     const normalizeShortcut = (value) => value.split("+").map((part) => part.toLowerCase()).sort().join("+");
@@ -104,6 +106,21 @@ async function focusFixtureAndInvokeShortcut() {
     assert.equal(await fixture.title(), fixtureTitle);
     await fixture.bringToFront();
     console.log(JSON.stringify({ stage: "fixture-ready", browser: browserName, origin }));
+    const beforeAction = await popup.evaluate(async () => {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (!tab?.id) throw new Error("Active fixture tab ID was unavailable");
+      try {
+        await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          func: () => document.title
+        });
+        return { allowed: true, message: "Script injection unexpectedly succeeded before user action" };
+      } catch (error) {
+        return { allowed: false, message: String(error) };
+      }
+    });
+    assert.equal(beforeAction.allowed, false, browserName + ": activeTab must deny script injection before the user action (" + beforeAction.message + ")");
+    console.log(JSON.stringify({ stage: "pre-action-injection-denied", browser: browserName }));
     await focusFixtureAndInvokeShortcut();
     console.log(JSON.stringify({ stage: "shortcut-sent", browser: browserName }));
 
