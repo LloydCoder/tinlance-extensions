@@ -8,6 +8,9 @@ CREATE TABLE public.outbox_replay_audit (
   event_id uuid NOT NULL REFERENCES public.outbox_events(id) ON DELETE CASCADE,
   replay_number integer NOT NULL CHECK (replay_number > 0),
   actor_id text NOT NULL CHECK (char_length(actor_id) BETWEEN 1 AND 256),
+  previous_attempts integer NOT NULL CHECK (previous_attempts >= 0),
+  previous_error_code text,
+  previous_dead_lettered_at timestamptz NOT NULL,
   request_id uuid NOT NULL,
   replayed_at timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY (tenant_id, event_id, replay_number),
@@ -39,6 +42,9 @@ AS $$
 DECLARE
   v_tenant_id text;
   v_replay_count integer;
+  v_previous_attempts integer;
+  v_previous_error_code text;
+  v_previous_dead_lettered_at timestamptz;
 BEGIN
   v_tenant_id := nullif(current_setting('app.tenant_id', true), '');
   IF v_tenant_id IS NULL THEN
@@ -50,8 +56,8 @@ BEGIN
     RAISE EXCEPTION 'replay audit identity is invalid' USING ERRCODE = '22023';
   END IF;
 
-  SELECT replay_count
-    INTO v_replay_count
+  SELECT replay_count, attempts, last_error_code, dead_lettered_at
+    INTO v_replay_count, v_previous_attempts, v_previous_error_code, v_previous_dead_lettered_at
     FROM public.outbox_events
    WHERE id = p_event_id
      AND tenant_id = v_tenant_id
@@ -82,10 +88,12 @@ BEGIN
   END IF;
 
   INSERT INTO public.outbox_replay_audit (
-    tenant_id, event_id, replay_number, actor_id, request_id
+    tenant_id, event_id, replay_number, actor_id,
+    previous_attempts, previous_error_code, previous_dead_lettered_at, request_id
   )
   VALUES (
-    v_tenant_id, p_event_id, v_replay_count, p_actor_id, p_request_id
+    v_tenant_id, p_event_id, v_replay_count, p_actor_id,
+    v_previous_attempts, v_previous_error_code, v_previous_dead_lettered_at, p_request_id
   );
 
   RETURN true;
