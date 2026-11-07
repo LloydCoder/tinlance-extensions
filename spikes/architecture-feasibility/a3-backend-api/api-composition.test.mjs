@@ -47,6 +47,9 @@ const repository = {
   async cancelJobForTenant(jobId, tenantId) {
     return jobId === "a4f6d9e2-1c3b-4a5d-8e7f-9012bc345678" && tenantId === "tenant-a";
   },
+  async replayDeadLetterForTenant(eventId, tenantId, actorId, requestId) {
+    return eventId === "c4f6d9e2-1c3b-4a5d-8e7f-9012bc345679" && tenantId === "tenant-a" && actorId === "oidc-user-42" && typeof requestId === "string";
+  },
   async findRecordForTenant(id, tenantId) {
     const records = [
       { id: "record-a", tenantId: "tenant-a", value: "alpha" },
