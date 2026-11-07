@@ -18,6 +18,8 @@ test("PostgreSQL API adapter enforces tenant isolation and resets pooled session
   const tenantB = `api-tenant-b-${suffix}`;
   const recordA = `api-record-a-${suffix}`;
   const recordB = `api-record-b-${suffix}`;
+  let jobA;
+  let jobB;
   let server;
 
   try {
@@ -26,13 +28,24 @@ test("PostgreSQL API adapter enforces tenant isolation and resets pooled session
       "INSERT INTO tenant_records(id, tenant_id, payload) VALUES ($1, $2, $3::jsonb), ($4, $5, $6::jsonb)",
       [recordA, tenantA, JSON.stringify({ value: "alpha" }), recordB, tenantB, JSON.stringify({ value: "beta" })]
     );
+    const jobAResult = await adminPool.query(
+      "INSERT INTO jobs(tenant_id, idempotency_key, job_type) VALUES ($1, $2, $3) RETURNING id",
+      [tenantA, `cancel-a-${suffix}`, "test.cancel"]
+    );
+    const jobBResult = await adminPool.query(
+      "INSERT INTO jobs(tenant_id, idempotency_key, job_type) VALUES ($1, $2, $3) RETURNING id",
+      [tenantB, `cancel-b-${suffix}`, "test.cancel"]
+    );
+    jobA = jobAResult.rows[0].id;
+    jobB = jobBResult.rows[0].id;
 
     const repository = createPostgresRepository({ pool });
     server = createApiServer({
       repository,
       verifyBearer: async (token) => token === "postgres-api-test-token-0001"
         ? { subject: "api-test-user", tenantId: tenantA }
-        : null
+        : null,
+      authorizeJobCancellation: async ({ principal }) => principal.subject === "api-test-user"
     });
     await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
     const address = server.address();
@@ -50,6 +63,22 @@ test("PostgreSQL API adapter enforces tenant isolation and resets pooled session
     const otherTenantRecord = await fetch(`${baseUrl}/v1/records/${recordB}`, { headers });
     assert.equal(otherTenantRecord.status, 404);
     assert.equal((await otherTenantRecord.json()).error, "not_found");
+
+    const cancelled = await fetch(`${baseUrl}/v1/jobs/${jobA}/cancel`, { method: "POST", headers });
+    assert.equal(cancelled.status, 200);
+    assert.deepEqual(await cancelled.json(), { status: "cancelled" });
+    const repeatedCancellation = await fetch(`${baseUrl}/v1/jobs/${jobA}/cancel`, { method: "POST", headers });
+    assert.equal(repeatedCancellation.status, 200);
+    assert.deepEqual(await repeatedCancellation.json(), { status: "cancelled" });
+
+    const crossTenantCancellation = await fetch(`${baseUrl}/v1/jobs/${jobB}/cancel`, { method: "POST", headers });
+    assert.equal(crossTenantCancellation.status, 404);
+    assert.equal((await crossTenantCancellation.json()).error, "not_found");
+    const jobStates = await adminPool.query(
+      "SELECT id, status FROM jobs WHERE id = ANY($1::uuid[]) ORDER BY id",
+      [[jobA, jobB]]
+    );
+    assert.deepEqual(jobStates.rows.map((row) => row.status).sort(), ["cancelled", "queued"]);
 
     // PostgreSQL restores a custom GUC to an empty string after SET LOCAL
     // when it was previously unset. Normalize that state to NULL so the

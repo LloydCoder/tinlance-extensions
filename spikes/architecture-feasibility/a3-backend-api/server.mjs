@@ -1,6 +1,8 @@
 import { createServer } from "node:http";
 import { randomUUID } from "node:crypto";
 
+const JOB_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 const json = (res, status, body, requestId) => {
   res.writeHead(status, {
     "content-type": "application/json; charset=utf-8",
@@ -11,9 +13,16 @@ const json = (res, status, body, requestId) => {
   res.end(JSON.stringify(body));
 };
 
-export function createApiServer({ verifyBearer = async () => null, repository }) {
+export function createApiServer({
+  verifyBearer = async () => null,
+  authorizeJobCancellation = async () => false,
+  repository
+}) {
   if (!repository || typeof repository.findRecordForTenant !== "function") {
     throw new TypeError("repository.findRecordForTenant is required");
+  }
+  if (typeof authorizeJobCancellation !== "function") {
+    throw new TypeError("authorizeJobCancellation must be a function");
   }
 
   return createServer(async (req, res) => {
@@ -27,8 +36,11 @@ export function createApiServer({ verifyBearer = async () => null, repository })
         const ready = typeof repository.isReady === "function" ? await repository.isReady() : true;
         return json(res, ready ? 200 : 503, { status: ready ? "ready" : "not_ready" }, requestId);
       }
-      if (req.method !== "GET") {
-        res.setHeader("allow", "GET");
+
+      const cancellationMatch = url.pathname.match(/^\/v1\/jobs\/([0-9a-f-]{36})\/cancel$/i);
+      const isCancellationRoute = Boolean(cancellationMatch && JOB_ID_PATTERN.test(cancellationMatch[1]));
+      if (req.method !== "GET" && !(req.method === "POST" && isCancellationRoute)) {
+        res.setHeader("allow", isCancellationRoute ? "POST" : "GET");
         return json(res, 405, { error: "method_not_allowed", requestId }, requestId);
       }
 
@@ -39,6 +51,20 @@ export function createApiServer({ verifyBearer = async () => null, repository })
       const principal = await verifyBearer(authorization.slice(7));
       if (!principal || typeof principal.subject !== "string" || typeof principal.tenantId !== "string") {
         return json(res, 401, { error: "unauthorized", requestId }, requestId);
+      }
+
+      if (req.method === "POST" && isCancellationRoute) {
+        const jobId = cancellationMatch[1].toLowerCase();
+        const authorized = await authorizeJobCancellation({ principal, jobId, requestId });
+        if (authorized !== true) {
+          return json(res, 403, { error: "forbidden", requestId }, requestId);
+        }
+        if (typeof repository.cancelJobForTenant !== "function") {
+          return json(res, 503, { error: "not_ready", requestId }, requestId);
+        }
+        const cancelled = await repository.cancelJobForTenant(jobId, principal.tenantId);
+        if (!cancelled) return json(res, 404, { error: "not_found", requestId }, requestId);
+        return json(res, 200, { status: "cancelled" }, requestId);
       }
 
       if (url.pathname === "/v1/me") {
