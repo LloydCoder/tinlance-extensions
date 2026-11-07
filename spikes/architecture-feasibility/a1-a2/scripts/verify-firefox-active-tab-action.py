@@ -120,7 +120,8 @@ def main() -> int:
         driver = webdriver.Firefox(options=options, service=service)
         driver.set_window_size(1280, 900)
 
-        addon_id = driver.install_addon(str(xpi), temporary=True)
+        extension = driver.install_web_extension(str(xpi), permanent=False)
+        addon_id = extension.id
         profile = Path(driver.capabilities["moz:profile"])
         addon_uuid = extension_uuid(profile, addon_id)
         popup_handle = driver.current_window_handle
