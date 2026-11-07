@@ -88,7 +88,7 @@ test("invalid job identifiers are rejected before acquiring a database connectio
 
   const requestId = "d4f6d9e2-1c3b-4a5d-8e7f-9012bc345670";
   assert.equal(await repository.cancelJobForTenant("not-a-uuid", "tenant-a", "operator-42", requestId), false);
-  assert.equal(await repository.cancelJobForTenant("a4f6d9e2-1c3b-4a5d-8e7f-9012bc345678", "tenant-a", "operator\\nforged", requestId), false);
+  assert.equal(await repository.cancelJobForTenant("a4f6d9e2-1c3b-4a5d-8e7f-9012bc345678", "tenant-a", "operator\nforged", requestId), false);
   assert.equal(connectionAttempts, 0);
 });
 
