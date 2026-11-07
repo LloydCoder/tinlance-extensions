@@ -5,8 +5,6 @@
 **Audited commit after PR #30:** `f6e34c242dfc7819a44e0940accb1544d1363148`
 **Scope:** Repository tree, consolidated phase plan, Phase 02 evidence ledger, accepted architecture records, PR #30 and exact-head/main GitHub Actions runs.
 **Disposition:** **Programme remains gated. No product implementation phase is authorized by the current evidence.**
-**Scope:** Repository tree, consolidated phase plan, Phase 02 evidence ledger, accepted architecture records, recent pull requests and GitHub Actions runs.
-**Disposition:** **Programme remains gated. No product implementation phase is authorized by the current evidence.**
 
 ## 1. Executive finding
 
@@ -18,11 +16,11 @@ PR #30 merged as `f6e34c242dfc7819a44e0940accb1544d1363148`. Its exact head (`cb
 
 - Default branch: `main`; repository is not archived.
 - Audited commit: `f6e34c242dfc7819a44e0940accb1544d1363148`.
-- Relevant merged changes include PR #23 (SVG brand assets), PR #24 (original PNG branding exports and popup application), PR #25 (isolated A3 backend/API contract spike), and PR #28 (tenant-bound PostgreSQL worker lease/recovery and stale-worker fencing). PR #27's tenant isolation/idempotency/outbox evidence remains part of the baseline.
-- Latest observed main Repository Quality workflow: [run 42015111208](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42015111208), conclusion `success`.
+- Relevant merged changes include PR #23 (SVG brand assets), PR #24 (original PNG branding exports and popup application), PR #25 (isolated A3 backend/API contract spike), PR #28 (tenant-bound PostgreSQL worker lease/recovery and stale-worker fencing), and PR #30 (Chromium MV3 popup/runtime and service-worker restart proof plus Safari Xcode packaging/project validation). PR #27's tenant isolation/idempotency/outbox evidence remains part of the baseline.
+- Latest observed main Repository Quality workflow after PR #30: [run 42367755219](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42367755219), conclusion `success`; A1–A2 main workflow: [run 42367755363](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42367755363), conclusion `success`.
 - PR #28 exact-head checks: [Repository Quality](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42020490026), [A3 API contract](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42020490127), and [PostgreSQL tenant/outbox/worker recovery](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42020489917) — all `success`.
 - The repository tree contains governance documents and isolated `spikes/architecture-feasibility/a1-a2` and `a3-backend-api` projects. It does not contain the planned production `apps/api`, `apps/worker`, `apps/web`, product extension applications, MCP gateway, or production shared packages.
-- The `main` branch protection API reported `protected: false` at audit time. Required branch protection/ruleset enforcement is therefore not evidenced by the branch metadata.
+- The live branch API reports `main.protected: false`; the repository rulesets endpoint returns an empty list. Required branch protection/ruleset enforcement is absent. The connected GitHub integration cannot mutate repository administration settings, so this remains a repository-owner configuration blocker.
 
 ## 3. Phase and gate status
 
