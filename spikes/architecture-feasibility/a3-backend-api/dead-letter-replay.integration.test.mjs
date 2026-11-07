@@ -78,13 +78,16 @@ test("dead-letter replay is tenant-scoped, authorized and durably audited", {
     assert.equal(state.rows[0].lease_token, null);
 
     const audit = await adminPool.query(
-      "SELECT actor_id, request_id, replay_number FROM outbox_replay_audit WHERE tenant_id = $1 AND event_id = $2",
+      "SELECT actor_id, request_id, replay_number, previous_attempts, previous_error_code, previous_dead_lettered_at FROM outbox_replay_audit WHERE tenant_id = $1 AND event_id = $2",
       [tenantA, eventA]
     );
     assert.equal(audit.rows.length, 1);
     assert.equal(audit.rows[0].actor_id, "operator-42");
     assert.equal(audit.rows[0].request_id, requestId);
     assert.equal(audit.rows[0].replay_number, 1);
+    assert.equal(audit.rows[0].previous_attempts, 3);
+    assert.equal(audit.rows[0].previous_error_code, "upstream_unavailable");
+    assert.ok(audit.rows[0].previous_dead_lettered_at);
 
     const crossTenantAudit = await adminPool.query(
       "SELECT count(*)::int AS count FROM outbox_replay_audit WHERE tenant_id = $1 AND event_id = $2",
