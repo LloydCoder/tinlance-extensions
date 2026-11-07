@@ -1,7 +1,7 @@
 # Phase 02 Closeout Audit and Phase 03 Architecture Review
 
 **Review date:** 2026-11-07
-**Repository baseline:** `main` after PR #57 merge, commit `94b43b7a0928d87417ccd651bb62062b6315ad1c`
+**Repository baseline:** `main` after PR #59 merge, commit `d3c3cc37aee68c4f6bfcb6c9329a19e8a249b9c1`
 **Status:** Phase 02 documentary audit completed; Phase 02 exit criteria remain open; ADRs 0003–0014 accepted and merged by PR #17; feasibility A1 passed, A2 partial (Chromium/Firefox/Edge/Brave/Opera MV3 permission-sensitive runtime checks passed in PRs #30/#32/#34/#38; Safari Xcode app/extension compile and package inspection passed in PR #36; Safari runtime/signing/notarization/store review remain open), A3 partial after PR #44 PostgreSQL-backed HTTP adapter proof, A4–A7 open
 **Decision owner:** Tinlance Limited
 **Authority:** This record is a review and recommendation package. It does not authorize application, infrastructure, paid-vendor or production MCP implementation.
@@ -222,3 +222,14 @@ The outbox process test receiver now writes the inbox receipt and its local data
 PR #57 exact-head Repository Quality (42393553306), A3 API (42393553255) and PostgreSQL 16 (42393553292) passed on bc5c9110bbda3d469b0a1335b6f672fd214d92b6. Post-merge Repository Quality (42393663373), A3 API (42393663375) and PostgreSQL 16 (42393663463) passed on merge commit 94b43b7a0928d87417ccd651bb62062b6315ad1c.
 
 A3 remains partial and is not a production backend. Remaining gaps include approved live identity-provider onboarding and tenant-claim mapping, token lifecycle, managed credential provisioning/rotation and TLS/connection management, provider-specific external delivery and idempotency, operational dead-letter tooling, Agent Platform authorization/approval integration and cancellation audit, migration rollback, production backup/restore operations and runbook, deployment/supervision, observability/SLOs, retention/deletion and legal/privacy/independent security review. Phase 02 external customer/owner/commercial/legal evidence remains open; A2 Safari runtime/distribution remains partial; A4–A7 remain open; production implementation remains gated.
+
+
+## 16. Audited dead-letter replay checkpoint — PR #59
+
+Current main checkpoint: d3c3cc37aee68c4f6bfcb6c9329a19e8a249b9c1 after PR #59.
+
+PR #59 adds migration 009 with a tenant-scoped dead-letter replay counter and append-only outbox replay audit. The database function locks only a currently dead-lettered, unpublished event belonging to the transaction-local tenant, requeues it, resets attempts/lease/failure state, increments replay_count and records actor subject, request ID, prior attempts, prior error code and prior dead-letter timestamp atomically. The HTTP POST /v1/outbox/dead-letters/{eventId}/replay route is authenticated and its authorization callback defaults to deny-all; it is forwarded through the OIDC composition root. The API rejects request bodies on operational action routes and returns non-enumerating 404 responses for missing, cross-tenant or no-longer-dead-lettered events.
+
+Exact-head checks passed on 30f0b56f1df319d84f71daae904020370b05fe4b: Repository Quality 42394553985, A3 API 42394553843 and PostgreSQL 16 42394553804. Post-merge checks passed on d3c3cc37aee68c4f6bfcb6c9329a19e8a249b9c1: Repository Quality 42394665035, A3 API 42394665046 and PostgreSQL 16 42394665064.
+
+The replay route and audit contract are not a production operator workflow: the real Tinlance Agent Platform authorization/approval contract is not integrated, the policy remains deny-all unless explicitly injected, and no operator UI is deployed. Provider-specific delivery, managed identity/secret lifecycle, production deployment, operational dead-letter supervision, SLOs, migration rollback, production backup/restore operations, retention/deletion and independent legal/privacy/security review remain open. Phase 02 customer/owner/commercial/legal evidence remains open; A2 Safari runtime/distribution remains partial; A4–A7 remain open; production implementation remains gated.
