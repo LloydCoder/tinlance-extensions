@@ -8,6 +8,7 @@ const root = path.resolve(__dirname, "..");
 const extensionPath = path.join(root, "apps", "extension-permission-sensitive", ".output", "chrome-mv3");
 const extensionName = "Tinlance Permission-sensitive Browser Spike";
 const fixtureTitle = "Tinlance A2 ActiveTab Permission Fixture";
+const commandName = "inspect-active-tab";
 const shortcut = "Alt+Shift+Y";
 
 async function discoverExtensionId(context) {
@@ -21,17 +22,6 @@ async function discoverExtensionId(context) {
   assert.equal(matching.length, 1, "expected exactly one loaded permission-sensitive extension");
   assert.match(matching[0].id, /^[a-p]{32}$/);
   return matching[0].id;
-}
-
-async function waitForActionPopup(context, extensionId, timeoutMs = 10000) {
-  const expectedUrl = `chrome-extension://${extensionId}/popup.html`;
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    const popup = context.pages().find((page) => page.url() === expectedUrl);
-    if (popup) return popup;
-    await new Promise((resolve) => setTimeout(resolve, 100));
-  }
-  throw new Error(`The action shortcut did not open ${expectedUrl}`);
 }
 
 (async () => {
@@ -48,40 +38,29 @@ async function waitForActionPopup(context, extensionId, timeoutMs = 10000) {
   assert.ok(address && typeof address === "object");
   const origin = `http://127.0.0.1:${address.port}`;
 
-  const context = await chromium.launchPersistentContext("", {
-    headless: false,
-    viewport: { width: 900, height: 700 },
-    args: [
-      "--no-sandbox",
-      "--disable-dev-shm-usage",
-      `--disable-extensions-except=${extensionPath}`,
-      `--load-extension=${extensionPath}`
-    ]
-  });
-
+  let context;
   try {
+    context = await chromium.launchPersistentContext("", {
+      headless: false,
+      viewport: { width: 900, height: 700 },
+      args: [
+        "--no-sandbox",
+        "--disable-dev-shm-usage",
+        `--disable-extensions-except=${extensionPath}`,
+        `--load-extension=${extensionPath}`
+      ]
+    });
+
     const extensionId = await discoverExtensionId(context);
     const extensionPage = await context.newPage();
     await extensionPage.goto(`chrome-extension://${extensionId}/popup.html`);
     const commands = await extensionPage.evaluate(() => chrome.commands.getAll());
-    const actionCommand = commands.find((command) => command.name === "_execute_action");
-    assert.equal(actionCommand?.shortcut, shortcut, "the action must have the test keyboard shortcut");
-    await extensionPage.close();
+    const actionCommand = commands.find((command) => command.name === commandName);
+    assert.equal(actionCommand?.shortcut, shortcut, "the explicit inspection command must be registered");
 
     const page = await context.newPage();
     await page.goto(origin);
     await page.bringToFront();
-    await page.evaluate(() => {
-      window.__tinlanceShortcutEvents = [];
-      document.addEventListener("keydown", (event) => {
-        window.__tinlanceShortcutEvents.push({
-          key: event.key,
-          ctrlKey: event.ctrlKey,
-          shiftKey: event.shiftKey,
-          altKey: event.altKey
-        });
-      });
-    });
 
     const windowIds = execFileSync("xdotool", [
       "search",
@@ -95,18 +74,10 @@ async function waitForActionPopup(context, extensionId, timeoutMs = 10000) {
     execFileSync("xdotool", ["windowraise", windowIds[0]]);
     execFileSync("xdotool", ["windowfocus", "--sync", windowIds[0]]);
     const focusedWindow = execFileSync("xdotool", ["getwindowfocus", "getwindowname"], { encoding: "utf8" }).trim();
-    console.log(JSON.stringify({ actionShortcut: shortcut, windowId: windowIds[0], focusedWindow }));
+    console.log(JSON.stringify({ commandName, shortcut, windowId: windowIds[0], focusedWindow }));
     execFileSync("xdotool", ["key", "--clearmodifiers", "--delay", "100", "alt+shift+y"]);
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    const shortcutEvents = await page.evaluate(() => window.__tinlanceShortcutEvents);
-    console.log(JSON.stringify({
-      pagesAfterActionShortcut: context.pages().map((candidate) => candidate.url()),
-      shortcutEvents
-    }));
 
-    const popup = await waitForActionPopup(context, extensionId);
-    await popup.locator("#inspect").click();
-    await popup.waitForFunction(
+    await extensionPage.waitForFunction(
       ({ expectedTitle, expectedOrigin }) => {
         const output = document.querySelector("#result");
         const value = output?.value || output?.textContent || "";
@@ -116,20 +87,21 @@ async function waitForActionPopup(context, extensionId, timeoutMs = 10000) {
       { timeout: 10000 }
     );
 
-    const result = await popup.locator("#result").evaluate((output) => output.value || output.textContent);
+    const result = await extensionPage.locator("#result").evaluate((output) => output.value || output.textContent);
     assert.ok(result.includes(fixtureTitle));
     assert.ok(result.includes(origin));
 
     console.log(JSON.stringify({
-      case: "chromium-activeTab-user-action",
+      case: "chromium-activeTab-user-command",
       extensionId,
+      commandName,
       shortcut,
       origin,
       result,
-      activeTabGrantedByAction: true
+      activeTabGrantedByCommand: true
     }));
   } finally {
-    await context.close();
+    if (context) await context.close();
     await new Promise((resolve) => server.close(resolve));
   }
 })().catch((error) => {
