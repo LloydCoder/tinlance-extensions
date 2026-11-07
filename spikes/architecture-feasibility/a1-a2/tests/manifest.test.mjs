@@ -37,7 +37,7 @@ for (const target of targets) {
       assert.equal(manifest.manifest_version, target.manifestVersion);
       assert.deepEqual([...manifest.permissions].sort(), [...item.expected].sort());
       if (item.name === "permission-sensitive" && target.name === "chrome-mv3") {
-        assert.equal(manifest.commands?._execute_action?.suggested_key?.default, "Alt+Shift+Y");
+        assert.equal(manifest.commands?.["inspect-active-tab"]?.suggested_key?.default, "Alt+Shift+Y");
       }
       assert.equal(manifest.host_permissions, undefined);
       assert.equal(manifest.optional_host_permissions, undefined);
