@@ -2,22 +2,22 @@
 
 **Audit date:** 2026-11-07
 **Audited branch:** `main`
-**Audited commit after PR #32:** `f671facca4ea87b25265344e3df00cc73d8ede92`
+**Audited commit after PR #34:** `3a5fffdd919c86d354614cc077532d88a9f2db3f`
 **Scope:** Repository tree, consolidated phase plan, Phase 02 evidence ledger, accepted architecture records, PRs #30–#32 and exact-head GitHub Actions runs.
 **Disposition:** **Programme remains gated. No product implementation phase is authorized by the current evidence.**
 
 ## 1. Executive finding
 
-The repository has a substantial governance and architecture baseline, plus isolated A1–A2 and A3 feasibility spikes. PR #30 adds Chromium MV3 popup/runtime and service-worker restart proof plus Safari Xcode packaging; PR #32 adds a real Chromium keyboard-shortcut `activeTab`/`scripting` runtime test using a loopback fixture. The repository is not yet an implemented browser-extension platform, production backend, MCP service, customer portal, or 26-product suite.
+The repository has a substantial governance and architecture baseline, plus isolated A1–A2 and A3 feasibility spikes. PR #30 adds Chromium MV3 popup/runtime and service-worker restart proof plus Safari Xcode packaging; PR #32 adds real Chromium keyboard-shortcut `activeTab`/`scripting` runtime evidence; PR #34 adds equivalent Firefox MV3 keyboard-shortcut runtime evidence using a loopback fixture. The repository is not yet an implemented browser-extension platform, production backend, MCP service, customer portal, or 26-product suite.
 
-PR #30 merged as `f6e34c242dfc7819a44e0940accb1544d1363148`. PR #32 merged as `f671facca4ea87b25265344e3df00cc73d8ede92` from head `0fef63a72b4418d953f529c9a01010da485fdbe0`; its exact-head Repository Quality [run 42368720120](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42368720120) and A1–A2 [run 42368720112](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42368720112) both passed. The A1–A2 job invoked the extension's registered keyboard shortcut with X11 against a loopback page and verified the injected script returned its title and origin. These are repository/spike checks only; they do not demonstrate production readiness.
+PR #30 merged as `f6e34c242dfc7819a44e0940accb1544d1363148`. PR #32 merged as `f671facca4ea87b25265344e3df00cc73d8ede92` from head `0fef63a72b4418d953f529c9a01010da485fdbe0`; its exact-head Repository Quality and A1–A2 checks passed. PR #34 merged as `3a5fffdd919c86d354614cc077532d88a9f2db3f` from head `a9f7f15d3c711d539b51ba333570e8510cf046db`; exact-head Repository Quality [run 42369746350](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42369746350) and A1–A2 [run 42369746359](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42369746359) both passed. The A1–A2 run exercised the registered Firefox MV3 keyboard shortcut with X11 against a loopback page and verified that the extension's `scripting.executeScript` result reached its popup. These are isolated feasibility checks, not production-readiness evidence.
 
 ## 2. Verified repository state
 
 - Default branch: `main`; repository is not archived.
-- Audited commit: `f671facca4ea87b25265344e3df00cc73d8ede92`.
-- Relevant merged changes include PR #23 (SVG brand assets), PR #24 (original PNG branding exports and popup application), PR #25 (isolated A3 backend/API contract spike), PR #28 (tenant-bound PostgreSQL worker lease/recovery and stale-worker fencing), PR #30 (Chromium MV3 popup/runtime and service-worker restart proof plus Safari Xcode packaging/project validation), and PR #32 (Chromium keyboard-shortcut activeTab/scripting runtime proof). PR #27's tenant isolation/idempotency/outbox evidence remains part of the baseline.
-- PR #32 exact-head Repository Quality [run 42368720120](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42368720120) and A1–A2 [run 42368720112](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42368720112) both passed. The available workflow-run connector does not expose push-triggered runs for the PR #32 merge commit; no post-merge push-run claim is made.
+- Audited commit: `3a5fffdd919c86d354614cc077532d88a9f2db3f`.
+- Relevant merged changes include PR #23 (SVG brand assets), PR #24 (original PNG branding exports and popup application), PR #25 (isolated A3 backend/API contract spike), PR #28 (tenant-bound PostgreSQL worker lease/recovery and stale-worker fencing), PR #30 (Chromium MV3 popup/runtime and service-worker restart proof plus Safari Xcode packaging/project validation), PR #32 (Chromium keyboard-shortcut activeTab/scripting runtime proof), and PR #34 (Firefox MV3 keyboard-shortcut activeTab/scripting runtime proof). PR #27's tenant isolation/idempotency/outbox evidence remains part of the baseline.
+- PR #34 exact-head Repository Quality [run 42369746350](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42369746350) and A1–A2 [run 42369746359](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42369746359) both passed. The A1–A2 workflow included the Chromium and Firefox runtime cases and the macOS Safari Xcode packaging lane. The post-merge `main` A1–A2 workflow [run 42369898982](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42369898982) also completed successfully on merge commit `3a5fffdd919c86d354614cc077532d88a9f2db3f`; post-merge Repository Quality [run 42369898958](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42369898958) passed.
 - PR #28 exact-head checks: [Repository Quality](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42020490026), [A3 API contract](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42020490127), and [PostgreSQL tenant/outbox/worker recovery](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42020489917) — all `success`.
 - The repository tree contains governance documents and isolated `spikes/architecture-feasibility/a1-a2` and `a3-backend-api` projects. It does not contain the planned production `apps/api`, `apps/worker`, `apps/web`, product extension applications, MCP gateway, or production shared packages.
 - The live branch API reports `main.protected: false`; the repository rulesets endpoint returns an empty list. Required branch protection/ruleset enforcement is absent. The connected GitHub integration cannot mutate repository administration settings, so this remains a repository-owner configuration blocker.
@@ -29,7 +29,7 @@ PR #30 merged as `f6e34c242dfc7819a44e0940accb1544d1363148`. PR #32 merged as `f
 | Phase 0 — repository foundation | Closed for documented repository scope | Does not imply application readiness |
 | Phase 1 — forensic baseline | Closed for documented audit scope | Refresh baseline after material repository changes |
 | Phase 2 — product requirements and validation | Documentary baseline complete; **open** | Real customer discovery, product-owner sign-offs, product-specific threat models, legal/provider reviews and commercial proof |
-| Phase 3 — architecture and feasibility | ADRs accepted; **feasibility partial** | A2 Firefox runtime and Safari runtime/signing; A3 production API/database wiring and operational recovery; A4 product data/security; A5 executable MCP conformance; A6 actual Agent Platform contract; A7 deployment/residency/budget approval |
+| Phase 3 — architecture and feasibility | ADRs accepted; **feasibility partial** | A2 Safari runtime/signing/notarization/store and Edge/Brave/Opera version evidence; A3 production API/database wiring and operational recovery; A4 product data/security; A5 executable MCP conformance; A6 actual Agent Platform contract; A7 deployment/residency/budget approval |
 | Phases 4–10 | Not started as production implementation | Phase 2 and Phase 3 exit gates must pass |
 | Phases 11–19 | Not started as product implementation | Shared platform and product-specific gates |
 | Phases 20–25 | Not started as production release work | Verified implementation, independent assurance, operational and release evidence |
@@ -44,7 +44,7 @@ The repository can prepare interview scripts, decision records, questionnaires a
 
 ### B2 — A2 is not a cross-browser runtime certification
 
-PR #30 proves the read-only Chromium MV3 popup/runtime, service-worker termination and event-driven restart, and Safari Xcode project packaging/validation. PR #32 proves a user-invoked custom keyboard shortcut grants temporary `activeTab` access in Chromium and that `scripting.executeScript` returns metadata from a loopback fixture with only `activeTab` and `scripting` permissions. Firefox runtime behavior, Safari runtime/signing/notarization, store review and the complete Edge/Brave/Opera version matrix remain open.
+PR #30 proves the read-only Chromium MV3 popup/runtime, service-worker termination and event-driven restart, and Safari Xcode project packaging/validation. PR #32 proves a user-invoked custom keyboard shortcut grants temporary `activeTab` access in Chromium. PR #34 proves the Firefox MV3 keyboard-shortcut path with a real X11 action and a loopback fixture; `scripting.executeScript` returns the expected page title and origin to the extension popup while the manifest remains limited to `activeTab` and `scripting`. Safari runtime/signing/notarization, store review and the complete Edge/Brave/Opera version matrix remain open.
 
 ### B3 — A3 is a contract fixture, not a production backend
 
@@ -75,7 +75,7 @@ The live branch API confirmed `main.protected: false` on 2026-11-07, and the rep
 ## 5. Required execution order
 
 1. Complete genuine Phase 2 customer, owner, legal/provider and product-risk evidence.
-2. Complete remaining A2 permission-sensitive action and Firefox runtime tests, then close Safari runtime/signing and browser-version evidence.
+2. Complete remaining A2 Safari runtime/signing/notarization, store review and Edge/Brave/Opera version evidence; Chromium and Firefox user-invoked `activeTab`/`scripting` runtime tests are now merged.
 3. Close A3 using real PostgreSQL/RLS and durable worker integration tests in CI.
 4. Close A4 product data/security review and tests.
 5. Close A5 with pinned MCP SDK, conformance fixtures, OAuth and client interoperability.
