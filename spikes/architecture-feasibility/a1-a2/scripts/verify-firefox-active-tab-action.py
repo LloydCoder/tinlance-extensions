@@ -124,28 +124,32 @@ def main() -> int:
         addon_id = extension.id
         profile = Path(driver.capabilities["moz:profile"])
         addon_uuid = extension_uuid(profile, addon_id)
-        popup_handle = driver.current_window_handle
         popup_url = f"moz-extension://{addon_uuid}/popup.html"
-        driver.get("about:blank")
-        browser_windows = subprocess.run(
-            ["xdotool", "search", "--onlyvisible", "--name", "Mozilla Firefox"],
-            check=True,
-            capture_output=True,
-            text=True,
-        ).stdout.splitlines()
-        if not browser_windows:
-            raise AssertionError("Could not locate the Firefox window to open the extension page")
-        browser_window = browser_windows[0]
-        subprocess.run(["xdotool", "windowactivate", "--sync", browser_window], check=True)
-        subprocess.run(["xdotool", "windowfocus", "--sync", browser_window], check=True)
-        subprocess.run(["xdotool", "key", "--clearmodifiers", "ctrl+l"], check=True)
-        subprocess.run(
-            ["xdotool", "type", "--clearmodifiers", "--delay", "2", "--", popup_url],
-            check=True,
+        # Firefox/geckodriver blocks direct WebDriver and address-bar navigation
+        # to moz-extension:// pages. Open the test tab through Firefox chrome
+        # with an explicit system triggering principal, then return to content
+        # context for normal WebDriver assertions. This does not grant activeTab:
+        # the permission-sensitive action is still invoked later via real X11
+        # keyboard input while the loopback fixture tab is focused.
+        existing_handles = set(driver.window_handles)
+        with driver.context(driver.CONTEXT_CHROME):
+            driver.execute_script(
+                """
+                gBrowser.selectedTab = gBrowser.addTab(arguments[0], {
+                    triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+                });
+                """,
+                popup_url,
+            )
+        WebDriverWait(driver, 10).until(
+            lambda browser: len(set(browser.window_handles) - existing_handles) == 1
         )
-        subprocess.run(["xdotool", "key", "Return"], check=True)
-        WebDriverWait(driver, 10).until(lambda browser: browser.current_url == popup_url)
-        popup_handle = driver.current_window_handle
+        popup_handle = next(iter(set(driver.window_handles) - existing_handles))
+        driver.switch_to.window(popup_handle)
+        WebDriverWait(driver, 10).until(
+            lambda browser: browser.execute_script("return document.readyState") == "complete"
+            and browser.current_url == popup_url
+        )
 
         command = driver.execute_async_script(
             "const done = arguments[arguments.length - 1]; "
