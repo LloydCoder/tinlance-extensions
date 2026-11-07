@@ -10,6 +10,7 @@ tenant_id="restore-${suffix}"
 record_id="restore-${suffix}"
 event_id="00000000-0000-4000-8000-${suffix}"
 request_id="20000000-0000-4000-8000-${suffix}"
+cancel_request_id="30000000-0000-4000-8000-${suffix}"
 restore_db="tinlance_restore_${suffix}"
 archive="${work_dir}/database.dump"
 
@@ -31,7 +32,7 @@ trap cleanup EXIT
 
 # Seed a unique tenant-owned row so the restore assertion proves data recovery,
 # not merely that pg_restore returned a zero exit code.
-psql "$ADMIN_DATABASE_URL" -v ON_ERROR_STOP=1 -v tenant_id="$tenant_id" -v record_id="$record_id" -v event_id="$event_id" -v request_id="$request_id" <<'SQL'
+psql "$ADMIN_DATABASE_URL" -v ON_ERROR_STOP=1 -v tenant_id="$tenant_id" -v record_id="$record_id" -v event_id="$event_id" -v request_id="$request_id" -v cancel_request_id="$cancel_request_id" <<'SQL'
 INSERT INTO public.tenants(id) VALUES (:'tenant_id');
 INSERT INTO public.tenant_records(id, tenant_id, payload)
 VALUES (:'record_id', :'tenant_id', '{"restore":"verified"}'::jsonb);
@@ -40,6 +41,11 @@ VALUES (:'tenant_id', 'restore.receiver', :'event_id', '{"restore":"inbox"}'::js
 INSERT INTO public.jobs(tenant_id, idempotency_key, job_type)
 VALUES (:'tenant_id', 'restore-job-' || :'tenant_id', 'restore.test')
 RETURNING id AS job_id \gset
+UPDATE public.jobs SET status = 'cancelled', cancelled_at = now() WHERE id = :'job_id';
+INSERT INTO public.job_cancellation_audit(tenant_id, job_id, actor_id, request_id, previous_status, cancelled_at)
+SELECT tenant_id, id, 'restore-actor', :'cancel_request_id', 'queued', cancelled_at
+  FROM public.jobs
+ WHERE id = :'job_id';
 INSERT INTO public.outbox_events(tenant_id, aggregate_id, event_type, payload)
 VALUES (:'tenant_id', :'job_id', 'restore.dead-letter', '{"restore":"replay"}'::jsonb)
 RETURNING id AS replay_event_id \gset
@@ -64,6 +70,7 @@ pg_restore --list "$archive" > "${work_dir}/toc.list"
 grep -q "tenant_records" "${work_dir}/toc.list"
 grep -q "consumer_inbox" "${work_dir}/toc.list"
 grep -q "outbox_replay_audit" "${work_dir}/toc.list"
+grep -q "job_cancellation_audit" "${work_dir}/toc.list"
 
 createdb --maintenance-db="$ADMIN_DATABASE_URL" --template=template0 "$restore_db"
 pg_restore --exit-on-error --no-owner --dbname="$restore_admin_url" "$archive"
@@ -93,11 +100,12 @@ WHERE proname IN (
   'renew_outbox_lease',
   'fail_outbox_event',
   'accept_consumer_event',
-  'replay_dead_letter_event'
+  'replay_dead_letter_event',
+  'cancel_job_audited'
 );
 SQL
 )"
-if [[ "$restored_functions" -lt "7" ]]; then
+if [[ "$restored_functions" -lt "8" ]]; then
   echo "expected all worker/outbox/cancellation functions after restore, found: $restored_functions" >&2
   exit 1
 fi
@@ -105,13 +113,13 @@ fi
 forced_rls_tables="$(psql "$restore_admin_url" -v ON_ERROR_STOP=1 -At <<'SQL'
 SELECT count(*) FROM pg_class
 WHERE relkind = 'r'
-  AND relname IN ('tenant_records', 'jobs', 'outbox_events', 'consumer_inbox', 'outbox_replay_audit')
+  AND relname IN ('tenant_records', 'jobs', 'outbox_events', 'consumer_inbox', 'outbox_replay_audit', 'job_cancellation_audit')
   AND relrowsecurity
   AND relforcerowsecurity;
 SQL
 )"
-if [[ "$forced_rls_tables" != "5" ]]; then
-  echo "expected forced RLS on all five tenant tables after restore, found: $forced_rls_tables" >&2
+if [[ "$forced_rls_tables" != "6" ]]; then
+  echo "expected forced RLS on all six tenant tables after restore, found: $forced_rls_tables" >&2
   exit 1
 fi
 
@@ -136,8 +144,12 @@ BEGIN
   IF visible_count <> 1 THEN
     RAISE EXCEPTION 'restored application login did not observe exactly one replay audit row: %', visible_count;
   END IF;
+  SELECT count(*) INTO visible_count FROM public.job_cancellation_audit;
+  IF visible_count <> 1 THEN
+    RAISE EXCEPTION 'restored application login did not observe exactly one cancellation audit row: %', visible_count;
+  END IF;
 END $$;
 ROLLBACK;
 SQL
 
-echo "PostgreSQL custom-format backup and fresh-database restore passed; tenant RLS, application login, worker, outbox, consumer inbox, replay audit and cancellation contracts were restored."
+echo "PostgreSQL custom-format backup and fresh-database restore passed; tenant RLS, application login, worker, outbox, consumer inbox, replay audit and job cancellation audit contracts were restored."
