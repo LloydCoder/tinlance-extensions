@@ -218,7 +218,7 @@ This report records research findings and repository evidence. It does not appro
 
 ## 9. Post-PR #38 verification record
 
-- Current main: `807ac4ff73868422ab40d1db5dadff5dfc815002`.
+- Current main at this review baseline: `0706c8d82f3d6a3130e141f8c567b356906ce629`.
 - PR #38 exact-head Repository Quality: [42373753116](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42373753116) — success.
 - PR #38 exact-head A1–A2: [42373753119](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42373753119) — success; Chromium, Firefox, Edge Stable, Brave Stable, Opera Stable and Safari Xcode compile/package jobs passed.
 - Post-merge main Repository Quality: [42373989212](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42373989212) — success.
