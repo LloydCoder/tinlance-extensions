@@ -21,6 +21,18 @@ extension="$(find "$app/Contents/PlugIns" -maxdepth 1 -type d -name '*.appex' -p
 test -n "$extension"
 plutil -lint "$extension/Contents/Info.plist"
 
+app_bundle_id="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$app/Contents/Info.plist")"
+extension_bundle_id="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$extension/Contents/Info.plist")"
+case "$extension_bundle_id" in
+  "$app_bundle_id".*) ;;
+  *)
+    echo "Safari extension bundle identifier must be prefixed by its containing app identifier." >&2
+    echo "App: $app_bundle_id" >&2
+    echo "Extension: $extension_bundle_id" >&2
+    exit 1
+    ;;
+esac
+
 extension_point="$(/usr/libexec/PlistBuddy -c 'Print :NSExtension:NSExtensionPointIdentifier' "$extension/Contents/Info.plist")"
 test "$extension_point" = "com.apple.Safari.web-extension"
 
