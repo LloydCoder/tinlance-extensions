@@ -44,6 +44,7 @@ pg_dump --format=custom --file="$archive" "$ADMIN_DATABASE_URL"
 test -s "$archive"
 pg_restore --list "$archive" > "${work_dir}/toc.list"
 grep -q "tenant_records" "${work_dir}/toc.list"
+grep -q "consumer_inbox" "${work_dir}/toc.list"
 
 createdb --maintenance-db="$ADMIN_DATABASE_URL" --template=template0 "$restore_db"
 pg_restore --exit-on-error --no-owner --dbname="$restore_admin_url" "$archive"
