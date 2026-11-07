@@ -61,6 +61,7 @@ END $$;
 -- Obtain a real lease in the other tenant, then prove the first tenant
 -- cannot publish it even when it supplies the correct event ID and lease token.
 SELECT set_config('app.tenant_id','other-outbox-tenant',false);
+CREATE TEMP TABLE other_outbox_lease (id uuid, lease_token uuid);
 DO $$
 DECLARE other_event outbox_events%ROWTYPE;
 BEGIN
