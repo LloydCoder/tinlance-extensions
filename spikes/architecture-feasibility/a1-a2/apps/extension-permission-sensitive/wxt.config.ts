@@ -8,7 +8,7 @@ export default defineConfig({
     commands: {
       _execute_action: {
         suggested_key: {
-          default: "Ctrl+Shift+Y",
+          default: "Alt+Shift+Y",
           mac: "Command+Shift+Y"
         }
       }
