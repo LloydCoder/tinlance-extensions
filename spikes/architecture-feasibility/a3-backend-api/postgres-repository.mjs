@@ -76,15 +76,15 @@ export function createPostgresRepository({ pool }) {
       });
     },
 
-    async cancelJobForTenant(jobId, tenantId) {
-      if (typeof jobId !== "string" || !JOB_ID_PATTERN.test(jobId)) {
-        return false;
-      }
+    async cancelJobForTenant(jobId, tenantId, actorId, requestId) {
+      if (typeof jobId !== "string" || !JOB_ID_PATTERN.test(jobId)) return false;
+      if (typeof actorId !== "string" || actorId.length < 1 || actorId.length > 256 || /[\u0000-\u001f\u007f]/.test(actorId)) return false;
+      if (typeof requestId !== "string" || !EVENT_ID_PATTERN.test(requestId)) return false;
 
       return withTenantTransaction(tenantId, async (client) => {
         const result = await client.query(
-          "SELECT public.cancel_job($1) AS cancelled",
-          [jobId]
+          "SELECT public.cancel_job_audited($1, $2, $3) AS cancelled",
+          [jobId, actorId, requestId]
         );
         return result.rows[0]?.cancelled === true;
       });

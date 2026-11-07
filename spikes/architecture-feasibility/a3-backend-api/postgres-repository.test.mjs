@@ -53,7 +53,7 @@ test("job cancellation uses the restricted role and transaction-local tenant con
   const client = {
     async query(statement, values) {
       statements.push({ statement, values });
-      if (statement === "SELECT public.cancel_job($1) AS cancelled") {
+      if (statement === "SELECT public.cancel_job_audited($1, $2, $3) AS cancelled") {
         return { rows: [{ cancelled: true }] };
       }
       return { rows: [] };
@@ -66,13 +66,14 @@ test("job cancellation uses the restricted role and transaction-local tenant con
   };
   const repository = createPostgresRepository({ pool });
   const jobId = "a4f6d9e2-1c3b-4a5d-8e7f-9012bc345678";
+  const requestId = "d4f6d9e2-1c3b-4a5d-8e7f-9012bc345670";
 
-  assert.equal(await repository.cancelJobForTenant(jobId, "tenant-a"), true);
+  assert.equal(await repository.cancelJobForTenant(jobId, "tenant-a", "operator-42", requestId), true);
   assert.deepEqual(statements, [
     { statement: "BEGIN", values: undefined },
     { statement: "SET LOCAL ROLE tinlance_app_runtime", values: undefined },
     { statement: "SELECT set_config('app.tenant_id', $1, true)", values: ["tenant-a"] },
-    { statement: "SELECT public.cancel_job($1) AS cancelled", values: [jobId] },
+    { statement: "SELECT public.cancel_job_audited($1, $2, $3) AS cancelled", values: [jobId, "operator-42", requestId] },
     { statement: "COMMIT", values: undefined }
   ]);
 });
@@ -85,7 +86,9 @@ test("invalid job identifiers are rejected before acquiring a database connectio
   };
   const repository = createPostgresRepository({ pool });
 
-  assert.equal(await repository.cancelJobForTenant("not-a-uuid", "tenant-a"), false);
+  const requestId = "d4f6d9e2-1c3b-4a5d-8e7f-9012bc345670";
+  assert.equal(await repository.cancelJobForTenant("not-a-uuid", "tenant-a", "operator-42", requestId), false);
+  assert.equal(await repository.cancelJobForTenant("a4f6d9e2-1c3b-4a5d-8e7f-9012bc345678", "tenant-a", "operator\nforged", requestId), false);
   assert.equal(connectionAttempts, 0);
 });
 

@@ -92,8 +92,8 @@ async function withCancellationServer(fn, cancellationResult = true, authorize =
   const repository = {
     async isReady() { return true; },
     async findRecordForTenant() { return null; },
-    async cancelJobForTenant(jobId, tenantId) {
-      calls.push({ jobId, tenantId });
+    async cancelJobForTenant(jobId, tenantId, actorId, requestId) {
+      calls.push({ jobId, tenantId, actorId, requestId });
       return cancellationResult;
     }
   };
@@ -118,7 +118,7 @@ test("authenticated tenant can cancel its own job through the API", async () => 
     });
     assert.equal(response.status, 200);
     assert.deepEqual(await response.json(), { status: "cancelled" });
-    assert.deepEqual(calls, [{ jobId: cancellationJobId, tenantId: "tenant-a" }]);
+    assert.deepEqual(calls, [{ jobId: cancellationJobId, tenantId: "tenant-a", actorId: "user-a", requestId: response.headers.get("x-request-id") }]);
   });
 });
 

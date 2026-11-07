@@ -39,7 +39,7 @@ paths:
         - bearerAuth: []
       description: |
         Cancellation is tenant-scoped and requires an explicit server-side authorization
-        policy. The policy defaults to deny; callers cannot supply tenant context.
+        policy. The policy defaults to deny; callers cannot supply tenant context. Successful state transitions are durably audited with the verified actor, request ID and previous status; repeat cancellation is idempotent and does not create a second audit record.
       parameters:
         - in: path
           name: jobId
