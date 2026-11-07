@@ -94,6 +94,12 @@ test("durable consumer inbox deduplicates concurrent deliveries within tenant tr
       } finally {
         rolledBack.release();
       }
+      const rolledBackState = await adminPool.query(
+        "SELECT (SELECT count(*) FROM consumer_inbox WHERE tenant_id = $1 AND consumer_name = $2 AND event_id = $3)::int AS inbox_count, (SELECT count(*) FROM tenant_records WHERE tenant_id = $1 AND id = $4)::int AS effect_count",
+        [tenantA, "rollback.consumer", rollbackEventId, `consumer-effect-${rollbackEventId}`]
+      );
+      assert.equal(rolledBackState.rows[0].inbox_count, 0);
+      assert.equal(rolledBackState.rows[0].effect_count, 0);
 
       const retry = await pool.connect();
       try {
@@ -107,6 +113,12 @@ test("durable consumer inbox deduplicates concurrent deliveries within tenant tr
       } finally {
         retry.release();
       }
+      const committedState = await adminPool.query(
+        "SELECT (SELECT count(*) FROM consumer_inbox WHERE tenant_id = $1 AND consumer_name = $2 AND event_id = $3)::int AS inbox_count, (SELECT count(*) FROM tenant_records WHERE tenant_id = $1 AND id = $4)::int AS effect_count",
+        [tenantA, "rollback.consumer", rollbackEventId, `consumer-effect-${rollbackEventId}`]
+      );
+      assert.equal(committedState.rows[0].inbox_count, 1);
+      assert.equal(committedState.rows[0].effect_count, 1);
     });
 
     await t.test("same idempotency key with a different payload is rejected", async () => {
