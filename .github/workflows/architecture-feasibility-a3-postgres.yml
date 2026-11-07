@@ -58,6 +58,14 @@ jobs:
         env:
           PGPASSWORD: postgres
         run: psql "host=127.0.0.1 port=5432 dbname=tinlance_test user=postgres" -v ON_ERROR_STOP=1 -f spikes/architecture-feasibility/a3-backend-api/postgres.worker.integration.sql
+      - name: Apply transactional outbox publisher migration
+        env:
+          PGPASSWORD: postgres
+        run: psql "host=127.0.0.1 port=5432 dbname=tinlance_test user=postgres" -v ON_ERROR_STOP=1 -f spikes/architecture-feasibility/a3-backend-api/migrations/003_outbox_publisher.sql
+      - name: Verify tenant-bound outbox publisher leases and fencing
+        env:
+          PGPASSWORD: postgres
+        run: psql "host=127.0.0.1 port=5432 dbname=tinlance_test user=postgres" -v ON_ERROR_STOP=1 -f spikes/architecture-feasibility/a3-backend-api/postgres.outbox-publisher.integration.sql
       - name: Verify concurrent worker claims use SKIP LOCKED
         env:
           PGPASSWORD: postgres
