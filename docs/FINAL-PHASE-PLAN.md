@@ -27,12 +27,12 @@ If records conflict, do not infer a new decision. Raise a documented discrepancy
 The repository baseline at the time this plan was prepared:
 
 - Repository: `LloydCoder/tinlance-extensions`; default branch: `main`.
-- Baseline for this programme reconciliation: `main` after PR #17, commit `74318596f066e8d8728e0fb3f32d2d62c8d2b089`. The review branch adds documentation corrections only; application implementation remains absent.
+- Baseline for this programme reconciliation: `main` after PR #30, commit `f6e34c242dfc7819a44e0940accb1544d1363148`. The isolated A1–A2 and A3 feasibility spikes remain separate from production application implementation.
 - The four proposal decisions were incorporated through PR #13.
 - The canonical catalogue contains 26 products in six families.
 - Phase 0 repository foundation and Phase 01 repository forensic baseline are closed for their documented repository scope.
 - Phase 02 documentary baseline is reconciled; customer discovery, product-owner sign-offs, product-specific threat models, legal/provider reviews and commercial proof remain outstanding.
-- ADRs 0003–0014 were explicitly accepted by the decision owner and merged through PR #17. Architecture feasibility A1 passed, A2 is partial, A3 has merged API and PostgreSQL 16 RLS/idempotency/transactional-outbox plus tenant-bound worker lease/recovery and stale-worker fencing evidence (PR #28; all three exact-head checks green), but remains partial pending production API/database wiring, multi-process contention, process crash/restart and outbox publisher delivery; A4–A7 remain open. See [Phase 02 evidence and feasibility review](PHASE-02-EVIDENCE-AND-FEASIBILITY-REVIEW.md).
+- ADRs 0003–0014 were explicitly accepted by the decision owner and merged through PR #17. A1 passed. A2 remains partial: PR #30 proves Chromium MV3 popup/runtime and service-worker termination/event-driven restart, and the macOS CI lane generates and validates a Safari Xcode project; permission-sensitive activeTab/scripting behavior, Firefox runtime, Safari runtime/signing and store validation remain open. A3 has merged API and PostgreSQL 16 RLS/idempotency/transactional-outbox plus tenant-bound worker lease/recovery and stale-worker fencing evidence (PR #28; all three exact-head checks green), but remains partial pending production API/database wiring, multi-process contention, process crash/restart and outbox publisher delivery; A4–A7 remain open. See [Phase 02 evidence and feasibility review](PHASE-02-EVIDENCE-AND-FEASIBILITY-REVIEW.md).
 - The repository remains a documentation/governance foundation, not an implemented application suite. An isolated A1–A2 spike now exists under `spikes/architecture-feasibility/a1-a2/`; no production product runtime, extension, backend API, worker, database, OAuth service or MCP gateway is implemented.
 - A passing repository CI workflow validates repository checks only. It is not product build, runtime, security, privacy, customer or release evidence.
 
@@ -139,14 +139,14 @@ The original 25-phase numbering and first-seven product order are retained. This
 | 2 | Product requirements and validation | Reviewed briefs for 26 products, discovery, permissions/data reviews, prioritization | **Documentary baseline complete / open**; substantive evidence gates outstanding |
 | 3 | Architecture and ADR approval | Target architecture, product/service boundaries, threat model, dependency graph, approved ADR set | **ADRs accepted; A1 pass, A2 partial, A3 partial, A4–A7 open**; implementation blocker |
 | 4 | Monorepo and developer platform | Reproducible workspace, pinned toolchain, local setup, scripts, clean checkout build | Not started |
-| 5 | CI/CD and repository governance | Required checks, branch rules, dependency automation, provenance, release permissions | Baseline exists; application pipeline not implemented |
+| 5 | CI/CD and repository governance | Required checks, branch rules, dependency automation, provenance, release permissions | Repository Quality and A1–A2 workflows exist; `main` is currently unprotected with no repository rulesets; application pipeline not implemented |
 | 6 | Design system and UX foundation | Tokens, components, accessibility baseline, extension patterns, web portal UX | Not started |
 | 7 | Browser SDK and compatibility foundation | Browser adapters, messaging, storage, permissions, compatibility harness | Not started |
 | 8 | Identity, authentication and tenancy | Accounts, sessions, organizations, tenant isolation, scopes and authorization primitives | Not started |
 | 9 | Backend and data architecture | Service ownership, schemas, migrations, API contracts, queues, evidence and data lifecycle | Not started |
 | 10 | Security and privacy control plane | Threat models, policy, consent, audit, secrets, retention/deletion and security gates | Not started |
 
-**Milestone A exit:** ADRs 0003–0014 are accepted; A1 passes, A2 is partial and A3 is partial. PR #28 adds green PostgreSQL tenant-bound worker lease/recovery and stale-worker fencing evidence, but production API/database wiring, multi-process contention, process crash/restart and outbox publisher delivery remain open. A4–A7, Phase 02 customer/owner/legal/security evidence and MCP Gate 0 executable conformance remain outstanding. Do not begin product implementation or production MCP gateway work before these gates pass.
+**Milestone A exit:** ADRs 0003–0014 are accepted; A1 passes, A2 remains partial and A3 is partial. PR #30 adds Chromium MV3 popup/runtime, service-worker restart and Safari Xcode packaging/project-validation evidence; activeTab/scripting action behavior, Firefox runtime, Safari runtime/signing and store validation remain open. PR #28 adds green PostgreSQL tenant-bound worker lease/recovery and stale-worker fencing evidence, but production API/database wiring, multi-process contention, process crash/restart and outbox publisher delivery remain open. A4–A7, Phase 02 customer/owner/legal/security evidence and MCP Gate 0 executable conformance remain outstanding. Do not begin product implementation or production MCP gateway work before these gates pass.
 
 ### Milestone B — Commercial beta
 
@@ -296,7 +296,7 @@ Shared packages should cover:
 - Redacted telemetry/error reporting and evidence utilities.
 - Browser compatibility, packaging, signing and release automation.
 
-WXT with TypeScript, pnpm workspaces and Turborepo are accepted architecture choices under ADRs 0003 and 0005. The isolated A1 toolchain spike passes; A2 browser build/manifest proof is partial pending runtime and Safari packaging evidence.
+WXT with TypeScript, pnpm workspaces and Turborepo are accepted architecture choices under ADRs 0003 and 0005. The isolated A1 toolchain spike passes. A2 now has Chromium MV3 popup/runtime and service-worker lifecycle evidence plus Safari Xcode packaging/project validation; the remaining permission-sensitive action, Firefox runtime and Safari runtime/signing gates keep A2 partial.
 
 Security constraints:
 - No remotely hosted executable code in extension packages.
@@ -524,7 +524,7 @@ Required before relevant launch: privacy notice, terms, data-processing disclosu
 ### P1 — platform feasibility and design
 
 8. A1 clean-checkout toolchain and representative Next.js/WXT builds passed in isolated spike PR #20; retain as a feasibility fixture.
-9. Complete A2 runtime Chrome/Firefox lifecycle and permission tests plus the Safari Xcode packaging/signing lane.
+9. Complete A2 permission-sensitive activeTab/scripting runtime, Firefox runtime, and Safari runtime/signing and store validation.
 10. PR #28 completed the isolated A3 PostgreSQL tenant-bound lease/recovery and fencing spike with all checks green; continue A3 with production API/database wiring, multi-process contention, crash/restart, outbox publisher delivery and operational recovery proof.
 11. Pass A4 product data-flow, threat-model, retention/deletion and telemetry review.
 12. Pass A5 MCP 2026-07-28 conformance, OAuth and client-matrix proof.
@@ -533,7 +533,7 @@ Required before relevant launch: privacy notice, terms, data-processing disclosu
 
 ### Accepted architecture decisions
 
-ADRs 0003–0014 are accepted and merged through PR #17. Their acceptance records are in `docs/adr/`. This is an architecture decision record, not proof of implementation. A1 passed through the isolated reproducible toolchain spike; A2 is partial; A3 has merged PostgreSQL 16 RLS/idempotency/transactional-outbox and tenant-bound worker lease/recovery/fencing evidence (PR #28; all exact-head checks green), but remains partial pending production API/database wiring and operational recovery proof; A4–A7 remain open. See [Phase 02 Evidence and Architecture Feasibility Review](PHASE-02-EVIDENCE-AND-FEASIBILITY-REVIEW.md).
+ADRs 0003–0014 are accepted and merged through PR #17. Their acceptance records are in `docs/adr/`. This is an architecture decision record, not proof of implementation. A1 passed through the isolated reproducible toolchain spike. A2 remains partial after PR #30's Chromium MV3 popup/runtime, service-worker restart and Safari Xcode packaging/project-validation evidence; activeTab/scripting, Firefox runtime and Safari runtime/signing remain open. A3 has merged PostgreSQL 16 RLS/idempotency/transactional-outbox and tenant-bound worker lease/recovery/fencing evidence (PR #28; all exact-head checks green), but remains partial pending production API/database wiring and operational recovery proof; A4–A7 remain open. See [Phase 02 Evidence and Architecture Feasibility Review](PHASE-02-EVIDENCE-AND-FEASIBILITY-REVIEW.md).
 
 ## 17. Programme definition of done
 
@@ -567,4 +567,4 @@ The programme is complete only when:
 | Product security/privacy/legal approvals | Open by product |
 | Commercial beta / production release | Not started / not evidenced |
 
-**Programme status:** this consolidated plan is the accepted programme baseline. The first-seven order and catalogue remain unchanged. Phase 02 substantive evidence remains open; A1 passed, A2 is partial, A3 is partial (PR #28 adds green PostgreSQL tenant-bound worker lease/recovery and fencing evidence, but production wiring and operational recovery remain unproved) and A4–A7 remain open. Application implementation begins only after the applicable evidence, security, architecture and owner go/no-go gates are accepted.
+**Programme status:** this consolidated plan is the accepted programme baseline. The first-seven order and catalogue remain unchanged. Phase 02 substantive evidence remains open; A1 passed; A2 remains partial after PR #30's Chromium MV3 popup/runtime, service-worker restart and Safari Xcode packaging evidence, with activeTab/scripting, Firefox runtime and Safari runtime/signing still open; A3 is partial (PR #28 adds green PostgreSQL tenant-bound worker lease/recovery and fencing evidence, but production wiring and operational recovery remain unproved); A4–A7 remain open. Application implementation begins only after the applicable evidence, security, architecture and owner go/no-go gates are accepted.
