@@ -36,6 +36,10 @@ test("dead-letter replay is tenant-scoped, authorized and durably audited", {
       "UPDATE outbox_events SET attempts = 3, last_error_code = 'upstream_unavailable', dead_lettered_at = now() WHERE id = ANY($1::uuid[])",
       [[eventA, eventB]]
     );
+    await adminPool.query(
+      "INSERT INTO outbox_replay_audit(tenant_id, event_id, replay_number, actor_id, request_id) VALUES ($1, $2, 1, 'tenant-b-operator', $3)",
+      [tenantB, eventB, randomUUID()]
+    );
 
     const repository = createPostgresRepository({ pool });
     server = createApiServer({
@@ -85,7 +89,19 @@ test("dead-letter replay is tenant-scoped, authorized and durably audited", {
       "SELECT count(*)::int AS count FROM outbox_replay_audit WHERE tenant_id = $1 AND event_id = $2",
       [tenantB, eventB]
     );
-    assert.equal(crossTenantAudit.rows[0].count, 0);
+    assert.equal(crossTenantAudit.rows[0].count, 1);
+
+    const rlsClient = await pool.connect();
+    try {
+      await rlsClient.query("BEGIN");
+      await rlsClient.query("SET LOCAL ROLE tinlance_app_runtime");
+      await rlsClient.query("SELECT set_config('app.tenant_id', $1, true)", [tenantA]);
+      const visibleAudit = await rlsClient.query("SELECT count(*)::int AS count FROM outbox_replay_audit");
+      assert.equal(visibleAudit.rows[0].count, 1);
+      await rlsClient.query("COMMIT");
+    } finally {
+      rlsClient.release();
+    }
 
     const session = await pool.query(
       "SELECT current_user AS role_name, nullif(current_setting('app.tenant_id', true), '') AS tenant_context"
