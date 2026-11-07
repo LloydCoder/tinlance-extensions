@@ -15,10 +15,18 @@ assert.ok(browserBinary && fs.existsSync(browserBinary), "BROWSER_BINARY must po
 assert.ok(extensionPath && fs.existsSync(extensionPath), "EXTENSION_PATH must point to the built unpacked MV3 extension");
 
 async function focusFixtureAndInvokeShortcut() {
-  const ids = execFileSync("xdotool", [
+  let ids = execFileSync("xdotool", [
     "search", "--onlyvisible", "--name", fixtureTitle
   ], { encoding: "utf8" }).trim().split("\n").filter(Boolean);
-  assert.ok(ids.length > 0, browserName + ": headed fixture window must be discoverable");
+  if (ids.length === 0 && browserName === "Opera Stable") {
+    // Opera's Linux WM title can remain generic instead of following the active
+    // tab title. The fixture title was already asserted through WebDriver;
+    // identify the visible Opera top-level window by WM_CLASS for keyboard input.
+    ids = execFileSync("xdotool", [
+      "search", "--onlyvisible", "--class", "opera"
+    ], { encoding: "utf8" }).trim().split("\n").filter(Boolean);
+  }
+  assert.ok(ids.length > 0, browserName + ": headed browser window must be discoverable");
   const windowId = ids[0];
   execFileSync("xdotool", ["windowactivate", "--sync", windowId], { timeout: 10000 });
   execFileSync("xdotool", ["windowraise", windowId], { timeout: 10000 });
@@ -26,7 +34,12 @@ async function focusFixtureAndInvokeShortcut() {
   const focused = execFileSync("xdotool", [
     "getwindowfocus", "getwindowname"
   ], { encoding: "utf8" }).trim();
-  assert.ok(focused.includes(fixtureTitle), browserName + ": fixture did not receive keyboard focus (" + focused + ")");
+  const focusedClass = execFileSync("xdotool", [
+    "getwindowfocus", "getwindowclassname"
+  ], { encoding: "utf8" }).trim();
+  const fixtureWindowFocused = focused.includes(fixtureTitle) ||
+    (browserName === "Opera Stable" && focusedClass.toLowerCase().includes("opera"));
+  assert.ok(fixtureWindowFocused, browserName + ": fixture browser did not receive keyboard focus (" + focused + "; class=" + focusedClass + ")");
   execFileSync("xdotool", ["key", "--clearmodifiers", "--delay", "100", "alt+shift+y"]);
 }
 
