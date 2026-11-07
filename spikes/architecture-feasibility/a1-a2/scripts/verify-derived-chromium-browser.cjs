@@ -20,9 +20,9 @@ async function focusFixtureAndInvokeShortcut() {
   ], { encoding: "utf8" }).trim().split("\n").filter(Boolean);
   assert.ok(ids.length > 0, browserName + ": headed fixture window must be discoverable");
   const windowId = ids[0];
-  execFileSync("xdotool", ["windowactivate", "--sync", windowId]);
-  execFileSync("xdotool", ["windowraise", windowId]);
-  execFileSync("xdotool", ["windowfocus", "--sync", windowId]);
+  execFileSync("xdotool", ["windowactivate", "--sync", windowId], { timeout: 10000 });
+  execFileSync("xdotool", ["windowraise", windowId], { timeout: 10000 });
+  execFileSync("xdotool", ["windowfocus", "--sync", windowId], { timeout: 10000 });
   const focused = execFileSync("xdotool", [
     "getwindowfocus", "getwindowname"
   ], { encoding: "utf8" }).trim();
@@ -46,8 +46,10 @@ async function focusFixtureAndInvokeShortcut() {
   let context;
 
   try {
+    console.log(JSON.stringify({ stage: "launch", browser: browserName, binary: browserBinary }));
     context = await chromium.launchPersistentContext("", {
       executablePath: browserBinary,
+      timeout: 30000,
       headless: false,
       viewport: { width: 1100, height: 760 },
       args: [
@@ -58,15 +60,18 @@ async function focusFixtureAndInvokeShortcut() {
       ]
     });
 
+    console.log(JSON.stringify({ stage: "launched", browser: browserName }));
     const worker = context.serviceWorkers()[0] ??
       await context.waitForEvent("serviceworker", { timeout: 15000 });
     const extensionId = new URL(worker.url()).host;
+    console.log(JSON.stringify({ stage: "service-worker-ready", browser: browserName, extensionId }));
     assert.match(extensionId, /^[a-p]{32}$/, browserName + ": browser must expose the extension service worker");
 
     const popup = await context.newPage();
     await popup.goto("chrome-extension://" + extensionId + "/popup.html");
     await popup.getByRole("heading", { name: "Extensions" }).waitFor({ state: "visible" });
 
+    console.log(JSON.stringify({ stage: "popup-ready", browser: browserName }));
     const manifest = await popup.evaluate(() => chrome.runtime.getManifest());
     assert.equal(manifest.manifest_version, 3);
     assert.deepEqual([...manifest.permissions].sort(), ["activeTab", "scripting"]);
@@ -80,7 +85,9 @@ async function focusFixtureAndInvokeShortcut() {
     await fixture.goto(origin);
     assert.equal(await fixture.title(), fixtureTitle);
     await fixture.bringToFront();
+    console.log(JSON.stringify({ stage: "fixture-ready", browser: browserName, origin }));
     await focusFixtureAndInvokeShortcut();
+    console.log(JSON.stringify({ stage: "shortcut-sent", browser: browserName }));
 
     await popup.waitForFunction(
       ({ expectedTitle, expectedOrigin }) => {
@@ -93,6 +100,7 @@ async function focusFixtureAndInvokeShortcut() {
     );
 
     const result = await popup.locator("#result").evaluate((output) => output.value || output.textContent);
+    console.log(JSON.stringify({ stage: "inspection-result-received", browser: browserName }));
     assert.ok(result.includes(fixtureTitle));
     assert.ok(result.includes(origin));
 
