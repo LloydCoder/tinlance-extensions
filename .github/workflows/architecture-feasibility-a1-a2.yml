@@ -146,6 +146,7 @@ jobs:
           project="$(find "${{ runner.temp }}/TinlanceReadOnlySpike" -maxdepth 4 -name '*.xcodeproj' -print -quit)"
           test -n "$project"
           xcodebuild -list -project "$project"
+          bash spikes/architecture-feasibility/a1-a2/scripts/verify-safari-xcode-build.sh "$project" "$RUNNER_TEMP/safari-derived-data"
       - name: Preserve generated Safari Xcode project for review
         uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
         with:
