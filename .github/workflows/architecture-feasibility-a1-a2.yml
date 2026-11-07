@@ -100,6 +100,7 @@ jobs:
       - name: Verify Firefox MV3 activeTab keyboard action
         env:
           FIREFOX_BINARY: ${{ steps.setup-firefox.outputs.firefox-path }}
+          MOZ_REMOTE_ALLOW_SYSTEM_ACCESS: "1"
         run: |
           xvfb-run -a bash -lc 'openbox --sm-disable >/tmp/openbox-firefox.log 2>&1 & sleep 1; "$RUNNER_TEMP/firefox-test-venv/bin/python" scripts/verify-firefox-active-tab-action.py "$RUNNER_TEMP/tinlance-permission-sensitive-firefox.xpi"'
       - name: Publish generated lockfile for review
