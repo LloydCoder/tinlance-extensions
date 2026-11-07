@@ -19,6 +19,7 @@ export function createPostgresRepository({ pool }) {
 
     const client = await pool.connect();
     let transactionOpen = false;
+    let releaseError;
     try {
       await client.query("BEGIN");
       transactionOpen = true;
@@ -32,14 +33,15 @@ export function createPostgresRepository({ pool }) {
       if (transactionOpen) {
         try {
           await client.query("ROLLBACK");
-        } catch {
-          // Preserve the original operation error; release() discards a
-          // connection that the driver considers unusable.
+        } catch (rollbackError) {
+          // pg.Pool removes a client released with an error instead of
+          // returning a potentially transaction-poisoned session to the pool.
+          releaseError = rollbackError;
         }
       }
       throw error;
     } finally {
-      client.release();
+      client.release(releaseError);
     }
   }
 
