@@ -11,6 +11,8 @@ This isolated spike is evidence, not a production API or service.
 - PostgreSQL row-level security (RLS) forced on tenant-owned tables; missing tenant context returns no rows.
 - Integration assertions for tenant isolation, idempotent enqueue/outbox and transaction rollback.
 - Durable worker lease functions with bounded lease duration, `FOR UPDATE SKIP LOCKED` claims, lease-expiry reclaim, per-claim fencing tokens, stale-worker rejection, bounded retries and terminal failure.
+- A Node worker runtime with tenant-scoped claim/finish/fail/renew transactions, bounded retry policy, handler cancellation signal and periodic lease heartbeat.
+- Real child-process PostgreSQL integration proving worker process death after claim, lease-expiry recovery by a new process, two concurrent worker processes claiming distinct jobs, idempotent test effects and heartbeat renewal for a long-running handler.
 - PostgreSQL integration assertions for worker lease-expiry recovery and fencing-token safety.
 - Tenant-bound transactional outbox publisher leases with bounded batch/lease inputs, `FOR UPDATE SKIP LOCKED` claims, expiry/reclaim, fresh fencing tokens, stale-token rejection and tenant-scoped publish acknowledgement.
 - OpenAPI 3.1 fixture and liveness/readiness separation.
@@ -20,8 +22,8 @@ This isolated spike is evidence, not a production API or service.
 - The PostgreSQL adapter expects a pool whose login role is allowed to `SET ROLE tinlance_app_runtime`. Production credential provisioning, migration ownership, connection-pool sizing/timeouts and secret rotation remain unimplemented.
 - The runtime role is a non-login database role for proving RLS policy behavior. The integration workflow connects as the PostgreSQL superuser and explicitly switches to the restricted runtime role inside each transaction; production must use a dedicated least-privilege login role with only the required membership.
 - A separate two-session PostgreSQL 16 CI test holds concurrent transactions open while two runtime-role workers claim jobs, asserting `FOR UPDATE SKIP LOCKED` yields distinct jobs exactly once. This is database-level concurrency evidence, not a multi-process application worker service or process crash/restart test.
-- The outbox publisher has a database lease/claim/acknowledgement contract, but no external delivery adapter, at-least-once delivery loop, consumer idempotency contract, backoff/dead-letter operations or process crash/restart test is implemented.
-- No rate limiting, deployment, secrets manager, backup/restore, object storage, retention/deletion, or legal/privacy review is included.
+- The outbox publisher has a database lease/claim/acknowledgement contract, but no external delivery adapter, at-least-once delivery loop, consumer idempotency contract or dead-letter operations are implemented. The job worker process now has crash/restart and concurrent-claim evidence; that does not prove the outbox publisher process.
+- No production OIDC/JWKS validation, production credential provisioning, rate limiting, deployment, secrets manager, backup/restore, object storage, retention/deletion, or legal/privacy review is included.
 
 Run locally against PostgreSQL 16+ after applying migrations 001–003. Install the pinned test driver with `npm install --no-save --package-lock=false --ignore-scripts pg@8.16.3`, then run:
 
@@ -29,8 +31,10 @@ Run locally against PostgreSQL 16+ after applying migrations 001–003. Install 
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f migrations/001_platform_core.sql
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f migrations/002_worker_leases.sql
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f migrations/003_outbox_publisher.sql
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f migrations/004_worker_lease_renewal.sql
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f postgres.integration.sql
 node --test postgres.repository.integration.test.mjs
+node --test worker.process.integration.test.mjs
 ```
 
-A3 remains **partial** until the production identity/token boundary, production credential model, multi-process worker execution and process crash/restart, external outbox delivery and consumer idempotency, cancellation semantics, migration rollback, backup/restore and security review are implemented and tested.
+A3 remains **partial** until the production identity/token boundary and credential model, production worker composition/deployment, external outbox delivery and consumer idempotency, cancellation semantics, migration rollback, backup/restore and security review are implemented and tested.
