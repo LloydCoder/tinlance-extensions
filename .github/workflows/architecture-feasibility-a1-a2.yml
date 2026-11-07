@@ -251,10 +251,10 @@ jobs:
           set -Eeuo pipefail
           mkdir -p "$RUNNER_TEMP/operadriver-bin"
           curl --fail --silent --show-error --location \
-            "https://github.com/operasoftware/operachromiumdriver/releases/download/v.155.0.8059.85/operadriver_linux64.zip" \
-            --output "$RUNNER_TEMP/operadriver-v155.0.8059.85-linux64.zip"
-          echo "e0687a1cdd3f2349e5bed716362856f43109f6306e696f3156bc7b98ec73f12d  $RUNNER_TEMP/operadriver-v155.0.8059.85-linux64.zip" | sha256sum --check -
-          unzip -q "$RUNNER_TEMP/operadriver-v155.0.8059.85-linux64.zip" -d "$RUNNER_TEMP/operadriver-bin"
+            "https://github.com/operasoftware/operachromiumdriver/releases/download/v.139.0.7258.156/operadriver_linux64.zip" \
+            --output "$RUNNER_TEMP/operadriver-v139.0.7258.156-linux64.zip"
+          echo "997ef6584b3ed7e892eecce9e49ec1c1e775c3b64f59962e004baba17fa12396  $RUNNER_TEMP/operadriver-v139.0.7258.156-linux64.zip" | sha256sum --check -
+          unzip -q "$RUNNER_TEMP/operadriver-v139.0.7258.156-linux64.zip" -d "$RUNNER_TEMP/operadriver-bin"
           driver_path="$(find "$RUNNER_TEMP/operadriver-bin" -type f -name operadriver -print -quit)"
           test -n "$driver_path"
           chmod 0755 "$driver_path"
@@ -271,5 +271,5 @@ jobs:
         run: |
           set -Eeuo pipefail
           opera --version
-          "$RUNNER_TEMP/operadriver-bin/operadriver" --version
+          "${{ steps.install-operadriver.outputs.path }}" --version
           xvfb-run -a bash -lc 'openbox --sm-disable >/tmp/openbox-opera.log 2>&1 & sleep 1; "$RUNNER_TEMP/opera-test-venv/bin/python" spikes/architecture-feasibility/a1-a2/scripts/verify-opera-active-tab-action.py'
