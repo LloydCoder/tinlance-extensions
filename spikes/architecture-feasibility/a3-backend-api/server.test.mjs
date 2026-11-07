@@ -12,7 +12,8 @@ async function withServer(fn, ready = true) {
     async isReady() { return ready; },
     async findRecordForTenant(id, tenantId) {
       return records.find((item) => item.id === id && item.tenantId === tenantId) ?? null;
-    }
+    },
+    async cancelJobForTenant() { return false; }
   };
   const server = createApiServer({
     repository,
@@ -86,7 +87,7 @@ test("unsupported methods are rejected with an explicit allow header", async () 
 
 const cancellationJobId = "a4f6d9e2-1c3b-4a5d-8e7f-9012bc345678";
 
-async function withCancellationServer(fn, cancellationResult = true) {
+async function withCancellationServer(fn, cancellationResult = true, authorize = true) {
   const calls = [];
   const repository = {
     async isReady() { return true; },
@@ -100,7 +101,8 @@ async function withCancellationServer(fn, cancellationResult = true) {
     repository,
     verifyBearer: async (token) => token === "valid-test-token-0001"
       ? { subject: "user-a", tenantId: "tenant-a" }
-      : null
+      : null,
+    authorizeJobCancellation: async () => authorize
   });
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
   const address = server.address();
@@ -145,4 +147,16 @@ test("job cancellation requires authentication and rejects unsupported methods",
     assert.equal(unsupported.headers.get("allow"), "POST");
     assert.equal(calls.length, 0);
   });
+});
+
+test("job cancellation fails closed when the authorization policy denies the principal", async () => {
+  await withCancellationServer(async (base, calls) => {
+    const response = await fetch(`${base}/v1/jobs/${cancellationJobId}/cancel`, {
+      method: "POST",
+      headers: { authorization: "Bearer valid-test-token-0001" }
+    });
+    assert.equal(response.status, 403);
+    assert.deepEqual(await response.json().then(({ error }) => ({ error })), { error: "forbidden" });
+    assert.equal(calls.length, 0);
+  }, true, false);
 });
