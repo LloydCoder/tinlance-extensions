@@ -99,7 +99,8 @@ def main() -> int:
             (item for item in commands if item.get("name") == "inspect-active-tab"),
             None,
         )
-        if not command or command.get("shortcut") != SHORTCUT:
+        normalize_shortcut = lambda value: sorted(part.lower() for part in value.split("+"))
+        if not command or normalize_shortcut(command.get("shortcut", "")) != normalize_shortcut(SHORTCUT):
             raise AssertionError(f"Opera did not register the expected shortcut: {command!r}")
 
         driver.switch_to.new_window("tab")
