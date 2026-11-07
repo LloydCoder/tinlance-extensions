@@ -2,22 +2,22 @@
 
 **Audit date:** 2026-11-07
 **Audited branch:** `main`
-**Audited commit after PR #30:** `f6e34c242dfc7819a44e0940accb1544d1363148`
-**Scope:** Repository tree, consolidated phase plan, Phase 02 evidence ledger, accepted architecture records, PR #30 and exact-head/main GitHub Actions runs.
+**Audited commit after PR #32:** `f671facca4ea87b25265344e3df00cc73d8ede92`
+**Scope:** Repository tree, consolidated phase plan, Phase 02 evidence ledger, accepted architecture records, PRs #30–#32 and exact-head GitHub Actions runs.
 **Disposition:** **Programme remains gated. No product implementation phase is authorized by the current evidence.**
 
 ## 1. Executive finding
 
-The repository has a substantial governance and architecture baseline, plus isolated A1–A2 and A3 feasibility spikes. PR #30 adds a real Chromium MV3 popup/runtime and service-worker restart regression, and successfully generates and validates a Safari Xcode project. The repository is not yet an implemented browser-extension platform, production backend, MCP service, customer portal, or 26-product suite.
+The repository has a substantial governance and architecture baseline, plus isolated A1–A2 and A3 feasibility spikes. PR #30 adds Chromium MV3 popup/runtime and service-worker restart proof plus Safari Xcode packaging; PR #32 adds a real Chromium keyboard-shortcut `activeTab`/`scripting` runtime test using a loopback fixture. The repository is not yet an implemented browser-extension platform, production backend, MCP service, customer portal, or 26-product suite.
 
-PR #30 merged as `f6e34c242dfc7819a44e0940accb1544d1363148`. Its exact head (`cb420e884cdecc34f6db33fe887eb77e8ec95fe7`) passed Repository Quality and the complete A1–A2 workflow, including clean install, lint, typecheck, Next.js/Chrome/Firefox/Safari builds, least-privilege manifest tests, Chromium popup runtime/brand verification, forced service-worker termination and event-driven restart, Safari Xcode packaging and `xcodebuild -list`. The post-merge main Repository Quality run `42367755219` and A1–A2 run `42367755363` both completed successfully. These are repository/spike checks only; they do not demonstrate production readiness.
+PR #30 merged as `f6e34c242dfc7819a44e0940accb1544d1363148`. PR #32 merged as `f671facca4ea87b25265344e3df00cc73d8ede92` from head `0fef63a72b4418d953f529c9a01010da485fdbe0`; its exact-head Repository Quality [run 42368720120](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42368720120) and A1–A2 [run 42368720112](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42368720112) both passed. The A1–A2 job invoked the extension's registered keyboard shortcut with X11 against a loopback page and verified the injected script returned its title and origin. These are repository/spike checks only; they do not demonstrate production readiness.
 
 ## 2. Verified repository state
 
 - Default branch: `main`; repository is not archived.
-- Audited commit: `f6e34c242dfc7819a44e0940accb1544d1363148`.
-- Relevant merged changes include PR #23 (SVG brand assets), PR #24 (original PNG branding exports and popup application), PR #25 (isolated A3 backend/API contract spike), PR #28 (tenant-bound PostgreSQL worker lease/recovery and stale-worker fencing), and PR #30 (Chromium MV3 popup/runtime and service-worker restart proof plus Safari Xcode packaging/project validation). PR #27's tenant isolation/idempotency/outbox evidence remains part of the baseline.
-- Latest observed main Repository Quality workflow after PR #30: [run 42367755219](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42367755219), conclusion `success`; A1–A2 main workflow: [run 42367755363](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42367755363), conclusion `success`.
+- Audited commit: `f671facca4ea87b25265344e3df00cc73d8ede92`.
+- Relevant merged changes include PR #23 (SVG brand assets), PR #24 (original PNG branding exports and popup application), PR #25 (isolated A3 backend/API contract spike), PR #28 (tenant-bound PostgreSQL worker lease/recovery and stale-worker fencing), PR #30 (Chromium MV3 popup/runtime and service-worker restart proof plus Safari Xcode packaging/project validation), and PR #32 (Chromium keyboard-shortcut activeTab/scripting runtime proof). PR #27's tenant isolation/idempotency/outbox evidence remains part of the baseline.
+- PR #32 exact-head Repository Quality [run 42368720120](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42368720120) and A1–A2 [run 42368720112](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42368720112) both passed. The available workflow-run connector does not expose push-triggered runs for the PR #32 merge commit; no post-merge push-run claim is made.
 - PR #28 exact-head checks: [Repository Quality](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42020490026), [A3 API contract](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42020490127), and [PostgreSQL tenant/outbox/worker recovery](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42020489917) — all `success`.
 - The repository tree contains governance documents and isolated `spikes/architecture-feasibility/a1-a2` and `a3-backend-api` projects. It does not contain the planned production `apps/api`, `apps/worker`, `apps/web`, product extension applications, MCP gateway, or production shared packages.
 - The live branch API reports `main.protected: false`; the repository rulesets endpoint returns an empty list. Required branch protection/ruleset enforcement is absent. The connected GitHub integration cannot mutate repository administration settings, so this remains a repository-owner configuration blocker.
@@ -29,7 +29,7 @@ PR #30 merged as `f6e34c242dfc7819a44e0940accb1544d1363148`. Its exact head (`cb
 | Phase 0 — repository foundation | Closed for documented repository scope | Does not imply application readiness |
 | Phase 1 — forensic baseline | Closed for documented audit scope | Refresh baseline after material repository changes |
 | Phase 2 — product requirements and validation | Documentary baseline complete; **open** | Real customer discovery, product-owner sign-offs, product-specific threat models, legal/provider reviews and commercial proof |
-| Phase 3 — architecture and feasibility | ADRs accepted; **feasibility partial** | A2 permission-sensitive action, Firefox runtime and Safari runtime/signing; A3 production API/database wiring and operational recovery; A4 product data/security; A5 executable MCP conformance; A6 actual Agent Platform contract; A7 deployment/residency/budget approval |
+| Phase 3 — architecture and feasibility | ADRs accepted; **feasibility partial** | A2 Firefox runtime and Safari runtime/signing; A3 production API/database wiring and operational recovery; A4 product data/security; A5 executable MCP conformance; A6 actual Agent Platform contract; A7 deployment/residency/budget approval |
 | Phases 4–10 | Not started as production implementation | Phase 2 and Phase 3 exit gates must pass |
 | Phases 11–19 | Not started as product implementation | Shared platform and product-specific gates |
 | Phases 20–25 | Not started as production release work | Verified implementation, independent assurance, operational and release evidence |
@@ -44,7 +44,7 @@ The repository can prepare interview scripts, decision records, questionnaires a
 
 ### B2 — A2 is not a cross-browser runtime certification
 
-PR #30 proves the read-only Chromium MV3 popup/runtime, service-worker termination and event-driven restart, and Safari Xcode project packaging/validation. It does not prove the permission-sensitive `activeTab` + `scripting` action flow, Firefox runtime behavior, Safari runtime/signing/notarization, store review, or the complete Edge/Brave/Opera version matrix. Add automated permission-sensitive and Firefox runtime tests, then complete the separate Safari runtime/signing and store evidence before declaring compatibility.
+PR #30 proves the read-only Chromium MV3 popup/runtime, service-worker termination and event-driven restart, and Safari Xcode project packaging/validation. PR #32 proves a user-invoked custom keyboard shortcut grants temporary `activeTab` access in Chromium and that `scripting.executeScript` returns metadata from a loopback fixture with only `activeTab` and `scripting` permissions. Firefox runtime behavior, Safari runtime/signing/notarization, store review and the complete Edge/Brave/Opera version matrix remain open.
 
 ### B3 — A3 is a contract fixture, not a production backend
 
