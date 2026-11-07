@@ -47,6 +47,9 @@ const repository = {
   async cancelJobForTenant(jobId, tenantId) {
     return jobId === "a4f6d9e2-1c3b-4a5d-8e7f-9012bc345678" && tenantId === "tenant-a";
   },
+  async replayDeadLetterForTenant(eventId, tenantId, actorId, requestId) {
+    return eventId === "c4f6d9e2-1c3b-4a5d-8e7f-9012bc345679" && tenantId === "tenant-a" && actorId === "oidc-user-42" && typeof requestId === "string";
+  },
   async findRecordForTenant(id, tenantId) {
     const records = [
       { id: "record-a", tenantId: "tenant-a", value: "alpha" },
@@ -56,7 +59,7 @@ const repository = {
   }
 };
 
-async function withOidcServer(fn, authorizeJobCancellation) {
+async function withOidcServer(fn, authorizeJobCancellation, authorizeOutboxReplay) {
   let fetchCount = 0;
   const fetchImpl = async (url) => {
     fetchCount += 1;
@@ -66,7 +69,7 @@ async function withOidcServer(fn, authorizeJobCancellation) {
       headers: { "content-type": "application/json" }
     });
   };
-  const server = createApiServerFromEnvironment({ repository, env, fetchImpl, authorizeJobCancellation });
+  const server = createApiServerFromEnvironment({ repository, env, fetchImpl, authorizeJobCancellation, authorizeOutboxReplay });
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
   const address = server.address();
   try {
@@ -135,4 +138,15 @@ test("OIDC composition forwards the explicit cancellation authorization policy",
     assert.equal(response.status, 200);
     assert.deepEqual(await response.json(), { status: "cancelled" });
   }, async ({ principal }) => principal.subject === "oidc-user-42");
+});
+
+test("OIDC composition forwards the explicit dead-letter replay authorization policy", async () => {
+  await withOidcServer(async (base) => {
+    const response = await fetch(`${base}/v1/outbox/dead-letters/c4f6d9e2-1c3b-4a5d-8e7f-9012bc345679/replay`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${makeToken()}` }
+    });
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), { status: "requeued" });
+  }, undefined, async ({ principal }) => principal.subject === "oidc-user-42");
 });

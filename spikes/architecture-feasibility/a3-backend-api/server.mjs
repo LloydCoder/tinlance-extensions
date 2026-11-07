@@ -2,6 +2,7 @@ import { createServer } from "node:http";
 import { randomUUID } from "node:crypto";
 
 const JOB_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const EVENT_ID_PATTERN = JOB_ID_PATTERN;
 
 const json = (res, status, body, requestId) => {
   res.writeHead(status, {
@@ -16,6 +17,7 @@ const json = (res, status, body, requestId) => {
 export function createApiServer({
   verifyBearer = async () => null,
   authorizeJobCancellation = async () => false,
+  authorizeOutboxReplay = async () => false,
   repository
 }) {
   if (!repository || typeof repository.findRecordForTenant !== "function") {
@@ -23,6 +25,9 @@ export function createApiServer({
   }
   if (typeof authorizeJobCancellation !== "function") {
     throw new TypeError("authorizeJobCancellation must be a function");
+  }
+  if (typeof authorizeOutboxReplay !== "function") {
+    throw new TypeError("authorizeOutboxReplay must be a function");
   }
 
   return createServer(async (req, res) => {
@@ -39,8 +44,19 @@ export function createApiServer({
 
       const cancellationMatch = url.pathname.match(/^\/v1\/jobs\/([0-9a-f-]{36})\/cancel$/i);
       const isCancellationRoute = Boolean(cancellationMatch && JOB_ID_PATTERN.test(cancellationMatch[1]));
-      if (req.method !== "GET" && !(req.method === "POST" && isCancellationRoute)) {
-        res.setHeader("allow", isCancellationRoute ? "POST" : "GET");
+      const replayMatch = url.pathname.match(/^\/v1\/outbox\/dead-letters\/([0-9a-f-]{36})\/replay$/i);
+      const isReplayRoute = Boolean(replayMatch && EVENT_ID_PATTERN.test(replayMatch[1]));
+      const isPostActionRoute = isCancellationRoute || isReplayRoute;
+      if (req.method === "POST" && isPostActionRoute) {
+        const contentLength = req.headers["content-length"];
+        if (req.headers["transfer-encoding"] !== undefined || (contentLength !== undefined && contentLength !== "0")) {
+          req.resume();
+          return json(res, 400, { error: "body_not_allowed", requestId }, requestId);
+        }
+      }
+      if (req.method !== "GET" && !(req.method === "POST" && isPostActionRoute)) {
+        req.resume();
+        res.setHeader("allow", isPostActionRoute ? "POST" : "GET");
         return json(res, 405, { error: "method_not_allowed", requestId }, requestId);
       }
 
@@ -65,6 +81,25 @@ export function createApiServer({
         const cancelled = await repository.cancelJobForTenant(jobId, principal.tenantId);
         if (!cancelled) return json(res, 404, { error: "not_found", requestId }, requestId);
         return json(res, 200, { status: "cancelled" }, requestId);
+      }
+
+      if (req.method === "POST" && isReplayRoute) {
+        const eventId = replayMatch[1].toLowerCase();
+        const authorized = await authorizeOutboxReplay({ principal, eventId, requestId });
+        if (authorized !== true) {
+          return json(res, 403, { error: "forbidden", requestId }, requestId);
+        }
+        if (typeof repository.replayDeadLetterForTenant !== "function") {
+          return json(res, 503, { error: "not_ready", requestId }, requestId);
+        }
+        const replayed = await repository.replayDeadLetterForTenant(
+          eventId,
+          principal.tenantId,
+          principal.subject,
+          requestId
+        );
+        if (!replayed) return json(res, 404, { error: "not_found", requestId }, requestId);
+        return json(res, 200, { status: "requeued" }, requestId);
       }
 
       if (url.pathname === "/v1/me") {

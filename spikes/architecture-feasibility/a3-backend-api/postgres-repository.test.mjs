@@ -88,3 +88,49 @@ test("invalid job identifiers are rejected before acquiring a database connectio
   assert.equal(await repository.cancelJobForTenant("not-a-uuid", "tenant-a"), false);
   assert.equal(connectionAttempts, 0);
 });
+
+test("dead-letter replay passes verified tenant, actor and request identity to PostgreSQL", async () => {
+  const statements = [];
+  const client = {
+    async query(statement, values) {
+      statements.push({ statement, values });
+      if (statement === "SELECT public.replay_dead_letter_event($1, $2, $3) AS replayed") {
+        return { rows: [{ replayed: true }] };
+      }
+      return { rows: [] };
+    },
+    release() {}
+  };
+  const pool = {
+    async connect() { return client; },
+    async query() { return { rows: [] }; }
+  };
+  const repository = createPostgresRepository({ pool });
+  const eventId = "c4f6d9e2-1c3b-4a5d-8e7f-9012bc345679";
+  const requestId = "d4f6d9e2-1c3b-4a5d-8e7f-9012bc345670";
+
+  assert.equal(await repository.replayDeadLetterForTenant(eventId, "tenant-a", "operator-42", requestId), true);
+  assert.deepEqual(statements, [
+    { statement: "BEGIN", values: undefined },
+    { statement: "SET LOCAL ROLE tinlance_app_runtime", values: undefined },
+    { statement: "SELECT set_config('app.tenant_id', $1, true)", values: ["tenant-a"] },
+    { statement: "SELECT public.replay_dead_letter_event($1, $2, $3) AS replayed", values: [eventId, "operator-42", requestId] },
+    { statement: "COMMIT", values: undefined }
+  ]);
+});
+
+test("invalid replay audit identities are rejected before acquiring a connection", async () => {
+  let connectionAttempts = 0;
+  const pool = {
+    async connect() { connectionAttempts += 1; throw new Error("must not connect"); },
+    async query() { return { rows: [] }; }
+  };
+  const repository = createPostgresRepository({ pool });
+  const eventId = "c4f6d9e2-1c3b-4a5d-8e7f-9012bc345679";
+  const requestId = "d4f6d9e2-1c3b-4a5d-8e7f-9012bc345670";
+
+  assert.equal(await repository.replayDeadLetterForTenant(eventId, "tenant-a", "operator-42", "invalid"), false);
+  assert.equal(await repository.replayDeadLetterForTenant(eventId, "tenant-a", "", requestId), false);
+  assert.equal(await repository.replayDeadLetterForTenant(eventId, "tenant-a", "operator\nforged", requestId), false);
+  assert.equal(connectionAttempts, 0);
+});

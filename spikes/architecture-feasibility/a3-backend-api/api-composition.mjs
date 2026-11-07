@@ -18,7 +18,7 @@ function integerEnvironmentValue(env, name, fallback) {
   return Number(raw);
 }
 
-export function createOidcApiServer({ repository, oidcConfig, fetchImpl, authorizeJobCancellation }) {
+export function createOidcApiServer({ repository, oidcConfig, fetchImpl, authorizeJobCancellation, authorizeOutboxReplay }) {
   if (!oidcConfig || typeof oidcConfig !== "object") {
     throw new TypeError("oidcConfig is required");
   }
@@ -26,10 +26,10 @@ export function createOidcApiServer({ repository, oidcConfig, fetchImpl, authori
     ...oidcConfig,
     fetchImpl
   });
-  return createApiServer({ repository, verifyBearer, authorizeJobCancellation });
+  return createApiServer({ repository, verifyBearer, authorizeJobCancellation, authorizeOutboxReplay });
 }
 
-export function createApiServerFromEnvironment({ repository, env = process.env, fetchImpl, authorizeJobCancellation } = {}) {
+export function createApiServerFromEnvironment({ repository, env = process.env, fetchImpl, authorizeJobCancellation, authorizeOutboxReplay } = {}) {
   if (!env || typeof env !== "object") throw new TypeError("env must be an environment object");
   const oidcConfig = {
     issuer: requiredEnvironmentValue(env, "OIDC_ISSUER"),
@@ -42,5 +42,5 @@ export function createApiServerFromEnvironment({ repository, env = process.env, 
     timeoutMs: integerEnvironmentValue(env, "OIDC_JWKS_TIMEOUT_MS", 5000),
     minRefreshIntervalMs: integerEnvironmentValue(env, "OIDC_JWKS_MIN_REFRESH_INTERVAL_MS", 1000)
   };
-  return createOidcApiServer({ repository, oidcConfig, fetchImpl, authorizeJobCancellation });
+  return createOidcApiServer({ repository, oidcConfig, fetchImpl, authorizeJobCancellation, authorizeOutboxReplay });
 }
