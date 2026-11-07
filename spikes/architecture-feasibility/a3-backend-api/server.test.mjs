@@ -83,3 +83,66 @@ test("unsupported methods are rejected with an explicit allow header", async () 
     assert.equal(response.headers.get("allow"), "GET");
   });
 });
+
+const cancellationJobId = "a4f6d9e2-1c3b-4a5d-8e7f-9012bc345678";
+
+async function withCancellationServer(fn, cancellationResult = true) {
+  const calls = [];
+  const repository = {
+    async isReady() { return true; },
+    async findRecordForTenant() { return null; },
+    async cancelJobForTenant(jobId, tenantId) {
+      calls.push({ jobId, tenantId });
+      return cancellationResult;
+    }
+  };
+  const server = createApiServer({
+    repository,
+    verifyBearer: async (token) => token === "valid-test-token-0001"
+      ? { subject: "user-a", tenantId: "tenant-a" }
+      : null
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address();
+  try { await fn(`http://127.0.0.1:${address.port}`, calls); }
+  finally { await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve())); }
+}
+
+test("authenticated tenant can cancel its own job through the API", async () => {
+  await withCancellationServer(async (base, calls) => {
+    const response = await fetch(`${base}/v1/jobs/${cancellationJobId}/cancel`, {
+      method: "POST",
+      headers: { authorization: "Bearer valid-test-token-0001" }
+    });
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), { status: "cancelled" });
+    assert.deepEqual(calls, [{ jobId: cancellationJobId, tenantId: "tenant-a" }]);
+  });
+});
+
+test("missing and cross-tenant jobs have the same cancellation response", async () => {
+  await withCancellationServer(async (base, calls) => {
+    const response = await fetch(`${base}/v1/jobs/${cancellationJobId}/cancel`, {
+      method: "POST",
+      headers: { authorization: "Bearer valid-test-token-0001" }
+    });
+    assert.equal(response.status, 404);
+    assert.deepEqual(await response.json(), { error: "not_found", requestId: response.headers.get("x-request-id") });
+    assert.equal(calls.length, 1);
+  }, false);
+});
+
+test("job cancellation requires authentication and rejects unsupported methods", async () => {
+  await withCancellationServer(async (base, calls) => {
+    const path = `${base}/v1/jobs/${cancellationJobId}/cancel`;
+    const unauthenticated = await fetch(path, { method: "POST" });
+    assert.equal(unauthenticated.status, 401);
+    const unsupported = await fetch(path, {
+      method: "DELETE",
+      headers: { authorization: "Bearer valid-test-token-0001" }
+    });
+    assert.equal(unsupported.status, 405);
+    assert.equal(unsupported.headers.get("allow"), "POST");
+    assert.equal(calls.length, 0);
+  });
+});
