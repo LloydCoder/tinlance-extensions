@@ -70,7 +70,7 @@ Provider, region/residency, cost ceiling, backup/restore, incident response and 
 
 ### B8 — Governance enforcement is incomplete
 
-The main branch was reported unprotected. Configure required checks, review rules, stale approval dismissal, restricted bypass and release permissions where repository administration permits. Re-check ruleset state after changes; a green run alone does not enforce merge policy.
+The live branch API confirmed `main.protected: false` on 2026-11-07, and the repository rulesets endpoint returned no rulesets. Configure a repository ruleset requiring pull requests and the Repository Quality and A1–A2 checks, prohibit force-push/deletion, and define an appropriate bypass policy. The connected GitHub integration is GET-only for repository administration and cannot apply this change; the repository owner must configure it in GitHub Settings. Re-check the branch API and rulesets after configuration; green CI alone does not enforce merge policy.
 
 ## 5. Required execution order
 
