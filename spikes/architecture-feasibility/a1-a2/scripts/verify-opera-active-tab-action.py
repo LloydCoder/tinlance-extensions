@@ -57,11 +57,14 @@ def main() -> int:
     server_thread.start()
     origin = f"http://127.0.0.1:{server.server_port}"
 
-    service = Service(executable_path=operadriver)
+    service = Service(executable_path=operadriver, service_args=["--verbose"], log_output=sys.stderr)
     driver = None
     try:
         options = webdriver.ChromeOptions()
-        options.binary_location = opera_binary
+        # OperaDriver uses its vendor-specific operaOptions.binary capability.
+        # ChromeOptions.binary_location emits goog:chromeOptions.binary, which
+        # is not the documented OperaDriver launch contract.
+        options.set_capability("operaOptions", {"binary": opera_binary})
         options.add_experimental_option("w3c", True)
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
@@ -149,6 +152,7 @@ def main() -> int:
                 {
                     "case": "opera-mv3-activeTab-keyboard-shortcut",
                     "browser_version": driver.capabilities.get("browserVersion"),
+                    "browser_user_agent": driver.execute_script("return navigator.userAgent"),
                     "operadriver_version": subprocess.run(
                         [operadriver, "--version"],
                         check=True,
