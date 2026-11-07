@@ -55,6 +55,7 @@ export function createApiServer({
         }
       }
       if (req.method !== "GET" && !(req.method === "POST" && isPostActionRoute)) {
+        req.resume();
         res.setHeader("allow", isPostActionRoute ? "POST" : "GET");
         return json(res, 405, { error: "method_not_allowed", requestId }, requestId);
       }
