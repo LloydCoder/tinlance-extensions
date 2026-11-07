@@ -239,3 +239,19 @@ test("dead-letter replay requires authentication and POST", async () => {
     assert.equal(calls.length, 0);
   });
 });
+
+test("operational replay endpoints reject request bodies", async () => {
+  await withReplayServer(async (base, calls) => {
+    const response = await fetch(`${base}/v1/outbox/dead-letters/${deadLetterEventId}/replay`, {
+      method: "POST",
+      headers: {
+        authorization: "Bearer valid-test-token-0001",
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({ tenantId: "tenant-b" })
+    });
+    assert.equal(response.status, 400);
+    assert.equal((await response.json()).error, "body_not_allowed");
+    assert.equal(calls.length, 0);
+  });
+});
