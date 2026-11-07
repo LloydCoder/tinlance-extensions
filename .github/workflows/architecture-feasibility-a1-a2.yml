@@ -246,6 +246,7 @@ jobs:
           name: chromium-permission-sensitive-extension
           path: ${{ runner.temp }}/chromium-permission-sensitive-extension
       - name: Install pinned OperaDriver with checksum verification
+        id: install-operadriver
         run: |
           set -Eeuo pipefail
           mkdir -p "$RUNNER_TEMP/operadriver-bin"
@@ -254,7 +255,10 @@ jobs:
             --output "$RUNNER_TEMP/operadriver-v155.0.8059.85-linux64.zip"
           echo "e0687a1cdd3f2349e5bed716362856f43109f6306e696f3156bc7b98ec73f12d  $RUNNER_TEMP/operadriver-v155.0.8059.85-linux64.zip" | sha256sum --check -
           unzip -q "$RUNNER_TEMP/operadriver-v155.0.8059.85-linux64.zip" -d "$RUNNER_TEMP/operadriver-bin"
-          chmod 0755 "$RUNNER_TEMP/operadriver-bin/operadriver"
+          driver_path="$(find "$RUNNER_TEMP/operadriver-bin" -type f -name operadriver -print -quit)"
+          test -n "$driver_path"
+          chmod 0755 "$driver_path"
+          echo "path=$driver_path" >> "$GITHUB_OUTPUT"
       - name: Install pinned Selenium runtime
         run: |
           python3 -m venv "$RUNNER_TEMP/opera-test-venv"
@@ -262,7 +266,7 @@ jobs:
       - name: Verify Opera MV3 activeTab keyboard action
         env:
           OPERA_BINARY: /usr/bin/opera
-          OPERADRIVER_BINARY: ${{ runner.temp }}/operadriver-bin/operadriver
+          OPERADRIVER_BINARY: ${{ steps.install-operadriver.outputs.path }}
           EXTENSION_PATH: ${{ runner.temp }}/chromium-permission-sensitive-extension
         run: |
           set -Eeuo pipefail
