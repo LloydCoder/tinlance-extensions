@@ -1,25 +1,27 @@
 # Tinlance Extensions — Current Execution Audit
 
-**Audit date:** 2026-11-05
+**Audit date:** 2026-11-07
 **Audited branch:** `main`
-**Audited commit before PR #28:** `cf35c9b663df1cc248ef68acac0980d786fa86e4`; A3 evidence follow-up merged as `baf03dc972a8fa7a51e47c7642082a150d50665c`
+**Audited commit after PR #30:** `f6e34c242dfc7819a44e0940accb1544d1363148`
+**Scope:** Repository tree, consolidated phase plan, Phase 02 evidence ledger, accepted architecture records, PR #30 and exact-head/main GitHub Actions runs.
+**Disposition:** **Programme remains gated. No product implementation phase is authorized by the current evidence.**
 **Scope:** Repository tree, consolidated phase plan, Phase 02 evidence ledger, accepted architecture records, recent pull requests and GitHub Actions runs.
 **Disposition:** **Programme remains gated. No product implementation phase is authorized by the current evidence.**
 
 ## 1. Executive finding
 
-The repository has a substantial governance and architecture baseline, plus two isolated feasibility spikes. It is not yet an implemented browser-extension platform, production backend, MCP service, customer portal, or 26-product suite.
+The repository has a substantial governance and architecture baseline, plus isolated A1–A2 and A3 feasibility spikes. PR #30 adds a real Chromium MV3 popup/runtime and service-worker restart regression, and successfully generates and validates a Safari Xcode project. The repository is not yet an implemented browser-extension platform, production backend, MCP service, customer portal, or 26-product suite.
 
-PR #28 merged as `baf03dc972a8fa7a51e47c7642082a150d50665c`. On its exact head (`3bcae4eb4fba38692c8511cce2c07bf84aa6d184`), Repository Quality, A3 API contract/tenant-isolation and PostgreSQL tenant-isolation/outbox/worker-recovery checks all completed successfully. These are repository/spike checks only; they do not demonstrate production readiness. A fresh main-branch quality run after the merge is still required.
+PR #30 merged as `f6e34c242dfc7819a44e0940accb1544d1363148`. Its exact head (`cb420e884cdecc34f6db33fe887eb77e8ec95fe7`) passed Repository Quality and the complete A1–A2 workflow, including clean install, lint, typecheck, Next.js/Chrome/Firefox/Safari builds, least-privilege manifest tests, Chromium popup runtime/brand verification, forced service-worker termination and event-driven restart, Safari Xcode packaging and `xcodebuild -list`. The post-merge main Repository Quality run `42367755219` and A1–A2 run `42367755363` both completed successfully. These are repository/spike checks only; they do not demonstrate production readiness.
 
 ## 2. Verified repository state
 
 - Default branch: `main`; repository is not archived.
-- Audited commit: `cf35c9b663df1cc248ef68acac0980d786fa86e4`.
+- Audited commit: `f6e34c242dfc7819a44e0940accb1544d1363148`.
 - Relevant merged changes include PR #23 (SVG brand assets), PR #24 (original PNG branding exports and popup application), PR #25 (isolated A3 backend/API contract spike), and PR #28 (tenant-bound PostgreSQL worker lease/recovery and stale-worker fencing). PR #27's tenant isolation/idempotency/outbox evidence remains part of the baseline.
 - Latest observed main Repository Quality workflow: [run 42015111208](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42015111208), conclusion `success`.
 - PR #28 exact-head checks: [Repository Quality](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42020490026), [A3 API contract](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42020490127), and [PostgreSQL tenant/outbox/worker recovery](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42020489917) — all `success`.
-- The repository tree contains governance documents and the isolated `spikes/architecture-feasibility/a1-a2` and `a3-backend-api` projects. It does not contain the planned production `apps/api`, `apps/worker`, `apps/web`, product extension applications, MCP gateway, or production shared packages.
+- The repository tree contains governance documents and isolated `spikes/architecture-feasibility/a1-a2` and `a3-backend-api` projects. It does not contain the planned production `apps/api`, `apps/worker`, `apps/web`, product extension applications, MCP gateway, or production shared packages.
 - The `main` branch protection API reported `protected: false` at audit time. Required branch protection/ruleset enforcement is therefore not evidenced by the branch metadata.
 
 ## 3. Phase and gate status
@@ -29,7 +31,7 @@ PR #28 merged as `baf03dc972a8fa7a51e47c7642082a150d50665c`. On its exact head (
 | Phase 0 — repository foundation | Closed for documented repository scope | Does not imply application readiness |
 | Phase 1 — forensic baseline | Closed for documented audit scope | Refresh baseline after material repository changes |
 | Phase 2 — product requirements and validation | Documentary baseline complete; **open** | Real customer discovery, product-owner sign-offs, product-specific threat models, legal/provider reviews and commercial proof |
-| Phase 3 — architecture and feasibility | ADRs accepted; **feasibility partial** | A2 runtime/Safari evidence; A3 PostgreSQL/RLS and durable worker recovery; A4 product data/security; A5 executable MCP conformance; A6 actual Agent Platform contract; A7 deployment/residency/budget approval |
+| Phase 3 — architecture and feasibility | ADRs accepted; **feasibility partial** | A2 permission-sensitive action, Firefox runtime and Safari runtime/signing; A3 production API/database wiring and operational recovery; A4 product data/security; A5 executable MCP conformance; A6 actual Agent Platform contract; A7 deployment/residency/budget approval |
 | Phases 4–10 | Not started as production implementation | Phase 2 and Phase 3 exit gates must pass |
 | Phases 11–19 | Not started as product implementation | Shared platform and product-specific gates |
 | Phases 20–25 | Not started as production release work | Verified implementation, independent assurance, operational and release evidence |
@@ -44,7 +46,7 @@ The repository can prepare interview scripts, decision records, questionnaires a
 
 ### B2 — A2 is not a cross-browser runtime certification
 
-The existing spike proves representative Chrome/Firefox MV3 builds and manifest checks. It does not prove browser runtime behavior, service-worker lifecycle, Safari packaging/signing, store review, or an extension-by-extension permission matrix. Add automated runtime tests and a documented browser/version matrix before declaring compatibility.
+PR #30 proves the read-only Chromium MV3 popup/runtime, service-worker termination and event-driven restart, and Safari Xcode project packaging/validation. It does not prove the permission-sensitive `activeTab` + `scripting` action flow, Firefox runtime behavior, Safari runtime/signing/notarization, store review, or the complete Edge/Brave/Opera version matrix. Add automated permission-sensitive and Firefox runtime tests, then complete the separate Safari runtime/signing and store evidence before declaring compatibility.
 
 ### B3 — A3 is a contract fixture, not a production backend
 
@@ -75,7 +77,7 @@ The main branch was reported unprotected. Configure required checks, review rule
 ## 5. Required execution order
 
 1. Complete genuine Phase 2 customer, owner, legal/provider and product-risk evidence.
-2. Close A2 runtime and browser compatibility evidence.
+2. Complete remaining A2 permission-sensitive action and Firefox runtime tests, then close Safari runtime/signing and browser-version evidence.
 3. Close A3 using real PostgreSQL/RLS and durable worker integration tests in CI.
 4. Close A4 product data/security review and tests.
 5. Close A5 with pinned MCP SDK, conformance fixtures, OAuth and client interoperability.
