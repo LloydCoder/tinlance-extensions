@@ -46,7 +46,7 @@ BEGIN
   END IF;
 
   IF p_actor_id IS NULL OR char_length(p_actor_id) < 1 OR char_length(p_actor_id) > 256
-     OR p_request_id IS NULL THEN
+     OR p_actor_id ~ '[[:cntrl:]]' OR p_request_id IS NULL THEN
     RAISE EXCEPTION 'replay audit identity is invalid' USING ERRCODE = '22023';
   END IF;
 
