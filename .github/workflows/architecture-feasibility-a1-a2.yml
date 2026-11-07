@@ -117,6 +117,13 @@ jobs:
           path: spikes/architecture-feasibility/a1-a2/apps/extension-readonly/.output/safari-mv2/
           if-no-files-found: error
           retention-days: 3
+      - name: Publish Chromium permission-sensitive extension input
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+        with:
+          name: chromium-permission-sensitive-extension
+          path: spikes/architecture-feasibility/a1-a2/apps/extension-permission-sensitive/.output/chrome-mv3/
+          if-no-files-found: error
+          retention-days: 3
 
   safari-package:
     name: A2 Safari Xcode packaging feasibility
@@ -156,3 +163,73 @@ jobs:
           path: ${{ runner.temp }}/TinlanceReadOnlySpike/
           if-no-files-found: error
           retention-days: 7
+
+  chromium-derived-browser-runtime:
+    name: A2 ${{ matrix.name }} MV3 permission runtime
+    needs: toolchain-and-browser-build
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Microsoft Edge Stable
+            browser: edge
+            binary: /usr/bin/microsoft-edge
+          - name: Brave Stable
+            browser: brave
+            binary: /usr/bin/brave-browser
+          - name: Opera Stable
+            browser: opera
+            binary: /usr/bin/opera
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: "24.22.2"
+      - name: Install pinned Playwright
+        run: npm install --global playwright@1.64.1
+      - name: Install Microsoft Edge Stable
+        if: matrix.browser == 'edge'
+        run: |
+          set -Eeuo pipefail
+          curl --fail --silent --show-error --location https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor | sudo tee /usr/share/keyrings/microsoft-edge.gpg >/dev/null
+          echo "deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft-edge.gpg] https://packages.microsoft.com/repos/edge stable main" | sudo tee /etc/apt/sources.list.d/microsoft-edge.list
+          sudo apt-get update
+          sudo apt-get install -y microsoft-edge-stable
+      - name: Install Brave Stable
+        if: matrix.browser == 'brave'
+        run: |
+          set -Eeuo pipefail
+          sudo install -d -m 0755 /usr/share/keyrings
+          curl --fail --silent --show-error --location https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg | sudo tee /usr/share/keyrings/brave-browser-archive-keyring.gpg >/dev/null
+          echo "deb [arch=amd64 signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg] https://brave-browser-apt-release.s3.brave.com/ stable main" | sudo tee /etc/apt/sources.list.d/brave-browser-release.list
+          sudo apt-get update
+          sudo apt-get install -y brave-browser
+      - name: Install Opera Stable
+        if: matrix.browser == 'opera'
+        run: |
+          set -Eeuo pipefail
+          curl --fail --silent --show-error --location https://deb.opera.com/archive.key | gpg --dearmor | sudo tee /usr/share/keyrings/opera-archive-keyring.gpg >/dev/null
+          echo "deb [arch=amd64 signed-by=/usr/share/keyrings/opera-archive-keyring.gpg] https://deb.opera.com/opera-stable/ stable non-free" | sudo tee /etc/apt/sources.list.d/opera-stable.list
+          sudo apt-get update
+          sudo apt-get install -y opera-stable
+      - name: Install X11 runtime dependencies
+        run: sudo apt-get install -y xdotool openbox gsettings-desktop-schemas
+      - name: Download permission-sensitive MV3 extension
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
+        with:
+          name: chromium-permission-sensitive-extension
+          path: ${{ runner.temp }}/chromium-permission-sensitive-extension
+      - name: Verify real user-action activeTab runtime
+        env:
+          NODE_PATH: ${{ runner.tool_cache }}/node_modules
+          BROWSER_NAME: ${{ matrix.name }}
+          BROWSER_BINARY: ${{ matrix.binary }}
+          EXTENSION_PATH: ${{ runner.temp }}/chromium-permission-sensitive-extension
+        run: |
+          export NODE_PATH="$(npm root --global)"
+          "${{ matrix.binary }}" --version
+          xvfb-run -a bash -lc 'openbox --sm-disable >/tmp/openbox-derived-browser.log 2>&1 & sleep 1; node spikes/architecture-feasibility/a1-a2/scripts/verify-derived-chromium-browser.cjs'
