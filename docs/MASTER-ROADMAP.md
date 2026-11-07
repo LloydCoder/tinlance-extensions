@@ -3,7 +3,7 @@
 **Document status:** Accepted programme roadmap baseline; implementation and feasibility remain unverified
 **Owner:** Tinlance Limited
 **Repository:** https://github.com/LloydCoder/tinlance-extensions
-**Last updated:** 2026-11-05
+**Last updated:** 2026-11-07
 **Consolidated programme plan:** [FINAL-PHASE-PLAN.md](FINAL-PHASE-PLAN.md) (accepted controlling programme index)
 
 > This roadmap is a controlled delivery plan, not a status report. A phase or work package is complete only when its evidence, acceptance criteria and review record exist. A green build alone does not prove product readiness.
@@ -349,3 +349,18 @@ Use this table in project tracking; do not mark a package complete without evide
 9. Do not begin product implementation, provision paid infrastructure or submit public listings until applicable gates are approved.
 
 **Current status:** The roadmap is the accepted programme baseline. No product phase or MCP work package is marked implemented, submitted, approved or released by virtue of this document. The separate A1 toolchain feasibility spike has passed. A2 remains partial: Chromium popup/runtime and service-worker lifecycle plus Safari Xcode packaging/project validation are evidenced by PR #30; PR #32 adds Chromium permission-sensitive keyboard-shortcut action proof; PR #34 adds Firefox permission-sensitive keyboard-shortcut runtime proof. Safari runtime enablement/execution, signing/notarization and store review remain outstanding; Edge/Brave/Opera runtime evidence is merged in PR #38.
+
+
+## Current implementation checkpoint — 2026-11-07 (PR #46–#52)
+
+This status addendum updates the historical roadmap baseline without changing the accepted 25-phase sequence, canonical 26-product catalogue, first-seven order or authority boundaries.
+
+Current main checkpoint: 301c54b4422e452d87384d612a1f901f2c8c7da2 after PR #52.
+
+A3 feasibility now includes: PR #46 tenant-scoped Node worker runtime with PostgreSQL child-process crash/restart, concurrent-claim and lease-heartbeat tests; PR #47 outbox publisher runtime with bounded retry/dead-letter, heartbeat and crash-after-delivery recovery against a deduplicating test receiver; PR #48 tenant-bound cancellation and worker AbortSignal handling; PR #49 strict RS256 OIDC/JWKS bearer verification; PR #50 dedicated non-superuser tinlance_app_login role used by API, worker and publisher integration tests; PR #51 fail-fast environment-driven OIDC API composition; and PR #52 tenant-scoped POST /v1/jobs/{jobId}/cancel wired through the PostgreSQL adapter.
+
+PR #52 exact-head Repository Quality (42392078298), A3 API (42392078129) and PostgreSQL 16 (42392078261) passed on ab5238eff808dd0f45eb973479967f5a86053af8. Post-merge A3 API (42392194443) and PostgreSQL 16 (42392194429) passed on merge commit 301c54b4422e452d87384d612a1f901f2c8c7da2.
+
+A3 remains partial and is not a production backend. Remaining gaps: approved provider-specific issuer/tenant-claim onboarding and token lifecycle; managed production secret/database credential provisioning and rotation plus TLS/connection management; real external provider transport adapters; durable receiver-side inbox/idempotency and operational dead-letter tooling; actual Tinlance Agent Platform authorization/approval integration (the cancellation callback defaults to deny-all); cancellation audit integration; migration rollback; backup/restore and recovery objectives; production deployment/supervision; observability, alerting and SLO evidence; retention/deletion; legal/privacy review and independent security review.
+
+Phase 02 remains open for genuine customer interviews, product-owner sign-offs, commercial evidence and legal/provider review. A2 remains partial for Safari runtime enablement/execution, signing, notarization and store review. A4–A7 remain open. Phases 4–25 remain gated as production implementation. No production implementation authorization or paid infrastructure approval is inferred.
