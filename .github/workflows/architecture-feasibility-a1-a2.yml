@@ -138,7 +138,7 @@ jobs:
           xcrun safari-web-extension-packager \
             --project-location "${{ runner.temp }}/TinlanceReadOnlySpike" \
             --app-name "TinlanceReadOnlySpike" \
-            --bundle-identifier "com.tinlance.extensions.spike.readonly" \
+            --bundle-identifier "com.tinlance.extensions.spike.TinlanceReadOnlySpike" \
             --swift \
             --macos-only \
             --copy-resources \
