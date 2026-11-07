@@ -9,32 +9,68 @@ const databaseUrl = process.env.DATABASE_URL;
 const here = dirname(fileURLToPath(import.meta.url));
 const fixture = resolve(here, "worker-test-process.mjs");
 
-function runChild(mode, tenantId, leaseSeconds = 5) {
-  return new Promise((resolveResult, reject) => {
-    const child = spawn(process.execPath, [fixture], {
-      cwd: here,
-      env: {
-        ...process.env,
-        WORKER_MODE: mode,
-        WORKER_TENANT_ID: tenantId,
-        WORKER_LEASE_SECONDS: String(leaseSeconds)
-      },
-      stdio: ["ignore", "pipe", "pipe"]
-    });
-    let stdout = "";
-    let stderr = "";
-    const timeout = setTimeout(() => child.kill("SIGKILL"), 30000);
-    child.stdout.setEncoding("utf8").on("data", (chunk) => { stdout += chunk; });
-    child.stderr.setEncoding("utf8").on("data", (chunk) => { stderr += chunk; });
-    child.once("error", (error) => {
-      clearTimeout(timeout);
-      reject(error);
-    });
+function startChild(mode, tenantId, leaseSeconds = 5) {
+  const child = spawn(process.execPath, [fixture], {
+    cwd: here,
+    env: {
+      ...process.env,
+      WORKER_MODE: mode,
+      WORKER_TENANT_ID: tenantId,
+      WORKER_LEASE_SECONDS: String(leaseSeconds)
+    },
+    stdio: ["ignore", "pipe", "pipe"]
+  });
+  let stdout = "";
+  let stderr = "";
+  const waiters = [];
+  child.stdout.setEncoding("utf8").on("data", (chunk) => {
+    stdout += chunk;
+    for (const waiter of [...waiters]) {
+      if (stdout.includes(waiter.fragment)) {
+        clearTimeout(waiter.timer);
+        waiters.splice(waiters.indexOf(waiter), 1);
+        waiter.resolve();
+      }
+    }
+  });
+  child.stderr.setEncoding("utf8").on("data", (chunk) => { stderr += chunk; });
+  const closed = new Promise((resolveResult, reject) => {
+    child.once("error", reject);
     child.once("close", (code, signal) => {
-      clearTimeout(timeout);
+      for (const waiter of waiters.splice(0)) {
+        clearTimeout(waiter.timer);
+        waiter.reject(new Error(`child closed before output ${waiter.fragment}; stderr=${stderr}`));
+      }
       resolveResult({ code, signal, stdout, stderr });
     });
   });
+  return {
+    child,
+    get stdout() { return stdout; },
+    waitForOutput(fragment, timeoutMs = 10000) {
+      if (stdout.includes(fragment)) return Promise.resolve();
+      return new Promise((resolveWait, rejectWait) => {
+        const waiter = {
+          fragment,
+          resolve: resolveWait,
+          reject: rejectWait,
+          timer: setTimeout(() => {
+            waiters.splice(waiters.indexOf(waiter), 1);
+            rejectWait(new Error(`timed out waiting for ${fragment}; stdout=${stdout}; stderr=${stderr}`));
+          }, timeoutMs)
+        };
+        waiters.push(waiter);
+      });
+    },
+    closed
+  };
+}
+
+async function runChild(mode, tenantId, leaseSeconds = 5) {
+  const running = startChild(mode, tenantId, leaseSeconds);
+  const timeout = setTimeout(() => running.child.kill("SIGKILL"), 30000);
+  try { return await running.closed; }
+  finally { clearTimeout(timeout); }
 }
 
 async function insertJob(pool, tenantId, key) {
@@ -45,17 +81,35 @@ async function insertJob(pool, tenantId, key) {
   return result.rows[0].id;
 }
 
-test("worker processes recover crashed leases, claim concurrently and renew long-running leases", {
+async function asTenant(pool, tenantId, statement, params) {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    await client.query("SET LOCAL ROLE tinlance_app_runtime");
+    await client.query("SELECT set_config('app.tenant_id', $1, true)", [tenantId]);
+    const result = await client.query(statement, params);
+    await client.query("COMMIT");
+    return result.rows[0];
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+test("worker processes recover crashed leases, claim concurrently, renew leases and honor tenant cancellation", {
   skip: !databaseUrl
 }, async (t) => {
   const { Pool } = await import("pg");
-  const pool = new Pool({ connectionString: databaseUrl, max: 2 });
+  const pool = new Pool({ connectionString: databaseUrl, max: 3 });
   const suffix = randomUUID().replaceAll("-", "");
   const tenantId = `worker-process-${suffix}`;
+  const otherTenantId = `other-worker-${suffix}`;
 
   try {
     await pool.query("CREATE TABLE IF NOT EXISTS worker_test_effects (tenant_id text NOT NULL, job_id uuid NOT NULL, effect text NOT NULL, PRIMARY KEY (tenant_id, job_id))");
-    await pool.query("INSERT INTO tenants(id) VALUES ($1)", [tenantId]);
+    await pool.query("INSERT INTO tenants(id) VALUES ($1), ($2)", [tenantId, otherTenantId]);
 
     await t.test("a new process reclaims a lease after the prior process dies", async () => {
       const jobId = await insertJob(pool, tenantId, `crash-${suffix}`);
@@ -97,6 +151,34 @@ test("worker processes recover crashed leases, claim concurrently and renew long
       assert.deepEqual(rows.rows.map((row) => row.status), ["succeeded", "succeeded"]);
     });
 
+    await t.test("queued cancellation is idempotent and cannot cross tenant boundaries", async () => {
+      const ownJob = await insertJob(pool, tenantId, `queued-cancel-${suffix}`);
+      const otherJob = await insertJob(pool, otherTenantId, `other-cancel-${suffix}`);
+      assert.equal((await asTenant(pool, tenantId, "SELECT public.cancel_job($1) AS cancelled", [ownJob])).cancelled, true);
+      assert.equal((await asTenant(pool, tenantId, "SELECT public.cancel_job($1) AS cancelled", [ownJob])).cancelled, true);
+      assert.equal((await asTenant(pool, tenantId, "SELECT public.cancel_job($1) AS cancelled", [otherJob])).cancelled, false);
+      const row = await pool.query("SELECT status, cancelled_at, lease_token FROM jobs WHERE id = $1", [ownJob]);
+      assert.equal(row.rows[0].status, "cancelled");
+      assert.ok(row.rows[0].cancelled_at);
+      assert.equal(row.rows[0].lease_token, null);
+    });
+
+    await t.test("running handler receives cancellation and cannot finish after its lease is revoked", async () => {
+      const jobId = await insertJob(pool, tenantId, `running-cancel-${suffix}`);
+      const child = startChild("slow", tenantId);
+      await child.waitForOutput(`HANDLER_STARTED:${jobId}`);
+      const cancellation = await asTenant(pool, tenantId, "SELECT public.cancel_job($1) AS cancelled", [jobId]);
+      assert.equal(cancellation.cancelled, true);
+
+      const result = await child.closed;
+      assert.equal(result.code, 0, result.stderr);
+      assert.match(result.stdout, new RegExp(`RESULT:cancelled:${jobId}`));
+      const row = await pool.query("SELECT status, cancelled_at, lease_token FROM jobs WHERE id = $1", [jobId]);
+      assert.equal(row.rows[0].status, "cancelled");
+      assert.ok(row.rows[0].cancelled_at);
+      assert.equal(row.rows[0].lease_token, null);
+    });
+
     await t.test("lease heartbeat keeps a long-running handler from losing ownership", async () => {
       const jobId = await insertJob(pool, tenantId, `heartbeat-${suffix}`);
       const result = await runChild("slow", tenantId, 5);
@@ -106,8 +188,8 @@ test("worker processes recover crashed leases, claim concurrently and renew long
       assert.deepEqual(row.rows[0], { status: "succeeded", attempts: 1 });
     });
   } finally {
-    await pool.query("DELETE FROM worker_test_effects WHERE tenant_id = $1", [tenantId]);
-    await pool.query("DELETE FROM tenants WHERE id = $1", [tenantId]);
+    await pool.query("DELETE FROM worker_test_effects WHERE tenant_id = ANY($1::text[])", [[tenantId, otherTenantId]]);
+    await pool.query("DELETE FROM tenants WHERE id = ANY($1::text[])", [[tenantId, otherTenantId]]);
     await pool.end();
   }
 });

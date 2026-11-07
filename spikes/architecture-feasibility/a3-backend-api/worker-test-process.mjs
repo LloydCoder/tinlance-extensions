@@ -14,7 +14,7 @@ const worker = createPostgresWorker({
   retryDelaySeconds: 0,
   maxAttempts: 4,
   handlers: {
-    "test.worker": async (job) => {
+    "test.worker": async (job, { signal }) => {
       if (mode === "crash-after-claim") {
         writeSync(1, `CLAIMED:${job.id}\n`);
         process.exit(73);
@@ -23,8 +23,22 @@ const worker = createPostgresWorker({
         "INSERT INTO worker_test_effects(tenant_id, job_id, effect) VALUES ($1, $2, $3) ON CONFLICT (tenant_id, job_id) DO NOTHING",
         [tenantId, job.id, "once"]
       );
-      const duration = mode === "slow" ? 6500 : 200;
-      await new Promise((resolve) => setTimeout(resolve, duration));
+      if (mode === "slow") {
+        writeSync(1, `HANDLER_STARTED:${job.id}\n`);
+        await new Promise((resolve, reject) => {
+          if (signal.aborted) {
+            reject(Object.assign(new Error("handler cancelled"), { name: "AbortError" }));
+            return;
+          }
+          const timer = setTimeout(resolve, 6500);
+          signal.addEventListener("abort", () => {
+            clearTimeout(timer);
+            reject(Object.assign(new Error("handler cancelled"), { name: "AbortError" }));
+          }, { once: true });
+        });
+      } else {
+        await new Promise((resolve) => setTimeout(resolve, 200));
+      }
     }
   }
 });

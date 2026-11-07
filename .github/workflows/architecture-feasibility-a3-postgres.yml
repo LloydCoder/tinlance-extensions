@@ -83,6 +83,10 @@ jobs:
         env:
           PGPASSWORD: postgres
         run: psql "host=127.0.0.1 port=5432 dbname=tinlance_test user=postgres" -v ON_ERROR_STOP=1 -f spikes/architecture-feasibility/a3-backend-api/migrations/005_outbox_delivery_runtime.sql
+      - name: Apply tenant job cancellation migration
+        env:
+          PGPASSWORD: postgres
+        run: psql "host=127.0.0.1 port=5432 dbname=tinlance_test user=postgres" -v ON_ERROR_STOP=1 -f spikes/architecture-feasibility/a3-backend-api/migrations/006_job_cancellation.sql
       - name: Install pinned PostgreSQL test driver
         run: npm install --no-save --package-lock=false --ignore-scripts pg@8.16.3
         working-directory: spikes/architecture-feasibility/a3-backend-api
