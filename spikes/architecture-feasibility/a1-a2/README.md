@@ -1,6 +1,6 @@
 # A1–A2 isolated feasibility spike
 
-**Purpose:** prove that the accepted toolchain can install from a clean checkout, build a minimal Next.js App Router surface, and produce narrowly permissioned WXT extension packages for Chromium, Firefox and a Safari packaging input.
+**Purpose:** prove that the accepted toolchain can install from a clean checkout, build a minimal Next.js App Router surface, and produce narrowly permissioned WXT extension packages for Chromium, Firefox and a Safari packaging input, with independent runtime checks for Edge, Brave and Opera.
 
 This is a disposable architecture spike, not a product implementation, production workspace, public extension, or authorization to begin product development.
 
@@ -37,7 +37,7 @@ The manifest test asserts exact permissions for Chrome MV3, Firefox MV3 and Safa
 
 ## Explicit limits
 
-- No browser runtime E2E has been executed by this spike.
-- The read-only Safari MV2 output is packaged into a macOS Xcode project in a separate CI lane. Signing, notarization, App Store Connect submission and Safari runtime testing remain unperformed; WXT does not automate Safari publishing.
+- Browser runtime E2E evidence is limited to the explicit fixture tests: Chromium/Firefox keyboard-shortcut `activeTab`/`scripting`, Edge Stable, Brave Stable and Opera Stable. These tests use loopback-only pages and real user-triggered keyboard actions; they are not product-level compatibility certification.
+- The read-only Safari MV2 output is packaged, compiled and inspected in a macOS Xcode CI lane, including app/`.appex` bundle and effective-manifest checks. Signing, notarization, App Store Connect submission/review and Safari runtime testing remain unperformed; WXT does not automate Safari publishing.
 - This does not prove the first-seven products' compatibility, performance, privacy or store acceptance.
 - Do not copy this spike into production without a separate reviewed implementation plan.
