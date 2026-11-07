@@ -69,6 +69,13 @@ export function createPostgresWorker({
     ? (jobType) => handlers.get(jobType)
     : (jobType) => Object.hasOwn(handlers, jobType) ? handlers[jobType] : undefined;
 
+  async function currentJobState(jobId) {
+    return inTenantTransaction(pool, tenantId, async (client) => {
+      const result = await client.query("SELECT status FROM public.jobs WHERE id = $1", [jobId]);
+      return result.rows[0]?.status ?? null;
+    });
+  }
+
   async function runOnce({ signal } = {}) {
     if (signal?.aborted) return { status: "stopped" };
 
@@ -85,6 +92,7 @@ export function createPostgresWorker({
       ? AbortSignal.any([signal, heartbeatController.signal])
       : heartbeatController.signal;
     let leaseLost = false;
+    let cancellationRequested = false;
 
     const heartbeat = (async () => {
       const intervalMs = Math.max(1000, Math.floor((leaseSeconds * 1000) / 3));
@@ -96,14 +104,21 @@ export function createPostgresWorker({
         }
         if (heartbeatController.signal.aborted) return;
         try {
-          const renewed = await inTenantTransaction(pool, tenantId, async (client) => {
-            const result = await client.query(
+          const leaseState = await inTenantTransaction(pool, tenantId, async (client) => {
+            const renewed = await client.query(
               "SELECT public.renew_job_lease($1, $2, $3) AS renewed",
               [job.id, job.lease_token, leaseSeconds]
             );
-            return result.rows[0]?.renewed === true;
+            if (renewed.rows[0]?.renewed === true) return "renewed";
+            const current = await client.query("SELECT status FROM public.jobs WHERE id = $1", [job.id]);
+            return current.rows[0]?.status === "cancelled" ? "cancelled" : "lease_lost";
           });
-          if (!renewed) {
+          if (leaseState === "cancelled") {
+            cancellationRequested = true;
+            heartbeatController.abort();
+            return;
+          }
+          if (leaseState === "lease_lost") {
             leaseLost = true;
             heartbeatController.abort();
             return;
@@ -128,6 +143,7 @@ export function createPostgresWorker({
         leaseToken: job.lease_token
       }), { signal: handlerSignal });
 
+      if (cancellationRequested) return { status: "cancelled", jobId };
       if (signal?.aborted) throw new Error("worker shutdown requested");
       if (leaseLost) return { status: "lease_lost", jobId };
 
@@ -136,10 +152,13 @@ export function createPostgresWorker({
           "SELECT public.finish_job($1, $2) AS finished",
           [job.id, job.lease_token]
         );
-        return result.rows[0]?.finished === true;
+        if (result.rows[0]?.finished === true) return "succeeded";
+        const current = await client.query("SELECT status FROM public.jobs WHERE id = $1", [job.id]);
+        return current.rows[0]?.status === "cancelled" ? "cancelled" : "lease_lost";
       });
-      return finished ? { status: "succeeded", jobId } : { status: "lease_lost", jobId };
+      return { status: finished, jobId };
     } catch (error) {
+      if (cancellationRequested) return { status: "cancelled", jobId };
       if (leaseLost) return { status: "lease_lost", jobId };
       const failedStatus = await inTenantTransaction(pool, tenantId, async (client) => {
         const result = await client.query(
@@ -148,7 +167,10 @@ export function createPostgresWorker({
         );
         return result.rows[0]?.status ?? null;
       });
-      if (failedStatus === null) return { status: "lease_lost", jobId };
+      if (failedStatus === null) {
+        const current = await currentJobState(job.id);
+        return { status: current === "cancelled" ? "cancelled" : "lease_lost", jobId };
+      }
       return {
         status: failedStatus === "failed" ? "failed" : "retry_scheduled",
         jobId,

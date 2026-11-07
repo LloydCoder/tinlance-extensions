@@ -25,9 +25,10 @@ This isolated spike is evidence, not a production API or service.
 - The runtime role is a non-login database role for proving RLS policy behavior. The integration workflow connects as the PostgreSQL superuser and explicitly switches to the restricted runtime role inside each transaction; production must use a dedicated least-privilege login role with only the required membership.
 - A separate two-session PostgreSQL 16 CI test holds concurrent transactions open while two runtime-role workers claim jobs, asserting `FOR UPDATE SKIP LOCKED` yields distinct jobs exactly once. This is database-level concurrency evidence, not a multi-process application worker service or process crash/restart test.
 - The outbox publisher process now has isolated at-least-once delivery, retry/dead-letter, heartbeat and crash-after-delivery recovery evidence. The test receiver deduplicates on the stable event ID; production transports must provide equivalent idempotency or explicitly accept duplicate side effects. No production external provider adapter, durable consumer inbox implementation, operational dead-letter tooling or deployed publisher service is included.
+- Job cancellation is implemented in the database feasibility contract and worker runtime, but no production HTTP cancellation endpoint, operator authorization workflow or cancellation audit integration is deployed.
 - No production OIDC/JWKS validation, production credential provisioning, rate limiting, deployment, secrets manager, backup/restore, object storage, retention/deletion, or legal/privacy review is included.
 
-Run locally against PostgreSQL 16+ after applying migrations 001–003. Install the pinned test driver with `npm install --no-save --package-lock=false --ignore-scripts pg@8.16.3`, then run:
+Run locally against PostgreSQL 16+ after applying migrations 001–006. Install the pinned test driver with `npm install --no-save --package-lock=false --ignore-scripts pg@8.16.3`, then run:
 
 ```sh
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f migrations/001_platform_core.sql
