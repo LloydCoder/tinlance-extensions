@@ -75,6 +75,10 @@ jobs:
           PGPASSWORD: postgres
           DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/tinlance_test
         run: bash spikes/architecture-feasibility/a3-backend-api/verify-concurrent-worker-claims.sh
+      - name: Apply worker lease renewal migration
+        env:
+          PGPASSWORD: postgres
+        run: psql "host=127.0.0.1 port=5432 dbname=tinlance_test user=postgres" -v ON_ERROR_STOP=1 -f spikes/architecture-feasibility/a3-backend-api/migrations/004_worker_lease_renewal.sql
       - name: Install pinned PostgreSQL test driver
         run: npm install --no-save --package-lock=false --ignore-scripts pg@8.16.3
         working-directory: spikes/architecture-feasibility/a3-backend-api
@@ -83,3 +87,8 @@ jobs:
           DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/tinlance_test
         working-directory: spikes/architecture-feasibility/a3-backend-api
         run: node --test postgres.repository.integration.test.mjs
+      - name: Exercise real worker processes, crash recovery and lease heartbeat
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/tinlance_test
+        working-directory: spikes/architecture-feasibility/a3-backend-api
+        run: node --test worker.process.integration.test.mjs
