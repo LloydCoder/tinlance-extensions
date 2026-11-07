@@ -6,7 +6,8 @@ This isolated spike is evidence, not a production API or service.
 - Injected bearer verification defaults to deny-all; a configurable RS256 OIDC/JWKS bearer verifier validates issuer, audience, time claims, tenant claim, key use and signature, with bounded JWKS caching and key-rotation refresh. Tenant identity comes only from the verified principal.
 - Tenant-scoped HTTP repository contract and cross-tenant negative HTTP tests.
 - PostgreSQL-backed repository adapter using a pooled PostgreSQL client, a restricted runtime role, parameterized record lookup and transaction-local tenant context.
-- A real PostgreSQL 16 API integration test that exercises the HTTP server through the PostgreSQL adapter, proves cross-tenant records are indistinguishable from missing records, and verifies role/tenant context is reset before a pooled connection is reused.\n- A tenant-bound HTTP job-cancellation route backed by the existing `cancel_job` database contract; it is tested through the real PostgreSQL adapter for same-tenant cancellation, idempotent repeat cancellation and cross-tenant non-enumeration.
+- A real PostgreSQL 16 API integration test that exercises the HTTP server through the PostgreSQL adapter, proves cross-tenant records are indistinguishable from missing records, and verifies role/tenant context is reset before a pooled connection is reused.
+- A tenant-bound HTTP job-cancellation route backed by the existing `cancel_job` database contract; it is tested through the real PostgreSQL adapter for same-tenant cancellation, idempotent repeat cancellation and cross-tenant non-enumeration.
 - PostgreSQL migration for tenant records, durable job rows, idempotency keys and transactional outbox.
 - PostgreSQL row-level security (RLS) forced on tenant-owned tables; missing tenant context returns no rows.
 - Integration assertions for tenant isolation, idempotent enqueue/outbox and transaction rollback.
@@ -49,8 +50,9 @@ SQL
 psql "$ADMIN_DATABASE_URL" -v ON_ERROR_STOP=1 -f postgres.integration.sql
 DATABASE_URL="$DATABASE_URL" ADMIN_DATABASE_URL="$ADMIN_DATABASE_URL" node --test postgres.repository.integration.test.mjs
 DATABASE_URL="$DATABASE_URL" ADMIN_DATABASE_URL="$ADMIN_DATABASE_URL" node --test worker.process.integration.test.mjs
-DATABASE_URL="$DATABASE_URL" ADMIN_DATABASE_URL="$ADMIN_DATABASE_URL" node --test consumer-inbox.integration.test.mjs\nDATABASE_URL="$DATABASE_URL" ADMIN_DATABASE_URL="$ADMIN_DATABASE_URL" node --test outbox.process.integration.test.mjs
+DATABASE_URL="$DATABASE_URL" ADMIN_DATABASE_URL="$ADMIN_DATABASE_URL" node --test consumer-inbox.integration.test.mjs
+DATABASE_URL="$DATABASE_URL" ADMIN_DATABASE_URL="$ADMIN_DATABASE_URL" node --test outbox.process.integration.test.mjs
 ```
 
-A3 remains **partial** until approved production issuer/audience/JWKS configuration and provider-specific claim mapping, managed credential provisioning/rotation, production worker/publisher supervision, provider-specific delivery adapters and durable receiver idempotency, Agent Platform-backed cancellation authorization/audit, migration rollback, backup/restore, observability/SLOs and legal/security review are implemented and tested.
+A3 remains **partial** until approved production issuer/audience/JWKS configuration and provider-specific claim mapping, managed credential provisioning/rotation, production worker/publisher supervision, provider-specific delivery adapters and provider-side idempotency contracts, Agent Platform-backed cancellation authorization/audit, migration rollback, production backup/restore runbook, observability/SLOs and legal/security review are implemented and tested.
 \n\nThe inbox relies on PostgreSQL's unique constraint and INSERT ... ON CONFLICT DO NOTHING concurrency semantics; acceptance and local database effects must commit in one transaction. See the [PostgreSQL 16 INSERT documentation](https://www.postgresql.org/docs/16/sql-insert.html) and [unique-index concurrency notes](https://www.postgresql.org/docs/16/index-unique-checks.html).
