@@ -2,8 +2,8 @@
 
 **Audit date:** 2026-11-07
 **Audited branch:** `main`
-**Audited commit after PR #44:** `0706c8d82f3d6a3130e141f8c567b356906ce629`
-**Scope:** Repository tree, consolidated phase plan, Phase 02 evidence ledger, accepted architecture records, PRs #30–#44 and exact-head/post-merge GitHub Actions runs.
+**Audited commit after PR #52:** `301c54b4422e452d87384d612a1f901f2c8c7da2`
+**Scope:** Repository tree, consolidated phase plan, Phase 02 evidence ledger, accepted architecture records, PRs #30–#52 and exact-head/post-merge GitHub Actions runs.
 **Disposition:** **Programme remains gated. No product implementation phase is authorized by the current evidence.**
 
 ## 1. Executive finding
@@ -129,3 +129,18 @@ PR #42 merged as `39c17f75aa9c533d5752fb6df97d589bad2c5d18`. It adds migration `
 PR #44 merged as `0706c8d82f3d6a3130e141f8c567b356906ce629`. It adds `postgres-repository.mjs`, which implements the existing A3 tenant repository contract using a pooled PostgreSQL client. Every tenant read runs in a transaction, switches locally to `tinlance_app_runtime`, sets the verified tenant context transaction-locally, and uses a parameterized record lookup. The HTTP integration test runs against PostgreSQL 16 and verifies the authenticated tenant can read its own record, another tenant's record returns the same 404 shape as a missing record, and the pooled session returns to its prior role with no active tenant context. A unit test also proves rollback failure marks the client for disposal rather than returning a potentially poisoned connection to the pool.
 
 Exact-head Repository Quality [42376883210](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42376883210), A3 API [42376883208](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42376883208), and PostgreSQL integration [42376883253](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42376883253) passed. Post-merge main Repository Quality [42376948442](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42376948442), A3 API [42376948519](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42376948519), and PostgreSQL integration [42376948399](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42376948399) passed on `0706c8d82f3d6a3130e141f8c567b356906ce629`. This closes the isolated HTTP-to-PostgreSQL adapter feasibility gap only; A3 remains partial and this does not authorize production implementation.
+
+
+## 13. Current main checkpoint — PRs #46–#52
+
+**This section supersedes the PR #44 checkpoint and A3 blocker descriptions above where they conflict.**
+
+Current main checkpoint: 301c54b4422e452d87384d612a1f901f2c8c7da2 after PR #52.
+
+A3 feasibility now includes: PR #46 tenant-scoped Node worker runtime with PostgreSQL child-process crash/restart, concurrent-claim and lease-heartbeat tests; PR #47 outbox publisher runtime with bounded retry/dead-letter, heartbeat and crash-after-delivery recovery against a deduplicating test receiver; PR #48 tenant-bound cancellation and worker AbortSignal handling; PR #49 strict RS256 OIDC/JWKS bearer verification; PR #50 dedicated non-superuser tinlance_app_login role used by API, worker and publisher integration tests; PR #51 fail-fast environment-driven OIDC API composition; and PR #52 tenant-scoped POST /v1/jobs/{jobId}/cancel wired through the PostgreSQL adapter.
+
+PR #52 exact-head Repository Quality (42392078298), A3 API (42392078129) and PostgreSQL 16 (42392078261) passed on ab5238eff808dd0f45eb973479967f5a86053af8. Post-merge A3 API (42392194443) and PostgreSQL 16 (42392194429) passed on merge commit 301c54b4422e452d87384d612a1f901f2c8c7da2.
+
+A3 remains partial and is not a production backend. Remaining gaps: approved provider-specific issuer/tenant-claim onboarding and token lifecycle; managed production secret/database credential provisioning and rotation plus TLS/connection management; real external provider transport adapters; durable receiver-side inbox/idempotency and operational dead-letter tooling; actual Tinlance Agent Platform authorization/approval integration (the cancellation callback defaults to deny-all); cancellation audit integration; migration rollback; backup/restore and recovery objectives; production deployment/supervision; observability, alerting and SLO evidence; retention/deletion; legal/privacy review and independent security review.
+
+Phase 02 remains open for genuine customer interviews, product-owner sign-offs, commercial evidence and legal/provider review. A2 remains partial for Safari runtime enablement/execution, signing, notarization and store review. A4–A7 remain open. Phases 4–25 remain gated as production implementation. No production implementation authorization or paid infrastructure approval is inferred.
