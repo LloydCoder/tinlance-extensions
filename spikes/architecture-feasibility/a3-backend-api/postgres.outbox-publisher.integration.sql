@@ -68,8 +68,8 @@ BEGIN
   IF other_event.id IS NULL OR other_event.tenant_id <> 'other-outbox-tenant' THEN
     RAISE EXCEPTION 'other tenant fixture could not claim its own event';
   END IF;
-  CREATE TEMP TABLE other_outbox_lease AS
-    SELECT other_event.id AS id, other_event.lease_token AS lease_token;
+  INSERT INTO other_outbox_lease(id, lease_token)
+  VALUES (other_event.id, other_event.lease_token);
 END $;
 SELECT set_config('app.tenant_id','outbox-tenant',false);
 DO $
