@@ -71,6 +71,17 @@ async function waitForActionPopup(context, extensionId, timeoutMs = 10000) {
     const page = await context.newPage();
     await page.goto(origin);
     await page.bringToFront();
+    await page.evaluate(() => {
+      window.__tinlanceShortcutEvents = [];
+      document.addEventListener("keydown", (event) => {
+        window.__tinlanceShortcutEvents.push({
+          key: event.key,
+          ctrlKey: event.ctrlKey,
+          shiftKey: event.shiftKey,
+          altKey: event.altKey
+        });
+      });
+    });
 
     const windowIds = execFileSync("xdotool", [
       "search",
@@ -80,12 +91,18 @@ async function waitForActionPopup(context, extensionId, timeoutMs = 10000) {
     ], { encoding: "utf8" }).trim().split("\n").filter(Boolean);
     assert.ok(windowIds.length > 0, "the headed Chromium fixture window must be discoverable through X11");
 
+    execFileSync("xdotool", ["windowactivate", "--sync", windowIds[0]]);
+    execFileSync("xdotool", ["windowraise", windowIds[0]]);
     execFileSync("xdotool", ["windowfocus", "--sync", windowIds[0]]);
     const focusedWindow = execFileSync("xdotool", ["getwindowfocus", "getwindowname"], { encoding: "utf8" }).trim();
     console.log(JSON.stringify({ actionShortcut: shortcut, windowId: windowIds[0], focusedWindow }));
-    execFileSync("xdotool", ["key", "--clearmodifiers", "--delay", "100", "ctrl+shift+y"]);
+    execFileSync("xdotool", ["key", "--window", windowIds[0], "--clearmodifiers", "--delay", "100", "ctrl+shift+y"]);
     await new Promise((resolve) => setTimeout(resolve, 500));
-    console.log(JSON.stringify({ pagesAfterActionShortcut: context.pages().map((candidate) => candidate.url()) }));
+    const shortcutEvents = await page.evaluate(() => window.__tinlanceShortcutEvents);
+    console.log(JSON.stringify({
+      pagesAfterActionShortcut: context.pages().map((candidate) => candidate.url()),
+      shortcutEvents
+    }));
 
     const popup = await waitForActionPopup(context, extensionId);
     await popup.locator("#inspect").click();
