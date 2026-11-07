@@ -22,7 +22,7 @@ jobs:
   postgres-integration:
     name: PostgreSQL tenant isolation, outbox and worker recovery
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     services:
       postgres:
         image: postgres:16.6
@@ -40,6 +40,10 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: "24.22.2"
       - name: Install PostgreSQL client
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
       - name: Apply core schema migration
@@ -71,3 +75,11 @@ jobs:
           PGPASSWORD: postgres
           DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/tinlance_test
         run: bash spikes/architecture-feasibility/a3-backend-api/verify-concurrent-worker-claims.sh
+      - name: Install pinned PostgreSQL test driver
+        run: npm install --no-save --package-lock=false --ignore-scripts pg@8.16.3
+        working-directory: spikes/architecture-feasibility/a3-backend-api
+      - name: Exercise HTTP API through the real PostgreSQL adapter
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/tinlance_test
+        working-directory: spikes/architecture-feasibility/a3-backend-api
+        run: node --test postgres.repository.integration.test.mjs
