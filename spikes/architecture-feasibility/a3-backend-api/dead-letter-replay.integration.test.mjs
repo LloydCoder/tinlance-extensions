@@ -38,8 +38,8 @@ test("dead-letter replay is tenant-scoped, authorized and durably audited", {
     );
     await adminPool.query("UPDATE outbox_events SET replay_count = 1 WHERE id = $1", [eventB]);
     await adminPool.query(
-      "INSERT INTO outbox_replay_audit(tenant_id, event_id, replay_number, actor_id, request_id) VALUES ($1, $2, 1, 'tenant-b-operator', $3)",
-      [tenantB, eventB, randomUUID()]
+      "INSERT INTO outbox_replay_audit(tenant_id, event_id, replay_number, actor_id, previous_attempts, previous_error_code, previous_dead_lettered_at, request_id) SELECT tenant_id, id, 1, 'tenant-b-operator', attempts, last_error_code, dead_lettered_at, $2 FROM outbox_events WHERE tenant_id = $1 AND id = $3",
+      [tenantB, randomUUID(), eventB]
     );
 
     const repository = createPostgresRepository({ pool });
