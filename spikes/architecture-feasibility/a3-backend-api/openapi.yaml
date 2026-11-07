@@ -50,6 +50,8 @@ paths:
       responses:
         "200":
           description: Job is cancelled; repeated cancellation is idempotent
+        "400":
+          description: Request body is not accepted
         "401":
           description: Missing or invalid credentials
         "403":
@@ -77,6 +79,8 @@ paths:
       responses:
         "200":
           description: Dead-letter event requeued
+        "400":
+          description: Request body is not accepted
         "401":
           description: Missing or invalid credentials
         "403":
