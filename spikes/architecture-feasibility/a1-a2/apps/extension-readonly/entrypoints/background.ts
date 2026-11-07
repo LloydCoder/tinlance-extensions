@@ -1,6 +1,6 @@
 import { browser } from "wxt/browser";
 
-const workerStartedAt = Date.now();
+const workerInstanceId = crypto.randomUUID();
 
 export default defineBackground(() => {
   browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
@@ -15,7 +15,7 @@ export default defineBackground(() => {
 
     sendResponse({
       ok: true,
-      startedAt: workerStartedAt
+      workerInstanceId
     });
     return false;
   });
