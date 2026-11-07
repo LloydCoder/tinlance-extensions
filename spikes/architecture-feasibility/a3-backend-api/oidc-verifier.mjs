@@ -198,7 +198,7 @@ export function createOidcBearerVerifier({
 
     if (header.alg !== "RS256" || typeof header.kid !== "string" || !KID_PATTERN.test(header.kid)) return null;
     if (header.typ !== undefined && header.typ !== "JWT" && header.typ !== "at+jwt") return null;
-    if ((header.crit !== undefined && (!Array.isArray(header.crit) || header.crit.length > 0)) || header.b64 === false) return null;
+    if (header.crit !== undefined || header.b64 === false) return null;
 
     let keys = await loadJwks();
     let key = keys.get(header.kid);

@@ -87,6 +87,7 @@ test("algorithm substitution, malformed tokens and invalid signatures fail close
   assert.equal(await verifyBearer("not-a-jwt"), null);
   assert.equal(await verifyBearer(tokenFor(key, {}, { alg: "none" })), null);
   assert.equal(await verifyBearer(tokenFor(key, {}, { crit: "unsupported" })), null);
+  assert.equal(await verifyBearer(tokenFor(key, {}, { crit: [] })), null);
   assert.equal(await verifyBearer(tokenFor(other)), null);
 });
 
