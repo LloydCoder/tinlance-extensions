@@ -113,13 +113,16 @@ test("PostgreSQL API adapter enforces tenant isolation and resets pooled session
     assert.equal(replayState.rows[0].last_error_code, null);
     assert.equal(replayState.rows[0].lease_token, null);
     const replayAudit = await adminPool.query(
-      "SELECT actor_id, request_id, replay_number FROM outbox_replay_audit WHERE tenant_id = $1 AND event_id = $2",
+      "SELECT actor_id, request_id, replay_number, previous_attempts, previous_error_code, previous_dead_lettered_at FROM outbox_replay_audit WHERE tenant_id = $1 AND event_id = $2",
       [tenantA, eventA]
     );
     assert.equal(replayAudit.rows.length, 1);
     assert.equal(replayAudit.rows[0].actor_id, "api-test-user");
     assert.equal(replayAudit.rows[0].request_id, replayRequestId);
     assert.equal(replayAudit.rows[0].replay_number, 1);
+    assert.equal(replayAudit.rows[0].previous_attempts, 3);
+    assert.equal(replayAudit.rows[0].previous_error_code, "upstream_unavailable");
+    assert.ok(replayAudit.rows[0].previous_dead_lettered_at);
     const crossTenantAudit = await adminPool.query(
       "SELECT count(*)::int AS count FROM outbox_replay_audit WHERE tenant_id = $1 AND event_id = $2",
       [tenantB, eventB]
