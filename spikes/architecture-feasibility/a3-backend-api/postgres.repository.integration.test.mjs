@@ -20,6 +20,8 @@ test("PostgreSQL API adapter enforces tenant isolation and resets pooled session
   const recordB = `api-record-b-${suffix}`;
   let jobA;
   let jobB;
+  let eventA;
+  let eventB;
   let server;
 
   try {
@@ -38,6 +40,16 @@ test("PostgreSQL API adapter enforces tenant isolation and resets pooled session
     );
     jobA = jobAResult.rows[0].id;
     jobB = jobBResult.rows[0].id;
+    const outboxEvents = await adminPool.query(
+      "INSERT INTO outbox_events(tenant_id, aggregate_id, event_type, payload) VALUES ($1, $2, 'test.dead-letter', '{}'::jsonb), ($3, $4, 'test.dead-letter', '{}'::jsonb) RETURNING id, tenant_id",
+      [tenantA, jobA, tenantB, jobB]
+    );
+    eventA = outboxEvents.rows.find((row) => row.tenant_id === tenantA).id;
+    eventB = outboxEvents.rows.find((row) => row.tenant_id === tenantB).id;
+    await adminPool.query(
+      "UPDATE outbox_events SET attempts = 3, last_error_code = 'upstream_unavailable', dead_lettered_at = now() WHERE id = ANY($1::uuid[])",
+      [[eventA, eventB]]
+    );
 
     const repository = createPostgresRepository({ pool });
     server = createApiServer({
@@ -45,7 +57,8 @@ test("PostgreSQL API adapter enforces tenant isolation and resets pooled session
       verifyBearer: async (token) => token === "postgres-api-test-token-0001"
         ? { subject: "api-test-user", tenantId: tenantA }
         : null,
-      authorizeJobCancellation: async ({ principal }) => principal.subject === "api-test-user"
+      authorizeJobCancellation: async ({ principal }) => principal.subject === "api-test-user",
+      authorizeOutboxReplay: async ({ principal }) => principal.subject === "api-test-user"
     });
     await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
     const address = server.address();
@@ -79,6 +92,39 @@ test("PostgreSQL API adapter enforces tenant isolation and resets pooled session
       [[jobA, jobB]]
     );
     assert.deepEqual(jobStates.rows.map((row) => row.status).sort(), ["cancelled", "queued"]);
+
+    const replayed = await fetch(`${baseUrl}/v1/outbox/dead-letters/${eventA}/replay`, { method: "POST", headers });
+    assert.equal(replayed.status, 200);
+    assert.deepEqual(await replayed.json(), { status: "requeued" });
+    const replayRequestId = replayed.headers.get("x-request-id");
+    const crossTenantReplay = await fetch(`${baseUrl}/v1/outbox/dead-letters/${eventB}/replay`, { method: "POST", headers });
+    assert.equal(crossTenantReplay.status, 404);
+    assert.equal((await crossTenantReplay.json()).error, "not_found");
+    const repeatedReplay = await fetch(`${baseUrl}/v1/outbox/dead-letters/${eventA}/replay`, { method: "POST", headers });
+    assert.equal(repeatedReplay.status, 404);
+
+    const replayState = await adminPool.query(
+      "SELECT dead_lettered_at, attempts, replay_count, last_error_code, lease_token FROM outbox_events WHERE id = $1",
+      [eventA]
+    );
+    assert.equal(replayState.rows[0].dead_lettered_at, null);
+    assert.equal(replayState.rows[0].attempts, 0);
+    assert.equal(replayState.rows[0].replay_count, 1);
+    assert.equal(replayState.rows[0].last_error_code, null);
+    assert.equal(replayState.rows[0].lease_token, null);
+    const replayAudit = await adminPool.query(
+      "SELECT actor_id, request_id, replay_number FROM outbox_replay_audit WHERE tenant_id = $1 AND event_id = $2",
+      [tenantA, eventA]
+    );
+    assert.equal(replayAudit.rows.length, 1);
+    assert.equal(replayAudit.rows[0].actor_id, "api-test-user");
+    assert.equal(replayAudit.rows[0].request_id, replayRequestId);
+    assert.equal(replayAudit.rows[0].replay_number, 1);
+    const crossTenantAudit = await adminPool.query(
+      "SELECT count(*)::int AS count FROM outbox_replay_audit WHERE tenant_id = $1 AND event_id = $2",
+      [tenantB, eventB]
+    );
+    assert.equal(crossTenantAudit.rows[0].count, 0);
 
     // PostgreSQL restores a custom GUC to an empty string after SET LOCAL
     // when it was previously unset. Normalize that state to NULL so the
