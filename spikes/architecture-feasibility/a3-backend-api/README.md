@@ -21,25 +21,33 @@ This isolated spike is evidence, not a production API or service.
 
 ## Important limitations
 - The HTTP server still receives its bearer verifier and repository as injected dependencies. The RS256 OIDC/JWKS verifier is an isolated implementation, not yet wired into a production deployment: issuer/audience/JWKS configuration, provider-specific claim mapping, token lifecycle, deployment composition root, secret/config management and security review remain open.
-- The PostgreSQL adapter expects a pool whose login role is allowed to `SET ROLE tinlance_app_runtime`. Production credential provisioning, migration ownership, connection-pool sizing/timeouts and secret rotation remain unimplemented.
-- The runtime role is a non-login database role for proving RLS policy behavior. The integration workflow connects as the PostgreSQL superuser and explicitly switches to the restricted runtime role inside each transaction; production must use a dedicated least-privilege login role with only the required membership.
+- The PostgreSQL adapter and worker/publisher runtimes use a dedicated `tinlance_app_login` role (`LOGIN NOINHERIT`, non-superuser) that is granted membership in `tinlance_app_runtime`; each tenant transaction explicitly switches role. CI connects through this login role for API, worker and publisher process tests, while a separate admin connection is used only to provision fixtures. Migration 007 creates the role but does not set a password. Production secret provisioning/rotation, migration ownership and connection-pool sizing/timeouts remain unimplemented.
+- The runtime role is a non-login database role for RLS policy enforcement. The integration workflow's application connections use the dedicated non-superuser login role and explicitly switch to the restricted runtime role inside each tenant transaction. The separate superuser connection is restricted to CI fixture setup and cleanup.
 - A separate two-session PostgreSQL 16 CI test holds concurrent transactions open while two runtime-role workers claim jobs, asserting `FOR UPDATE SKIP LOCKED` yields distinct jobs exactly once. This is database-level concurrency evidence, not a multi-process application worker service or process crash/restart test.
 - The outbox publisher process now has isolated at-least-once delivery, retry/dead-letter, heartbeat and crash-after-delivery recovery evidence. The test receiver deduplicates on the stable event ID; production transports must provide equivalent idempotency or explicitly accept duplicate side effects. No production external provider adapter, durable consumer inbox implementation, operational dead-letter tooling or deployed publisher service is included.
 - Job cancellation is implemented in the database feasibility contract and worker runtime, but no production HTTP cancellation endpoint, operator authorization workflow or cancellation audit integration is deployed.
-- No production OIDC/JWKS validation, production credential provisioning, rate limiting, deployment, secrets manager, backup/restore, object storage, retention/deletion, or legal/privacy review is included.
+- The RS256 OIDC/JWKS verifier and least-privilege login-role contract are implemented as feasibility components, but no production identity deployment/configuration, secret rotation, rate limiting, deployment, secrets manager, backup/restore, object storage, retention/deletion, or legal/privacy review is included.
 
-Run locally against PostgreSQL 16+ after applying migrations 001–006. Install the pinned test driver with `npm install --no-save --package-lock=false --ignore-scripts pg@8.16.3`, then run:
+Run locally against PostgreSQL 16+ after applying migrations 001–007. Install the pinned test driver with `npm install --no-save --package-lock=false --ignore-scripts pg@8.16.3`, then run:
 
 ```sh
-psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f migrations/001_platform_core.sql
-psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f migrations/002_worker_leases.sql
-psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f migrations/003_outbox_publisher.sql
-psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f migrations/004_worker_lease_renewal.sql
-psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f migrations/005_outbox_delivery_runtime.sql
-psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f postgres.integration.sql
-node --test postgres.repository.integration.test.mjs
-node --test worker.process.integration.test.mjs
-node --test outbox.process.integration.test.mjs
+# Apply migrations with an administrative/migration connection.
+for migration in migrations/001_platform_core.sql migrations/002_worker_leases.sql migrations/003_outbox_publisher.sql migrations/004_worker_lease_renewal.sql migrations/005_outbox_delivery_runtime.sql migrations/006_job_cancellation.sql migrations/007_app_login_role.sql; do
+  psql "$ADMIN_DATABASE_URL" -v ON_ERROR_STOP=1 -f "$migration"
+done
+
+# Provision the application login password out of band (e.g. from a secret manager).
+# The migration deliberately creates no password and stores no credential.
+psql "$ADMIN_DATABASE_URL" -v app_password="$APP_DB_PASSWORD" <<'SQL'
+ALTER ROLE tinlance_app_login WITH PASSWORD :'app_password';
+SQL
+
+# DATABASE_URL must authenticate as tinlance_app_login; ADMIN_DATABASE_URL is
+# only for fixture setup, migration and administrative operations.
+psql "$ADMIN_DATABASE_URL" -v ON_ERROR_STOP=1 -f postgres.integration.sql
+DATABASE_URL="$DATABASE_URL" ADMIN_DATABASE_URL="$ADMIN_DATABASE_URL" node --test postgres.repository.integration.test.mjs
+DATABASE_URL="$DATABASE_URL" ADMIN_DATABASE_URL="$ADMIN_DATABASE_URL" node --test worker.process.integration.test.mjs
+DATABASE_URL="$DATABASE_URL" ADMIN_DATABASE_URL="$ADMIN_DATABASE_URL" node --test outbox.process.integration.test.mjs
 ```
 
-A3 remains **partial** until the production identity/token boundary and credential model, production worker composition/deployment, external outbox delivery and consumer idempotency, cancellation semantics, migration rollback, backup/restore and security review are implemented and tested.
+A3 remains **partial** until the verifier is wired to an approved production issuer/audience and deployment composition, managed credential provisioning/rotation, production worker/publisher supervision, provider-specific delivery adapters and durable receiver idempotency, an authorized HTTP cancellation surface, migration rollback, backup/restore, observability/SLOs and legal/security review are implemented and tested.

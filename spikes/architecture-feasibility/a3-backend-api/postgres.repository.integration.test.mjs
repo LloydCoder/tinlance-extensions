@@ -5,12 +5,14 @@ import { createApiServer } from "./server.mjs";
 import { createPostgresRepository } from "./postgres-repository.mjs";
 
 const databaseUrl = process.env.DATABASE_URL;
+const adminDatabaseUrl = process.env.ADMIN_DATABASE_URL;
 
 test("PostgreSQL API adapter enforces tenant isolation and resets pooled session context", {
-  skip: !databaseUrl
+  skip: !databaseUrl || !adminDatabaseUrl
 }, async () => {
   const { Pool } = await import("pg");
   const pool = new Pool({ connectionString: databaseUrl, max: 1 });
+  const adminPool = new Pool({ connectionString: adminDatabaseUrl, max: 1 });
   const suffix = randomUUID().replaceAll("-", "");
   const tenantA = `api-tenant-a-${suffix}`;
   const tenantB = `api-tenant-b-${suffix}`;
@@ -19,8 +21,8 @@ test("PostgreSQL API adapter enforces tenant isolation and resets pooled session
   let server;
 
   try {
-    await pool.query("INSERT INTO tenants(id) VALUES ($1), ($2)", [tenantA, tenantB]);
-    await pool.query(
+    await adminPool.query("INSERT INTO tenants(id) VALUES ($1), ($2)", [tenantA, tenantB]);
+    await adminPool.query(
       "INSERT INTO tenant_records(id, tenant_id, payload) VALUES ($1, $2, $3::jsonb), ($4, $5, $6::jsonb)",
       [recordA, tenantA, JSON.stringify({ value: "alpha" }), recordB, tenantB, JSON.stringify({ value: "beta" })]
     );
@@ -55,13 +57,14 @@ test("PostgreSQL API adapter enforces tenant isolation and resets pooled session
     const session = await pool.query(
       "SELECT current_user AS role_name, nullif(current_setting('app.tenant_id', true), '') AS tenant_context"
     );
-    assert.equal(session.rows[0].role_name, "postgres");
+    assert.equal(session.rows[0].role_name, "tinlance_app_login");
     assert.equal(session.rows[0].tenant_context, null);
   } finally {
     if (server?.listening) {
       await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
     }
-    await pool.query("DELETE FROM tenants WHERE id = ANY($1::text[])", [[tenantA, tenantB]]);
+    await adminPool.query("DELETE FROM tenants WHERE id = ANY($1::text[])", [[tenantA, tenantB]]);
     await pool.end();
+    await adminPool.end();
   }
 });
