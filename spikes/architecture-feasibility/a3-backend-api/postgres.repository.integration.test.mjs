@@ -80,6 +80,7 @@ test("PostgreSQL API adapter enforces tenant isolation and resets pooled session
     const cancelled = await fetch(`${baseUrl}/v1/jobs/${jobA}/cancel`, { method: "POST", headers });
     assert.equal(cancelled.status, 200);
     assert.deepEqual(await cancelled.json(), { status: "cancelled" });
+    const cancellationRequestId = cancelled.headers.get("x-request-id");
     const repeatedCancellation = await fetch(`${baseUrl}/v1/jobs/${jobA}/cancel`, { method: "POST", headers });
     assert.equal(repeatedCancellation.status, 200);
     assert.deepEqual(await repeatedCancellation.json(), { status: "cancelled" });
@@ -92,6 +93,20 @@ test("PostgreSQL API adapter enforces tenant isolation and resets pooled session
       [[jobA, jobB]]
     );
     assert.deepEqual(jobStates.rows.map((row) => row.status).sort(), ["cancelled", "queued"]);
+    const cancellationAudit = await adminPool.query(
+      "SELECT actor_id, request_id, previous_status, cancelled_at FROM job_cancellation_audit WHERE tenant_id = $1 AND job_id = $2",
+      [tenantA, jobA]
+    );
+    assert.equal(cancellationAudit.rows.length, 1);
+    assert.equal(cancellationAudit.rows[0].actor_id, "api-test-user");
+    assert.equal(cancellationAudit.rows[0].request_id, cancellationRequestId);
+    assert.equal(cancellationAudit.rows[0].previous_status, "queued");
+    assert.ok(cancellationAudit.rows[0].cancelled_at);
+    const crossTenantCancellationAudit = await adminPool.query(
+      "SELECT count(*)::int AS count FROM job_cancellation_audit WHERE tenant_id = $1 AND job_id = $2",
+      [tenantB, jobB]
+    );
+    assert.equal(crossTenantCancellationAudit.rows[0].count, 0);
 
     const replayed = await fetch(`${baseUrl}/v1/outbox/dead-letters/${eventA}/replay`, { method: "POST", headers });
     assert.equal(replayed.status, 200);
