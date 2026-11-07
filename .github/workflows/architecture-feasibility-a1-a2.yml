@@ -124,6 +124,8 @@ jobs:
     runs-on: macos-latest
     timeout-minutes: 15
     steps:
+      - name: Check out source for Safari package verification
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - name: Download WXT Safari output
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
         with:
@@ -136,7 +138,7 @@ jobs:
           xcrun safari-web-extension-packager \
             --project-location "${{ runner.temp }}/TinlanceReadOnlySpike" \
             --app-name "TinlanceReadOnlySpike" \
-            --bundle-identifier "com.tinlance.extensions.spike.readonly" \
+            --bundle-identifier "com.tinlance.extensions.spike.TinlanceReadOnlySpike" \
             --swift \
             --macos-only \
             --copy-resources \
@@ -146,6 +148,7 @@ jobs:
           project="$(find "${{ runner.temp }}/TinlanceReadOnlySpike" -maxdepth 4 -name '*.xcodeproj' -print -quit)"
           test -n "$project"
           xcodebuild -list -project "$project"
+          bash spikes/architecture-feasibility/a1-a2/scripts/verify-safari-xcode-build.sh "$project" "$RUNNER_TEMP/safari-derived-data"
       - name: Preserve generated Safari Xcode project for review
         uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
         with:
