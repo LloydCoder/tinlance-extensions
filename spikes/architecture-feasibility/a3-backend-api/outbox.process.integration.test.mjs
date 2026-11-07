@@ -72,6 +72,10 @@ test("outbox publisher delivers at least once with idempotency, retries, dead le
       assert.equal(afterCrash.rows[0].published_at, null);
       assert.equal(afterCrash.rows[0].attempts, 1);
       assert.ok(afterCrash.rows[0].lease_token);
+      const deliveredInbox = await pool.query("SELECT count(*)::int AS count FROM consumer_inbox WHERE tenant_id = $1 AND consumer_name = $2 AND event_id = $3", [tenantId, "test.receiver", eventId]);
+      const deliveredEffect = await pool.query("SELECT count(*)::int AS count FROM tenant_records WHERE tenant_id = $1 AND id = $2", [tenantId, `consumer-effect-${eventId}`]);
+      assert.equal(deliveredInbox.rows[0].count, 1);
+      assert.equal(deliveredEffect.rows[0].count, 1);
 
       await pool.query("UPDATE outbox_events SET lease_expires_at = now() - interval '1 second' WHERE id = $1", [eventId]);
       const restarted = await runChild("complete", tenantId);
@@ -105,7 +109,9 @@ test("outbox publisher delivers at least once with idempotency, retries, dead le
       assert.ok(dead.rows[0].dead_lettered_at);
       assert.equal(dead.rows[0].published_at, null);
       const noInbox = await pool.query("SELECT count(*)::int AS count FROM consumer_inbox WHERE tenant_id = $1 AND consumer_name = $2 AND event_id = $3", [tenantId, "test.receiver", eventId]);
+      const noEffect = await pool.query("SELECT count(*)::int AS count FROM tenant_records WHERE tenant_id = $1 AND id = $2", [tenantId, `consumer-effect-${eventId}`]);
       assert.equal(noInbox.rows[0].count, 0);
+      assert.equal(noEffect.rows[0].count, 0);
     });
 
     await t.test("lease heartbeat preserves ownership during a long external delivery", async () => {
@@ -122,7 +128,6 @@ test("outbox publisher delivers at least once with idempotency, retries, dead le
       assert.equal(effects.rows[0].count, 1);
     });
   } finally {
-    await pool.query("DELETE FROM outbox_test_receipts WHERE tenant_id = $1", [tenantId]);
     await pool.query("DELETE FROM tenants WHERE id = $1", [tenantId]);
     await pool.end();
   }
