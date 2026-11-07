@@ -1,7 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
-import { createServer } from "node:http";
 import { createApiServer } from "./server.mjs";
 import { createPostgresRepository } from "./postgres-repository.mjs";
 
@@ -50,10 +49,11 @@ test("PostgreSQL API adapter enforces tenant isolation and resets pooled session
     assert.equal(otherTenantRecord.status, 404);
     assert.equal((await otherTenantRecord.json()).error, "not_found");
 
-    // max: 1 forces the health check to reuse the same physical connection.
-    // SET LOCAL ROLE and transaction-local tenant context must not leak.
+    // PostgreSQL restores a custom GUC to an empty string after SET LOCAL
+    // when it was previously unset. Normalize that state to NULL so the
+    // assertion checks the security property rather than GUC representation.
     const session = await pool.query(
-      "SELECT current_user AS role_name, current_setting('app.tenant_id', true) AS tenant_context"
+      "SELECT current_user AS role_name, nullif(current_setting('app.tenant_id', true), '') AS tenant_context"
     );
     assert.equal(session.rows[0].role_name, "postgres");
     assert.equal(session.rows[0].tenant_context, null);
