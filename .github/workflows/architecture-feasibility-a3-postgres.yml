@@ -122,3 +122,9 @@ jobs:
           ADMIN_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/tinlance_test
         working-directory: spikes/architecture-feasibility/a3-backend-api
         run: node --test outbox.process.integration.test.mjs
+
+      - name: Verify custom PostgreSQL backup restore, schema and tenant isolation
+        env:
+          DATABASE_URL: postgresql://tinlance_app_login:${{ env.APP_DB_PASSWORD }}@127.0.0.1:5432/tinlance_test
+          ADMIN_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/tinlance_test
+        run: bash spikes/architecture-feasibility/a3-backend-api/verify-backup-restore.sh
