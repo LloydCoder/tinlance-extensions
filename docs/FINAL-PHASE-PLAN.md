@@ -1,7 +1,7 @@
 # Tinlance Extensions — Final Consolidated Phase Plan
 
 **Document status:** Accepted programme baseline; implementation authorization remains gated
-**Date:** 2026-11-05
+**Date:** 2026-11-07
 **Owner:** Tinlance Limited
 **Repository:** https://github.com/LloydCoder/tinlance-extensions
 **Canonical catalogue:** [26 products](PRODUCT-CATALOGUE.md)
@@ -568,3 +568,18 @@ The programme is complete only when:
 | Commercial beta / production release | Not started / not evidenced |
 
 **Programme status:** this consolidated plan is the accepted programme baseline. The first-seven order and catalogue remain unchanged. Phase 02 substantive evidence remains open; A1 passed; A2 remains partial after PR #30's Chromium MV3 popup/runtime, service-worker restart and Safari Xcode packaging evidence, PR #32's Chromium keyboard-shortcut action proof and PR #34's Firefox keyboard-shortcut runtime proof, with Safari runtime/signing and store review still open; Edge/Brave/Opera runtime evidence is merged in PR #38; A3 is partial (PR #44 adds green PostgreSQL-backed HTTP adapter feasibility evidence, while production identity/credentials, worker lifecycle and outbox delivery remain unproved); A4–A7 remain open. Application implementation begins only after the applicable evidence, security, architecture and owner go/no-go gates are accepted.
+
+
+## 10. Current feasibility evidence checkpoint — 2026-11-07
+
+Current main checkpoint: 301c54b4422e452d87384d612a1f901f2c8c7da2 after PR #52.
+
+A3 feasibility now includes: PR #46 tenant-scoped Node worker runtime with PostgreSQL child-process crash/restart, concurrent-claim and lease-heartbeat tests; PR #47 outbox publisher runtime with bounded retry/dead-letter, heartbeat and crash-after-delivery recovery against a deduplicating test receiver; PR #48 tenant-bound cancellation and worker AbortSignal handling; PR #49 strict RS256 OIDC/JWKS bearer verification; PR #50 dedicated non-superuser tinlance_app_login role used by API, worker and publisher integration tests; PR #51 fail-fast environment-driven OIDC API composition; and PR #52 tenant-scoped POST /v1/jobs/{jobId}/cancel wired through the PostgreSQL adapter.
+
+PR #52 exact-head Repository Quality (42392078298), A3 API (42392078129) and PostgreSQL 16 (42392078261) passed on ab5238eff808dd0f45eb973479967f5a86053af8. Post-merge A3 API (42392194443) and PostgreSQL 16 (42392194429) passed on merge commit 301c54b4422e452d87384d612a1f901f2c8c7da2.
+
+A3 remains partial and is not a production backend. Remaining gaps: approved provider-specific issuer/tenant-claim onboarding and token lifecycle; managed production secret/database credential provisioning and rotation plus TLS/connection management; real external provider transport adapters; durable receiver-side inbox/idempotency and operational dead-letter tooling; actual Tinlance Agent Platform authorization/approval integration (the cancellation callback defaults to deny-all); cancellation audit integration; migration rollback; backup/restore and recovery objectives; production deployment/supervision; observability, alerting and SLO evidence; retention/deletion; legal/privacy review and independent security review.
+
+Phase 02 remains open for genuine customer interviews, product-owner sign-offs, commercial evidence and legal/provider review. A2 remains partial for Safari runtime enablement/execution, signing, notarization and store review. A4–A7 remain open. Phases 4–25 remain gated as production implementation. No production implementation authorization or paid infrastructure approval is inferred.
+
+The original phase sequence, product catalogue, first-seven order and authority boundaries remain unchanged.
