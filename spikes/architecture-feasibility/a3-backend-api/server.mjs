@@ -47,6 +47,13 @@ export function createApiServer({
       const replayMatch = url.pathname.match(/^\/v1\/outbox\/dead-letters\/([0-9a-f-]{36})\/replay$/i);
       const isReplayRoute = Boolean(replayMatch && EVENT_ID_PATTERN.test(replayMatch[1]));
       const isPostActionRoute = isCancellationRoute || isReplayRoute;
+      if (req.method === "POST" && isPostActionRoute) {
+        const contentLength = req.headers["content-length"];
+        if (req.headers["transfer-encoding"] !== undefined || (contentLength !== undefined && contentLength !== "0")) {
+          req.resume();
+          return json(res, 400, { error: "body_not_allowed", requestId }, requestId);
+        }
+      }
       if (req.method !== "GET" && !(req.method === "POST" && isPostActionRoute)) {
         res.setHeader("allow", isPostActionRoute ? "POST" : "GET");
         return json(res, 405, { error: "method_not_allowed", requestId }, requestId);
