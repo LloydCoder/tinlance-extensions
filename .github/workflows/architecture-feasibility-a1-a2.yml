@@ -75,14 +75,20 @@ jobs:
           xvfb-run -a bash -lc 'openbox --sm-disable >/tmp/openbox.log 2>&1 & sleep 1; node scripts/verify-active-tab-action.cjs'
       - name: Set up Firefox
         id: setup-firefox
-        uses: browser-actions/setup-firefox@68bf44c713a76eba74dad465d58b0a62d06b4ac5
+        uses: browser-actions/setup-firefox@0bc507ddf224827e3b1af68e014d5e42ab93e795
         with:
           firefox-version: latest
-      - name: Set up pinned geckodriver
-        uses: browser-actions/setup-geckodriver@617ad6f7b2f162033adf38138d619be5101af52e
-        with:
-          geckodriver-version: "0.37.1"
-          token: ${{ github.token }}
+      - name: Install pinned geckodriver with checksum verification
+        run: |
+          set -Eeuo pipefail
+          mkdir -p "$RUNNER_TEMP/geckodriver-bin"
+          curl --fail --silent --show-error --location \
+            "https://github.com/mozilla/geckodriver/releases/download/v0.37.1/geckodriver-v0.37.1-linux64.tar.gz" \
+            --output "$RUNNER_TEMP/geckodriver-v0.37.1-linux64.tar.gz"
+          echo "e815130ea95983e162ae91843b48d3a3ce991735635fce83a647afde21e09f7e  $RUNNER_TEMP/geckodriver-v0.37.1-linux64.tar.gz" | sha256sum --check -
+          tar -xzf "$RUNNER_TEMP/geckodriver-v0.37.1-linux64.tar.gz" -C "$RUNNER_TEMP/geckodriver-bin"
+          chmod 0755 "$RUNNER_TEMP/geckodriver-bin/geckodriver"
+          echo "$RUNNER_TEMP/geckodriver-bin" >> "$GITHUB_PATH"
       - name: Install pinned Selenium runtime
         run: |
           python3 -m venv "$RUNNER_TEMP/firefox-test-venv"
