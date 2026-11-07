@@ -17,7 +17,8 @@ This isolated spike is evidence, not a production API or service.
 - PostgreSQL integration assertions for worker lease-expiry recovery and fencing-token safety.
 - Tenant-bound transactional outbox publisher leases with bounded batch/lease inputs, `FOR UPDATE SKIP LOCKED` claims, expiry/reclaim, fresh fencing tokens, stale-token rejection and tenant-scoped publish acknowledgement.
 - A Node outbox publisher runtime with tenant-scoped claim/renew/ack/fail transactions, configured event-type transport registry, idempotency-key propagation, bounded retries and dead-letter transition.
-- A PostgreSQL 16 custom-format logical backup/restore CI exercise that restores into a fresh database, verifies tenant data and schema contracts, then proves the restricted application login still observes only its tenant under forced RLS.\n- A durable tenant-scoped consumer inbox with a unique (tenant, consumer, event) key, forced RLS, bounded JSON payloads and payload-mismatch rejection. The publisher's crash-after-delivery integration now uses this inbox and writes its local effect in the same transaction, proving the effect is not repeated after publisher restart.
+- A PostgreSQL 16 custom-format logical backup/restore CI exercise that restores into a fresh database, verifies tenant data and schema contracts, then proves the restricted application login still observes only its tenant under forced RLS.
+- A durable tenant-scoped consumer inbox with a unique (tenant, consumer, event) key, forced RLS, bounded JSON payloads and payload-mismatch rejection. The publisher's crash-after-delivery integration now uses this inbox and writes its local effect in the same transaction, proving the effect is not repeated after publisher restart.
 - Real child-process PostgreSQL integration proving crash-after-delivery recovery with receiver-side idempotency, retry/dead-letter behavior and heartbeat renewal during long external delivery.
 - OpenAPI 3.1 fixture and liveness/readiness separation.
 
@@ -31,7 +32,7 @@ This isolated spike is evidence, not a production API or service.
 - The feasibility HTTP API exposes `POST /v1/jobs/{jobId}/cancel`, but its authorization callback defaults to deny-all and must be explicitly injected. This is a policy seam, not a production operator authorization workflow. The real Tinlance Agent Platform authorization/approval contract is not integrated, and no cancellation audit trail/UI is deployed.
 - The RS256 OIDC/JWKS verifier and least-privilege login-role contract are implemented as feasibility components, but no production identity deployment/configuration, secret rotation, rate limiting, deployment, secrets manager, backup/restore, object storage, retention/deletion, or legal/privacy review is included.
 
-Run locally against PostgreSQL 16+ after applying migrations 001–007. Install the pinned test driver with `npm install --no-save --package-lock=false --ignore-scripts pg@8.16.3`, then run:
+Run locally against PostgreSQL 16+ after applying migrations 001–008. Install the pinned test driver with `npm install --no-save --package-lock=false --ignore-scripts pg@8.16.3`, then run:
 
 ```sh
 # Apply migrations with an administrative/migration connection.
