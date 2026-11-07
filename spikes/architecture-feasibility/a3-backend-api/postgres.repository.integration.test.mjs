@@ -107,6 +107,17 @@ test("PostgreSQL API adapter enforces tenant isolation and resets pooled session
       [tenantB, jobB]
     );
     assert.equal(crossTenantCancellationAudit.rows[0].count, 0);
+    const cancellationRlsClient = await pool.connect();
+    try {
+      await cancellationRlsClient.query("BEGIN");
+      await cancellationRlsClient.query("SET LOCAL ROLE tinlance_app_runtime");
+      await cancellationRlsClient.query("SELECT set_config('app.tenant_id', $1, true)", [tenantA]);
+      const visibleCancellationAudit = await cancellationRlsClient.query("SELECT count(*)::int AS count FROM job_cancellation_audit");
+      assert.equal(visibleCancellationAudit.rows[0].count, 1);
+      await cancellationRlsClient.query("COMMIT");
+    } finally {
+      cancellationRlsClient.release();
+    }
 
     const replayed = await fetch(`${baseUrl}/v1/outbox/dead-letters/${eventA}/replay`, { method: "POST", headers });
     assert.equal(replayed.status, 200);
