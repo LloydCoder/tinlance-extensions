@@ -58,3 +58,8 @@ jobs:
         env:
           PGPASSWORD: postgres
         run: psql "host=127.0.0.1 port=5432 dbname=tinlance_test user=postgres" -v ON_ERROR_STOP=1 -f spikes/architecture-feasibility/a3-backend-api/postgres.worker.integration.sql
+      - name: Verify concurrent worker claims use SKIP LOCKED
+        env:
+          PGPASSWORD: postgres
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/tinlance_test
+        run: bash spikes/architecture-feasibility/a3-backend-api/verify-concurrent-worker-claims.sh
