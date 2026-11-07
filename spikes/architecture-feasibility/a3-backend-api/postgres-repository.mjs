@@ -1,5 +1,6 @@
 const TENANT_ID_PATTERN = /^[a-z0-9_-]{1,64}$/;
-const JOB_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;\nconst EVENT_ID_PATTERN = JOB_ID_PATTERN;
+const JOB_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const EVENT_ID_PATTERN = JOB_ID_PATTERN;
 
 /**
  * PostgreSQL-backed implementation of the A3 tenant repository contract.
