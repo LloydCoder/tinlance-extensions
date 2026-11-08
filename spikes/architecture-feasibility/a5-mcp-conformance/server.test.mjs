@@ -662,7 +662,7 @@ test("slow request bodies are rejected at the configured read deadline", async (
       method: "POST",
       headers: {
         host: "test.local",
-        authorization: `Bearer \${token}`,
+        authorization: `Bearer ${token}`,
         "content-type": "application/json"
       },
       body: stream,
@@ -687,7 +687,7 @@ test("aborted request bodies stop reading and fail closed", async () => {
       method: "POST",
       headers: {
         host: "test.local",
-        authorization: `Bearer \${token}`,
+        authorization: `Bearer ${token}`,
         "content-type": "application/json"
       },
       body: stream,
