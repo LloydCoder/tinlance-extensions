@@ -1,19 +1,18 @@
-import { createMcpHandler, McpServer } from "@modelcontextprotocol/server";
+import {
+  createMcpHandler,
+  McpServer,
+  OAuthError,
+  OAuthErrorCode,
+  hostHeaderValidationResponse,
+  originValidationResponse,
+  requireBearerAuth,
+  requireScopes
+} from "@modelcontextprotocol/server";
+import { jwtVerify } from "jose";
 import * as z from "zod/v4";
 
 export const REQUIRED_SCOPE = "extensions:conformance.read";
 export const MAX_BODY_BYTES = 64 * 1024;
-
-function jsonError(status, code, extraHeaders = {}) {
-  return new Response(JSON.stringify({ error: code }), {
-    status,
-    headers: {
-      "content-type": "application/json",
-      "cache-control": "no-store",
-      ...extraHeaders
-    }
-  });
-}
 
 async function readBoundedBody(request, limit) {
   const reader = request.body.getReader();
@@ -45,22 +44,70 @@ async function readBoundedBody(request, limit) {
 }
 
 export function createConformanceApp({
-  verifyBearerToken,
-  allowedHosts,
-  allowedOrigins = [],
+  publicKey,
+  issuer,
+  resourceUrl,
+  allowedHostnames,
+  allowedOriginHostnames = [],
   maxBodyBytes = MAX_BODY_BYTES
 }) {
-  if (typeof verifyBearerToken !== "function") {
-    throw new TypeError("verifyBearerToken must be supplied");
+  if (!publicKey || typeof issuer !== "string" || typeof resourceUrl !== "string") {
+    throw new TypeError("publicKey, issuer, and resourceUrl are required");
   }
 
-  const hosts = new Set(allowedHosts.map((host) => host.toLowerCase()));
-  const origins = new Set(allowedOrigins);
+  const resource = new URL(resourceUrl);
+  const resourceMetadataUrl = new URL(
+    "/.well-known/oauth-protected-resource/mcp",
+    resource.origin
+  ).toString();
+
+  const verifier = {
+    async verifyAccessToken(token) {
+      try {
+        const { payload, protectedHeader } = await jwtVerify(token, publicKey, {
+          algorithms: ["EdDSA"],
+          issuer,
+          audience: resourceUrl
+        });
+
+        if (
+          protectedHeader.typ !== "at+jwt" ||
+          typeof payload.sub !== "string" ||
+          typeof payload.client_id !== "string" ||
+          typeof payload.tenant_id !== "string" ||
+          typeof payload.scope !== "string" ||
+          typeof payload.exp !== "number"
+        ) {
+          throw new Error("required access-token claims are missing");
+        }
+
+        const scopes = payload.scope.split(" ").filter(Boolean);
+        if (scopes.length === 0) throw new Error("access token has no scopes");
+
+        return {
+          token,
+          clientId: payload.client_id,
+          scopes,
+          expiresAt: payload.exp,
+          resource
+        };
+      } catch {
+        throw new OAuthError(OAuthErrorCode.InvalidToken, "Invalid access token");
+      }
+    }
+  };
+
+  const authGate = requireBearerAuth({
+    verifier,
+    requiredScopes: [REQUIRED_SCOPE],
+    expectedResource: resource,
+    resourceMetadataUrl
+  });
 
   const handler = createMcpHandler(({ era }) => {
     const server = new McpServer({
       name: "tinlance-extensions-a5-conformance",
-      version: "0.1.0"
+      version: "0.2.0"
     });
 
     server.registerTool(
@@ -71,27 +118,13 @@ export function createConformanceApp({
         outputSchema: z.object({
           status: z.literal("ok"),
           protocol: z.literal("2026-07-28")
-        })
+        }),
+        scopeChallenge: requireScopes(REQUIRED_SCOPE)
       },
-      async (_input, context) => {
-        const authInfo = context.http?.authInfo;
-        if (!authInfo?.scopes?.includes(REQUIRED_SCOPE)) {
-          return {
-            content: [{ type: "text", text: "insufficient scope" }],
-            isError: true
-          };
-        }
-        if (era !== "modern") {
-          return {
-            content: [{ type: "text", text: "unsupported protocol era" }],
-            isError: true
-          };
-        }
-        return {
-          content: [{ type: "text", text: "ok" }],
-          structuredContent: { status: "ok", protocol: "2026-07-28" }
-        };
-      }
+      async () => ({
+        content: [{ type: "text", text: "ok" }],
+        structuredContent: { status: "ok", protocol: era === "modern" ? "2026-07-28" : "legacy" }
+      })
     );
 
     return server;
@@ -99,51 +132,40 @@ export function createConformanceApp({
 
   return {
     async fetch(request) {
-      const requestUrl = new URL(request.url);
-      const requestHost = requestUrl.host.toLowerCase();
-      const suppliedHost = request.headers.get("host")?.toLowerCase();
-      // Fetch Request objects may omit the forbidden Host header. The URL
-      // authority is then the normalized host supplied by the HTTP adapter.
-      if (suppliedHost && suppliedHost !== requestHost) return jsonError(403, "forbidden");
-      if (!hosts.has(requestHost)) return jsonError(403, "forbidden");
+      const hostRejected = hostHeaderValidationResponse(request, allowedHostnames);
+      if (hostRejected) return hostRejected;
 
-      const origin = request.headers.get("origin");
-      if (origin !== null && !origins.has(origin)) return jsonError(403, "forbidden");
+      const originRejected = originValidationResponse(request, allowedOriginHostnames);
+      if (originRejected) return originRejected;
 
-      const authorization = request.headers.get("authorization") ?? "";
-      const match = /^Bearer (\S+)$/.exec(authorization);
-      if (!match) {
-        return jsonError(401, "unauthorized", {
-          "www-authenticate": 'Bearer realm="tinlance-extensions-mcp"'
-        });
-      }
-
-      let authInfo;
-      try {
-        authInfo = await verifyBearerToken(match[1]);
-      } catch {
-        return jsonError(401, "unauthorized", {
-          "www-authenticate": 'Bearer realm="tinlance-extensions-mcp"'
-        });
-      }
-      if (!authInfo || !Array.isArray(authInfo.scopes)) {
-        return jsonError(401, "unauthorized", {
-          "www-authenticate": 'Bearer realm="tinlance-extensions-mcp"'
-        });
-      }
+      const authInfo = await authGate(request);
+      if (authInfo instanceof Response) return authInfo;
 
       if (request.body) {
         const declared = request.headers.get("content-length");
         if (declared !== null) {
           const declaredLength = Number(declared);
           if (!Number.isSafeInteger(declaredLength) || declaredLength < 0) {
-            return jsonError(400, "invalid_content_length");
+            return new Response(JSON.stringify({ error: "invalid_content_length" }), {
+              status: 400,
+              headers: { "content-type": "application/json", "cache-control": "no-store" }
+            });
           }
-          if (declaredLength > maxBodyBytes) return jsonError(413, "request_too_large");
+          if (declaredLength > maxBodyBytes) {
+            return new Response(JSON.stringify({ error: "request_too_large" }), {
+              status: 413,
+              headers: { "content-type": "application/json", "cache-control": "no-store" }
+            });
+          }
         }
 
         const body = await readBoundedBody(request, maxBodyBytes);
-        if (body === null) return jsonError(413, "request_too_large");
+        if (body === null) {
+          return new Response(JSON.stringify({ error: "request_too_large" }), {
+            status: 413,
+            headers: { "content-type": "application/json", "cache-control": "no-store" }
+          });
+        }
         const forwarded = new Request(request.url, {
           method: request.method,
           headers: request.headers,
