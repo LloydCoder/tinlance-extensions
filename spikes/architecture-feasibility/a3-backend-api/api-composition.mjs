@@ -12,7 +12,7 @@ function requiredEnvironmentValue(env, name) {
 function integerEnvironmentValue(env, name, fallback) {
   const raw = env[name];
   if (raw === undefined || raw === "") return fallback;
-  if (typeof raw !== "string" || !/^\\d+$/.test(raw)) {
+  if (typeof raw !== "string" || !/^\d+$/.test(raw)) {
     throw new Error(`OIDC configuration ${name} must be an integer`);
   }
   return Number(raw);
