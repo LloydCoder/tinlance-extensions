@@ -1,0 +1,38 @@
+name: Architecture Feasibility A5 MCP
+
+on:
+  pull_request:
+    paths:
+      - "spikes/architecture-feasibility/a5-mcp-conformance/**"
+      - ".github/workflows/architecture-feasibility-a5-mcp.yml"
+  push:
+    branches: [main]
+    paths:
+      - "spikes/architecture-feasibility/a5-mcp-conformance/**"
+      - ".github/workflows/architecture-feasibility-a5-mcp.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: architecture-feasibility-a5-mcp-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  mcp-conformance:
+    name: A5 MCP SDK v2 conformance tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: "24.22.2"
+      - name: Install exact SDK versions
+        working-directory: spikes/architecture-feasibility/a5-mcp-conformance
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Run A5 conformance tests
+        working-directory: spikes/architecture-feasibility/a5-mcp-conformance
+        run: npm test
