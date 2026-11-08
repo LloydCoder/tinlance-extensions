@@ -188,7 +188,12 @@ export function createSignedWebhookTransport({
         : response.status >= 500
           ? "upstream_unavailable"
           : "upstream_rejected";
-      throw deliveryError(`webhook upstream returned HTTP ${response.status}`, code);
+      const message = code === "upstream_unavailable"
+        ? `webhook upstream is unavailable (HTTP ${response.status})`
+        : code === "upstream_rate_limited"
+          ? `webhook upstream is rate limited (HTTP ${response.status})`
+          : `webhook upstream rejected the event (HTTP ${response.status})`;
+      throw deliveryError(message, code);
     }
     try { await response.body?.cancel(); } catch {}
     return { statusCode: response.status };
