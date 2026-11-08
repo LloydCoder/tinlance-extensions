@@ -6,14 +6,40 @@ import {
   hostHeaderValidationResponse,
   originValidationResponse,
   requireBearerAuth,
-  requireScopes,
   oauthMetadataResponse
 } from "@modelcontextprotocol/server";
-import { createRemoteJWKSet, jwtVerify } from "jose";
+import { createHash } from "node:crypto";
+import { jwtVerify } from "jose";
 import * as z from "zod/v4";
 
 export const REQUIRED_SCOPE = "extensions:conformance.read";
+export const ACTION_SCOPE = "extensions:health:read";
+export const ACTION_TOOL_NAME = "extensions_health_read";
+export const ACTION_RESOURCE_ID = "a4f6d9e2-1c3b-4a5d-8e7f-9012bc345678";
+export const EXPECTED_TENANT_ID = "tenant-test-001";
 export const MAX_BODY_BYTES = 64 * 1024;
+
+export function platformActionPurpose(tenantId, subject, toolName, resourceId, idempotencyKey = null) {
+  if (typeof tenantId !== "string" || typeof subject !== "string") return null;
+  const canonical = JSON.stringify([tenantId, subject, toolName, resourceId, idempotencyKey]);
+  return "extensions-action-v1:" + createHash("sha256").update(canonical, "utf8").digest("hex");
+}
+
+function hasPlatformActionPurpose(authInfo) {
+  const expected = platformActionPurpose(
+    EXPECTED_TENANT_ID,
+    authInfo?.subject,
+    ACTION_TOOL_NAME,
+    ACTION_RESOURCE_ID
+  );
+  return Boolean(
+    authInfo &&
+    authInfo.tenantId === EXPECTED_TENANT_ID &&
+    authInfo.scopes?.includes(ACTION_SCOPE) &&
+    typeof expected === "string" &&
+    authInfo.purpose === expected
+  );
+}
 
 async function readBoundedBody(request, limit) {
   const reader = request.body.getReader();
@@ -46,7 +72,6 @@ async function readBoundedBody(request, limit) {
 
 export function createConformanceApp({
   publicKey,
-  jwksUrl,
   issuer,
   resourceUrl,
   allowedHostnames,
@@ -54,17 +79,11 @@ export function createConformanceApp({
   oauthMetadata,
   maxBodyBytes = MAX_BODY_BYTES
 }) {
-  if ((!publicKey && !jwksUrl) || typeof issuer !== "string" || typeof resourceUrl !== "string") {
-    throw new TypeError("publicKey or jwksUrl, issuer, and resourceUrl are required");
+  if (!publicKey || typeof issuer !== "string" || typeof resourceUrl !== "string") {
+    throw new TypeError("publicKey, issuer, and resourceUrl are required");
   }
 
   const resource = new URL(resourceUrl);
-  const jwksEndpoint = jwksUrl ? new URL(jwksUrl) : undefined;
-  if (jwksEndpoint && jwksEndpoint.protocol !== "https:" &&
-      jwksEndpoint.hostname !== "localhost" && jwksEndpoint.hostname !== "127.0.0.1") {
-    throw new TypeError("JWKS endpoint must use HTTPS outside loopback tests");
-  }
-  const verificationKey = jwksEndpoint ? createRemoteJWKSet(jwksEndpoint) : publicKey;
   if (!oauthMetadata || oauthMetadata.issuer !== issuer) {
     throw new TypeError("oauthMetadata with the configured issuer is required");
   }
@@ -76,7 +95,7 @@ export function createConformanceApp({
   const verifier = {
     async verifyAccessToken(token) {
       try {
-        const { payload, protectedHeader } = await jwtVerify(token, verificationKey, {
+        const { payload, protectedHeader } = await jwtVerify(token, publicKey, {
           algorithms: ["EdDSA"],
           issuer,
           audience: resourceUrl
@@ -88,6 +107,8 @@ export function createConformanceApp({
           typeof payload.client_id !== "string" ||
           typeof payload.tenant_id !== "string" ||
           typeof payload.scope !== "string" ||
+          typeof payload.purpose !== "string" ||
+          !/^extensions-action-v1:[a-f0-9]{64}$/.test(payload.purpose) ||
           typeof payload.exp !== "number"
         ) {
           throw new Error("required access-token claims are missing");
@@ -101,7 +122,10 @@ export function createConformanceApp({
           clientId: payload.client_id,
           scopes,
           expiresAt: payload.exp,
-          resource
+          resource,
+          tenantId: payload.tenant_id,
+          subject: payload.sub,
+          purpose: payload.purpose
         };
       } catch {
         throw new OAuthError(OAuthErrorCode.InvalidToken, "Invalid access token");
@@ -131,7 +155,12 @@ export function createConformanceApp({
           status: z.literal("ok"),
           protocol: z.literal("2026-07-28")
         }),
-        scopeChallenge: requireScopes(REQUIRED_SCOPE)
+        scopeChallenge: ({ authInfo }) => hasPlatformActionPurpose(authInfo)
+          ? undefined
+          : {
+              scopes: [ACTION_SCOPE],
+              errorDescription: "A matching tenant, action, and resource authorization is required"
+            }
       },
       async () => ({
         content: [{ type: "text", text: "ok" }],
