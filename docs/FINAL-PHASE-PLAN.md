@@ -801,3 +801,10 @@ The A5 suite now tests the Platform RS256 token against a remote JWKS endpoint, 
 Exact-head runs: A5 MCP [42530547781](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42530547781), Repository Quality [42530547755](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42530547755). Post-merge runs: A5 MCP [42530612903](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42530612903), Repository Quality [42530612900](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42530612900).
 
 Live KMS/JWKS discovery, TLS/network reachability, key rotation overlap, revocation service and production cross-service requests remain open.
+## A3/A4 payload-boundary checkpoint — 2026-11-08 (PR #116)
+
+Migration 012 now requires `tenant_records`, `jobs` and `outbox_events` payloads to be JSON objects no larger than 1 MiB. PostgreSQL tests verify near-limit acceptance and reject arrays/oversized objects. PR #116 merged as `a78410ea6918e55c27442dfe2ac57b8e74037270`; exact-head and post-merge Repository Quality, A3 API and PostgreSQL 16 workflows passed.
+
+Exact-head runs: Repository Quality [42531040851](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42531040851), A3 API [42531040879](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42531040879), PostgreSQL 16 [42531040846](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42531040846). Post-merge runs: Repository Quality [42531161996](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42531161996), A3 API [42531161961](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42531161961), PostgreSQL 16 [42531161868](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42531161868).
+
+A4 is still open: field-level product schemas, data classification, lawful basis, processors/transfers, retention, export/deletion and legal-hold behavior remain owner decisions. The signed webhook adapter is generic and not deployed with a provider.

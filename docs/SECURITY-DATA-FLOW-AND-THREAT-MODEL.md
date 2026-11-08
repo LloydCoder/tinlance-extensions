@@ -15,8 +15,8 @@ A1–A3 now provide executable evidence for a minimal browser-permission spike, 
 The highest-impact A4 risks are:
 
 1. **Unspecified product data paths:** exact local/cloud processing, third-party processors, retention and deletion behaviour are not approved for each product.
-2. **Unbounded business payload schemas:** A3 `jobs.payload` and `outbox_events.payload` are JSONB objects without a product-specific data classification or field-level sensitivity policy. The consumer inbox enforces a 1 MiB object limit, but that is not a privacy policy.
-3. **External delivery boundary:** the publisher feasibility spike uses a deduplicating test receiver. No production provider adapter, provider contract, transfer assessment or provider-side duplicate-effect guarantee is evidenced.
+2. **Unclassified business payload schemas:** PR #116 now constrains A3 `tenant_records.payload`, `jobs.payload` and `outbox_events.payload` to JSON objects no larger than 1 MiB; the consumer inbox already has the same bound. This limits resource consumption and malformed payload shapes, but does not establish product-specific field allowlists, sensitivity classification, retention or deletion.
+3. **External delivery boundary:** A3 now has a generic HMAC-signed, host-allowlisted HTTPS webhook adapter with event-ID idempotency headers and bounded payload/time. No production provider configuration, receiver-side replay-window enforcement, provider-side duplicate-effect guarantee, transfer assessment or live delivery is evidenced.
 4. **Operational data lifecycle:** no production retention scheduler, verifiable export/deletion workflow, backup retention policy or cross-region restore proof is evidenced.
 5. **Browser and AI content trust:** page content, URLs, AI prompts/responses and tool outputs must remain untrusted data and must never become authorization instructions.
 
@@ -49,8 +49,8 @@ flowchart LR
 | Extension → product API | Client-supplied IDs, content, auth state, action requests | Server-side identity/tenant derivation, entitlement and product authorization | Production product APIs are not implemented. |
 | MCP client → Platform | Tool arguments, resource IDs, client metadata | Platform authentication, policy, approval and capability checks | Platform integration is code-level; live identity/KMS configuration is not evidenced. |
 | Platform → Extensions API | Signed delegated JWT, action/resource, idempotency key | Signature, issuer, audience, client, tenant, scope and action-bound purpose | Issuer and receiver code are merged and tested; live KMS/JWKS and deployment remain open. |
-| API → PostgreSQL | SQL parameters, tenant context, payload JSON | Least-privilege role, transaction-local tenant context, RLS, constraints and audit | PostgreSQL 16 integration tests cover tenant isolation, session reset, cancellation and replay. |
-| Publisher → external provider | Event payload, credentials, idempotency key | Provider allowlist, TLS, secret isolation, egress control, provider-specific idempotency and audit | Current receiver is a test fixture. Production provider path is absent. |
+| API → PostgreSQL | SQL parameters, tenant context, bounded JSON object payloads | Least-privilege role, transaction-local tenant context, RLS, 1 MiB object constraints and audit | PostgreSQL 16 integration tests cover tenant isolation, session reset, cancellation, replay and payload-boundary rejection. |
+| Publisher → external provider | Event payload (≤1 MiB), signing secret, event UUID idempotency key | Exact hostname allowlist, HTTPS, HMAC-SHA256, bounded timeout, redirect denial, secret isolation, egress control and receiver-side idempotency/replay-window checks | Generic signed webhook adapter is tested; no production provider/receiver or live delivery is configured. |
 | Operations → logs/backups | Identifiers, error details, event metadata, database snapshots | Redaction, access control, retention, deletion, encryption and recovery policy | Production telemetry and lifecycle controls remain unimplemented/unverified. |
 
 ## 3. Data classification
@@ -75,20 +75,22 @@ Use these classes as the minimum classification vocabulary. Product owners must 
 | A1–A2 permission-sensitive fixture | Active tab after an explicit visible-button or keyboard action | Fixed packaged script reads title/origin in the fixture | `activeTab+scripting`; no broad host permission | This is not evidence for any of the 26 product permission sets. |
 | Safari package fixture | Read-only Safari MV2 manifest and packaged extension resources | Xcode app/appex build output | Manifest/package checks only | Safari runtime, signing, notarization and distribution review remain open. |
 | A3 API authentication | Bearer JWT claims: issuer, audience, client, subject, tenant, scope, request ID and signed action purpose | Verified principal and request correlation; raw bearer token must not be persisted | RS256/JWKS verification; action purpose binds tenant, subject, tool, resource and replay idempotency key | Live issuer onboarding, KMS key lifecycle, JWKS hosting, revocation and secret rotation remain open. |
-| A3 job API | Job ID, tenant derived from verified principal, actor and request ID | `jobs` rows contain job type, status, idempotency key and JSONB payload | Tenant RLS, transaction-local tenant context and cancellation audit | Product payload schema/classification, retention, deletion and export are undefined. |
-| A3 outbox publisher | Tenant-bound event ID, aggregate ID, event type and JSONB payload | Outbox attempts, lease state, error code, publication/dead-letter state | Lease token/fencing, tenant isolation and bounded retry tests | No production provider adapter; payload minimization, external transfer, provider idempotency and operational replay controls remain open. |
+| A3 job API | Job ID, tenant derived from verified principal, actor and request ID | `jobs` rows contain job type, status, idempotency key and JSONB object payload capped at 1 MiB | Tenant RLS, transaction-local tenant context, payload constraint and cancellation audit | Product field allowlist/classification, retention, deletion and export are undefined. |
+| A3 outbox publisher | Tenant-bound event ID, aggregate ID, event type and JSONB object payload capped at 1 MiB | Outbox attempts, lease state, error code, publication/dead-letter state | Lease token/fencing, tenant isolation, bounded retry and signed webhook transport tests | No production provider; product field minimization, external transfer, receiver idempotency/replay-window and operational replay controls remain open. |
 | A3 consumer inbox | Consumer name, event ID and JSONB payload | Tenant-scoped inbox receipt, maximum 1 MiB JSON object | Composite idempotency key and payload-mismatch rejection | No production consumer or business-effect transaction has been approved; receiver-side retention/deletion remains open. |
 | A3 audit records | Actor ID, request ID, job/event ID and prior state | Cancellation and replay audit metadata | Tenant-scoped uniqueness, format checks and RLS | Retention schedule, export, legal hold, deletion exception policy and tamper-evidence beyond database permissions remain open. |
 | Agent Platform delegated call | User/tenant identity, capability, resource ID, replay idempotency key and approval context | Short-lived signed JWT with action-bound purpose; no inbound bearer forwarding | Platform token issuer and Extensions receiver have matching cross-service test vectors | Production KMS/JWKS, durable approval/idempotency service, deployment and live connectivity remain open. |
 
-### A3 database payload warning
+### A3 database payload warning — updated after PR #116
 
-The current schema permits JSONB payloads in `jobs` and `outbox_events` without a product-specific field allowlist or maximum payload size. The consumer inbox limits payloads to 1 MiB, but that does not constrain the originating job/outbox records. Until payload schemas are approved:
+The schema now requires `tenant_records.payload`, `jobs.payload` and `outbox_events.payload` to be JSON objects whose serialized JSON size is at most 1 MiB. Migration `012_payload_bounds.sql` validates existing rows before the constraints become active. The consumer inbox and signed webhook adapter also enforce a 1 MiB bound.
+
+This is a structural/resource bound, not a product privacy policy. Until product-specific schemas are approved:
 
 - Treat all payloads as **C2 by default**, and **C3 if a product can include credentials, prompts, source code or other sensitive content**.
 - Do not copy raw payloads into logs, traces, error messages or analytics.
-- Do not send them to an external provider.
-- Before production, define per-event schemas, maximum sizes, allowed fields, redaction rules, retention and deletion behaviour.
+- Do not send payloads to an external provider until the product data flow, provider and transfer are approved.
+- Before production, define per-event field allowlists, sensitivity classification, redaction, retention and deletion behaviour.
 
 ## 5. First-seven product data-flow register
 
