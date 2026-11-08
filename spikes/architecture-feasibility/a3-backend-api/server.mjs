@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 
 const JOB_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const EVENT_ID_PATTERN = JOB_ID_PATTERN;
+const REQUEST_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:@/-]{0,255}$/;
 
 const json = (res, status, body, requestId) => {
   res.writeHead(status, {
@@ -70,7 +71,12 @@ export function createApiServer({
       }
       // A verified Platform service token carries the original trusted request ID.
       // End-user tokens do not expose this field and retain the server-generated ID.
-      if (typeof principal.requestId === "string") requestId = principal.requestId;
+      if (principal.requestId !== undefined) {
+        if (typeof principal.requestId !== "string" || !REQUEST_ID_PATTERN.test(principal.requestId)) {
+          return json(res, 401, { error: "unauthorized", requestId }, requestId);
+        }
+        requestId = principal.requestId;
+      }
 
       if (req.method === "POST" && isCancellationRoute) {
         const jobId = cancellationMatch[1].toLowerCase();
