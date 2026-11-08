@@ -52,3 +52,7 @@ No product adapters, database access, customer data, browser actions, write tool
 - Tool catalogue, risk/approval matrix, security/privacy review and formal architecture approval.
 
 Passing this spike is one layer of evidence; it does not close A5.
+
+## Cancellation evidence update — PRs #96 and #97
+
+The suite now includes both in-process cancellation propagation and a real loopback HTTP client-disconnect test. The network fixture explicitly bridges Node's incoming-request abort / premature outgoing-response close events to the web-standard request AbortSignal; the synthetic tool verifies that the server handler observes cancellation and stops before its five-second deadline. This is a test-adapter contract, not proof of the production reverse-proxy/ingress topology or durable worker cancellation. Those remain Gate 0 requirements.
