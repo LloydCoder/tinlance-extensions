@@ -105,9 +105,7 @@ export function createOidcApiServer({
     }
   }
   const verifyBearer = createCompositeVerifier({ oidcConfig, platformOidcConfig, fetchImpl });
-  const platformAuthorize = platformOidcConfig
-    ? (scope) => async (input) => hasPlatformScope(input?.principal, platformOidcConfig, scope)
-    : null;
+  const platformAuthorize = Boolean(platformOidcConfig);
 
   const effectiveCancelAuthorization = platformAuthorize
     ? async (input) =>
