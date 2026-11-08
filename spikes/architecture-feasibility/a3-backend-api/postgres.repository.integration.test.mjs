@@ -81,6 +81,7 @@ test("PostgreSQL API adapter enforces tenant isolation and resets pooled session
     assert.equal(cancelled.status, 200);
     assert.deepEqual(await cancelled.json(), { status: "cancelled" });
     const cancellationRequestId = cancelled.headers.get("x-request-id");
+    assert.equal(cancellationRequestId, "mcp-0123456789abcdef0123456789abcdef");
     const repeatedCancellation = await fetch(`${baseUrl}/v1/jobs/${jobA}/cancel`, { method: "POST", headers });
     assert.equal(repeatedCancellation.status, 200);
     assert.deepEqual(await repeatedCancellation.json(), { status: "cancelled" });
