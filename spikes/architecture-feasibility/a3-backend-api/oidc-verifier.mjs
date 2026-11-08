@@ -235,6 +235,7 @@ export function createOidcBearerVerifier({
     const principalType = claims.principal_type;
     const scope = claims.scope;
     const requestId = claims.request_id;
+    const purpose = claims.purpose;
     const identifierPattern = /^[A-Za-z0-9][A-Za-z0-9._:@/-]{0,255}$/;
     const scopePattern = /^[A-Za-z0-9][A-Za-z0-9:._/-]{0,127}$/;
     const allowedPrincipalTypes = new Set(["user", "service", "agent", "workload"]);
@@ -242,6 +243,7 @@ export function createOidcBearerVerifier({
       typeof clientId !== "string" || !identifierPattern.test(clientId) ||
       typeof principalType !== "string" || !allowedPrincipalTypes.has(principalType) ||
       typeof requestId !== "string" || !identifierPattern.test(requestId) ||
+      (purpose !== undefined && (typeof purpose !== "string" || !identifierPattern.test(purpose))) ||
       typeof scope !== "string" || scope.length < 1 || scope.length > 1024 ||
       scope !== scope.trim() || scope.includes("  ")
     ) return null;
@@ -256,7 +258,8 @@ export function createOidcBearerVerifier({
       clientId,
       principalType,
       scopes: Object.freeze(scopes),
-      requestId
+      requestId,
+      ...(purpose === undefined ? {} : { purpose })
     });
   };
 }
