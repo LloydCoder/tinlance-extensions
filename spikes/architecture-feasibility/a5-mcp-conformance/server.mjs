@@ -84,8 +84,13 @@ export function createConformanceApp({
 
   return {
     async fetch(request) {
-      const host = request.headers.get("host")?.toLowerCase();
-      if (!host || !hosts.has(host)) return forbidden();
+      const requestHost = new URL(request.url).host.toLowerCase();
+      const suppliedHost = request.headers.get("host")?.toLowerCase();
+      // Web-standard Request objects may omit the forbidden Host header. The
+      // URL authority is then the normalized host supplied by the HTTP adapter.
+      // If both are present, reject disagreement rather than trusting either.
+      if (suppliedHost && suppliedHost !== requestHost) return forbidden();
+      if (!hosts.has(requestHost)) return forbidden();
 
       const origin = request.headers.get("origin");
       if (origin !== null && !origins.has(origin)) return forbidden();
