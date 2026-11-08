@@ -401,3 +401,10 @@ Also resolve package boundaries, browser SDK, identity/tenancy, product adapters
 **Implementation prohibition:** this document alone does not authorize a product to be described as implemented, secure, compatible, production-ready or commercially validated.
 
 **Handoff:** use this as Phase 03 requirements input. Changes to the first seven product phases require a separate evidence-backed roadmap decision.
+
+
+## A4 data-flow and threat-model baseline — 2026-11-08
+
+The new [Security Data-Flow Inventory and Threat Model](SECURITY-DATA-FLOW-AND-THREAT-MODEL.md) records current A1–A3 data flows, trust boundaries, data classifications, the first-seven product input categories, a STRIDE-oriented threat register, privacy/data-lifecycle controls and explicit A4 acceptance gates.
+
+**Disposition: A4 remains open.** The document is an evidence-backed baseline and gap register, not product-owner approval or a completed privacy assessment. The first-seven product local/cloud paths, lawful bases, processors/transfers, retention periods, export/deletion behaviour, telemetry policy and product-specific residual-risk decisions still require accountable owner and legal/security review. Executable retention/deletion/redaction tests and production data-lifecycle controls are not yet evidenced.
