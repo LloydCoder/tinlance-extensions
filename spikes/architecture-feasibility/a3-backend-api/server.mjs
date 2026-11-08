@@ -94,7 +94,8 @@ export function createApiServer({
 
       if (req.method === "POST" && isReplayRoute) {
         const eventId = replayMatch[1].toLowerCase();
-        const authorized = await authorizeOutboxReplay({ principal, eventId, requestId });
+        const idempotencyKey = req.headers["idempotency-key"];
+        const authorized = await authorizeOutboxReplay({ principal, eventId, requestId, idempotencyKey });
         if (authorized !== true) {
           return json(res, 403, { error: "forbidden", requestId }, requestId);
         }
