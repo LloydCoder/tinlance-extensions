@@ -97,7 +97,9 @@ export function createConformanceApp({
   allowedOriginHostnames = [],
   oauthMetadata,
   maxBodyBytes = MAX_BODY_BYTES,
-  maxBodyDurationMs = MAX_BODY_DURATION_MS
+  maxBodyDurationMs = MAX_BODY_DURATION_MS,
+  onToolStart = () => {},
+  onToolAbort = () => {}
 }) {
   if ((!publicKey && !jwksUrl) || typeof issuer !== "string" || typeof resourceUrl !== "string") {
     throw new TypeError("publicKey or jwksUrl, issuer, and resourceUrl are required");
@@ -174,6 +176,44 @@ export function createConformanceApp({
       name: "tinlance-extensions-a5-conformance",
       version: "0.2.0"
     });
+
+    server.registerTool(
+      "extensions_cancel_probe",
+      {
+        description: "Synthetic long-running read-only tool used only to verify request cancellation.",
+        inputSchema: z.object({
+          delayMs: z.number().int().min(1).max(5000)
+        }),
+        outputSchema: z.object({ status: z.literal("completed") }),
+        annotations: {
+          readOnlyHint: true,
+          destructiveHint: false,
+          idempotentHint: true,
+          openWorldHint: false
+        }
+      },
+      async ({ delayMs }, ctx) => {
+        onToolStart();
+        await new Promise((resolve, reject) => {
+          const signal = ctx.mcpReq.signal;
+          const timer = setTimeout(() => {
+            signal.removeEventListener("abort", abortHandler);
+            resolve();
+          }, delayMs);
+          const abortHandler = () => {
+            clearTimeout(timer);
+            onToolAbort();
+            reject(new DOMException("Tool request aborted", "AbortError"));
+          };
+          if (signal.aborted) abortHandler();
+          else signal.addEventListener("abort", abortHandler, { once: true });
+        });
+        return {
+          content: [{ type: "text", text: "completed" }],
+          structuredContent: { status: "completed" }
+        };
+      }
+    );
 
     server.registerTool(
       "extensions_health_read",
