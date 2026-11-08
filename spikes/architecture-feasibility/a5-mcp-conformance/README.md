@@ -19,10 +19,13 @@ The dependency graph is pinned by `package.json` and `package-lock.json`. CI ver
 - Official TypeScript SDK v2.4.0 `Client`, `StreamableHTTPClientTransport`, `createMcpHandler`, and `requireBearerAuth`.
 - Modern protocol negotiation pinned to `2026-07-28`; legacy protocol handling is rejected.
 - In-process handler and real loopback HTTP discovery/tool-call paths.
-- EdDSA-signed JWT access-token verification with `jose`: algorithm, `typ=at+jwt`, issuer, audience/resource, expiry, subject, client ID, tenant claim presence, and scope.
+- EdDSA-signed JWT access-token verification with `jose`: algorithm, `typ=at+jwt`, issuer, audience/resource, expiry, subject, client ID, tenant claim, and scope.
+- Configurable remote JWKS verification through `createRemoteJWKSet`, exercised against a loopback JWKS endpoint with positive signature, unknown-`kid`, and invalid-signature cases.
 - SDK-native Bearer challenges for missing/invalid tokens and insufficient scopes.
 - SDK-served RFC 9728 Protected Resource Metadata and RFC 8414 Authorization Server Metadata discovery documents, including issuer and S256/CIMD capability declarations.
 - SDK Host/Origin validation helpers.
+- Platform action-purpose binding using the shared `extensions-action-v1:` SHA-256 canonical tuple contract, with exact tenant, subject, tool, and resource checks plus action-specific scope challenges.
+- Cross-service hash vectors shared with the A3 Platform delegation fixture.
 - Platform action-purpose binding using the shared `extensions-action-v1:` SHA-256 canonical tuple contract, with exact tenant, subject, tool, and resource checks plus action-specific scope challenges.
 - Cross-service hash vectors shared with the A3 Platform delegation fixture.
 - Bounded streaming request-body enforcement, including chunked bodies without Content-Length.
@@ -30,7 +33,7 @@ The dependency graph is pinned by `package.json` and `package-lock.json`. CI ver
 
 ## Security and readiness boundary
 
-This is a test fixture only. The signing key is generated ephemerally for tests and is not a deployed issuer key. The RFC 9728 and RFC 8414 documents are synthetic conformance metadata only: their authorization/token endpoint URLs are not hosted. There is no production authorization server, JWKS endpoint or rotation, token revocation/introspection, client registration, PKCE flow, or live trust configuration. Metadata publication proves document shape and discovery routing, not a working OAuth authorization-code flow.
+This is a test fixture only. Signing keys are generated ephemerally and are not deployed issuer keys. The remote JWKS URL is a loopback fixture; HTTPS is required for non-loopback endpoints, but no production JWKS hosting or key-rotation policy is implemented. The RFC 9728 and RFC 8414 documents are synthetic metadata; their authorization/token endpoint URLs are not hosted. There is no production authorization server, token revocation/introspection, client registration, PKCE flow, or live trust configuration. Metadata publication proves document shape and discovery routing, not a working OAuth authorization-code flow.
 
 The tenant, subject, action, and resource claims are bound in a synthetic fixture using the same action-purpose canonicalization contract as the A3 Platform delegation tests. The fixture pins one expected tenant/resource and proves mismatched tenant/action/resource purposes are denied. It does not call the live Agent Platform, validate Platform-issued tokens, or authorize real tenant-scoped data. Host/Origin allowlists are fixture inputs and must be replaced with reviewed production host/proxy policy.
 
