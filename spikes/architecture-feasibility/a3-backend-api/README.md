@@ -82,3 +82,6 @@ The A3 RS256 verifier now requires a canonical 32-character lowercase-hex `jti` 
 The A3 spike now includes a generic `createSignedWebhookTransport` adapter. It uses exact-host allowlisting, HTTPS-only production endpoints, HMAC-SHA256 over timestamp plus exact request bytes, a stable event UUID idempotency key, a 1 MiB body cap, bounded timeout, cancellation, redirect rejection and retry-classified upstream errors. HTTP is allowed only for explicit loopback tests.
 
 This adapter is not wired to a production provider or deployed worker. The receiver must verify the HMAC and timestamp replay window and enforce idempotency; production secret storage and egress/DNS controls are still required.
+## JSON payload storage bounds — PR #116
+
+Migration `012_payload_bounds.sql` requires `tenant_records.payload`, `jobs.payload` and `outbox_events.payload` to be JSON objects no larger than 1 MiB when serialized. Existing rows are validated during migration; new writes are constrained immediately. PostgreSQL integration tests prove small objects are accepted and arrays/oversized payloads are rejected. This is a structural/resource limit, not a product-specific field allowlist, sensitivity classification, retention or deletion policy.
