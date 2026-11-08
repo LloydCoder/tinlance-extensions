@@ -91,7 +91,7 @@ async function readBoundedBody(request, limit, timeoutMs) {
 export function createConformanceApp({
   publicKey,
   jwksUrl,
-  allowedAlgorithms = ["EdDSA"],
+  allowedAlgorithms,
   issuer,
   resourceUrl,
   allowedHostnames,
