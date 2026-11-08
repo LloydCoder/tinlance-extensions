@@ -90,6 +90,53 @@ async function startHttpServer(overrides = {}) {
   };
 }
 
+
+async function rawModernToolRequest(app, token, {
+  methodHeader = "tools/call",
+  nameHeader = "extensions_health_read",
+  protocolHeader = "2026-07-28",
+  bodyMethod = "tools/call",
+  bodyName = "extensions_health_read",
+  bodyProtocol = "2026-07-28"
+} = {}) {
+  const headers = {
+    host: "test.local",
+    authorization: `Bearer ${token}`,
+    "content-type": "application/json",
+    accept: "application/json, text/event-stream",
+    "mcp-protocol-version": protocolHeader
+  };
+  if (methodHeader !== null) headers["mcp-method"] = methodHeader;
+  if (nameHeader !== null) headers["mcp-name"] = nameHeader;
+  return app.fetch(new Request("http://test.local/mcp", {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
+      jsonrpc: "2.0",
+      id: 91,
+      method: bodyMethod,
+      params: {
+        name: bodyName,
+        arguments: {},
+        _meta: {
+          "io.modelcontextprotocol/protocolVersion": bodyProtocol,
+          "io.modelcontextprotocol/clientCapabilities": {},
+          "io.modelcontextprotocol/clientInfo": {
+            name: "a5-raw-wire-test",
+            version: "1.0.0"
+          }
+        }
+      }
+    })
+  }));
+}
+
+async function assertHeaderMismatch(response) {
+  assert.equal(response.status, 400);
+  const payload = await response.json();
+  assert.equal(payload.error?.code, -32020);
+}
+
 function modernClient(name) {
   return new Client(
     { name, version: "1.0.0" },
@@ -288,5 +335,51 @@ test("oversized chunked bodies are bounded across the actual HTTP adapter", asyn
     assert.equal(response.status, 413);
   } finally {
     await network.close();
+  }
+});
+
+
+test("raw modern HTTP rejects a missing Mcp-Method header", async () => {
+  const app = createApp();
+  try {
+    await assertHeaderMismatch(await rawModernToolRequest(app, await signedToken(), { methodHeader: null }));
+  } finally {
+    await app.close();
+  }
+});
+
+test("raw modern HTTP rejects a missing Mcp-Name header for tools/call", async () => {
+  const app = createApp();
+  try {
+    await assertHeaderMismatch(await rawModernToolRequest(app, await signedToken(), { nameHeader: null }));
+  } finally {
+    await app.close();
+  }
+});
+
+test("raw modern HTTP rejects Mcp-Method that disagrees with the JSON-RPC method", async () => {
+  const app = createApp();
+  try {
+    await assertHeaderMismatch(await rawModernToolRequest(app, await signedToken(), { methodHeader: "tools/list" }));
+  } finally {
+    await app.close();
+  }
+});
+
+test("raw modern HTTP rejects Mcp-Name that disagrees with params.name", async () => {
+  const app = createApp();
+  try {
+    await assertHeaderMismatch(await rawModernToolRequest(app, await signedToken(), { nameHeader: "other_tool" }));
+  } finally {
+    await app.close();
+  }
+});
+
+test("raw modern HTTP rejects protocol-version header that disagrees with request metadata", async () => {
+  const app = createApp();
+  try {
+    await assertHeaderMismatch(await rawModernToolRequest(app, await signedToken(), { protocolHeader: "2025-11-25" }));
+  } finally {
+    await app.close();
   }
 });
