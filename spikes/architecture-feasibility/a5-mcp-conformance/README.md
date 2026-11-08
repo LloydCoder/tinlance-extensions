@@ -59,3 +59,6 @@ The suite now includes both in-process cancellation propagation and a real loopb
 ## Authorization-code PKCE evidence — PR #99
 
 The fixture now drives the official SDK v2 `OAuthClientProvider` through dynamic client registration, authorization redirect, PKCE S256, callback state comparison, RFC 9207 issuer validation, RFC 8707 resource binding, remote JWKS validation and an authenticated MCP tool call. A mismatched authorization-response issuer is rejected before token exchange. This is a synthetic authorization server with ephemeral keys and no real user login; production IdP onboarding, secure token storage, key lifecycle, revocation and live Platform authorization remain unproven.
+## OAuth negative-case update — PR #101
+
+The authorization-code test explicitly rejects a mismatched callback state and an incorrect PKCE verifier. It also records the official SDK's `invalid_grant` retry behavior and proves that only the correct verifier succeeds. This remains synthetic fixture evidence; no production issuer or credential storage is included.
