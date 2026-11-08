@@ -74,3 +74,6 @@ A3 remains **partial** until approved production issuer/audience/JWKS configurat
 
 
 The inbox relies on PostgreSQL's unique constraint and INSERT ... ON CONFLICT DO NOTHING concurrency semantics; acceptance and local database effects must commit in one transaction. See the [PostgreSQL 16 INSERT documentation](https://www.postgresql.org/docs/16/sql-insert.html) and [unique-index concurrency notes](https://www.postgresql.org/docs/16/index-unique-checks.html).
+## Platform delegated-token JWT ID validation — PR #110
+
+The A3 RS256 verifier now requires a canonical 32-character lowercase-hex `jti` for Platform delegated tokens, matching `PlatformServiceTokenIssuer` (`uuid4().hex`) and the A5 verifier. Missing or malformed IDs are rejected before authorization. Ordinary user OIDC tokens remain unaffected. No durable revocation/introspection service is implied.

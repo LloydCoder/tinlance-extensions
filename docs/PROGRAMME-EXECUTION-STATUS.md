@@ -392,3 +392,10 @@ Cross-repository review found a second real integration mismatch: the Agent Plat
 This closes the code-level tenant identifier mismatch across the Platform issuer, A3 schema/verifier and A5 RS256 verifier. The A5 suite remains 40/40 passing.
 
 **Boundary:** this does not prove production KMS/JWKS deployment, live Platform-to-Extensions requests, or production database credentials. The Platform issuer's broader multi-product tenant lifecycle still needs the owner-approved canonical tenant ID contract.
+## A3 Platform-token JWT ID validation — PR #110 (2026-11-08)
+
+PR #110 closes a delegated-token validation gap: A3 previously accepted Platform RS256 tokens with a missing or malformed JWT ID even though the Platform issuer always emits a canonical `uuid4().hex` `jti`, and the A5 verifier now requires it. The A3 verifier now requires exactly 32 lowercase hexadecimal characters for `jti` on Platform delegated tokens. Ordinary user OIDC tokens remain unaffected.
+
+PR #110 merged as `f21a544d7be68872b8d0bcceb838051790938c08`. Exact-head Repository Quality [42529381419](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42529381419), A3 API [42529465551](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42529465551) and PostgreSQL 16 [42529465580](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42529465580) passed. Post-merge Repository Quality [42529571151](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42529571151), A3 API [42529570965](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42529570965) and PostgreSQL 16 [42529571056](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42529571056) passed.
+
+**Boundary:** this validates the canonical token ID but does not provide a durable revocation/introspection store. Token revocation, KMS key lifecycle, issuer onboarding and production cross-service traffic remain open.
