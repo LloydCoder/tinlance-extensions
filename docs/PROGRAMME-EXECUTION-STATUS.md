@@ -365,3 +365,10 @@ PR #99 merged as `2cf2056af18f228b2e7dea17fca29e43df7f8b6f`. Exact-head A5 MCP a
 PR #101 strengthens the authorization-code fixture with an explicit callback state guard, a mismatched-state rejection assertion, an invalid PKCE verifier rejection, and a successful retry with the correct verifier. The official SDK's `invalid_grant` retry behavior is recorded and both invalid attempts are verified as rejected. It merged as `36d0a94bd6074b481c3723bbfd22180e3b781967`; exact-head and post-merge A5 MCP / Repository Quality checks passed. Post-merge runs: [A5 MCP 42527262821](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42527262821) and [Repository Quality 42527262823](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42527262823). The suite remains 28 passing tests.
 
 **Boundary:** these are synthetic OAuth protocol tests. Production issuer, secure token storage, revocation, KMS/key lifecycle, live Platform integration and external client certification remain open.
+## A5 revocation fail-closed contract — PR #103 (2026-11-08)
+
+PR #103 adds an optional conformance-server `isTokenRevoked` callback invoked only after JWT signature and claim validation. When configured, it requires a non-empty verified JWT ID (`jti`) and passes issuer, `jti`, subject, client, tenant and expiry to the lookup. A revoked token is rejected; a lookup exception is mapped to invalid-token rejection; a non-revoked token proceeds. The A5 suite now reports 31 tests passed, 0 failed.
+
+PR #103 merged as `52b350295c1af1959018f86826314207a7ccde60`. Exact-head checks passed; post-merge [A5 MCP 42527529036](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42527529036) and [Repository Quality 42527529005](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42527529005) passed.
+
+**Boundary:** this is an optional callback seam in the isolated conformance fixture, not a configured or durable production revocation service. Production introspection/revocation storage, availability semantics, cache invalidation, issuer integration and operational controls remain open.
