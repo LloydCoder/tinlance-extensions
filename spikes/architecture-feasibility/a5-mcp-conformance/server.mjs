@@ -18,6 +18,10 @@ export const ACTION_TOOL_NAME = "extensions_health_read";
 export const ACTION_RESOURCE_ID = "a4f6d9e2-1c3b-4a5d-8e7f-9012bc345678";
 export const EXPECTED_TENANT_ID = "tenant-test-001";
 export const MAX_BODY_BYTES = 64 * 1024;
+export const MAX_BODY_DURATION_MS = 15_000;
+
+class BodyReadTimeoutError extends Error {}
+class BodyReadAbortedError extends Error {}
 
 export function platformActionPurpose(tenantId, subject, toolName, resourceId, idempotencyKey = null) {
   if (typeof tenantId !== "string" || typeof subject !== "string") return null;
@@ -41,24 +45,38 @@ function hasPlatformActionPurpose(authInfo) {
   );
 }
 
-async function readBoundedBody(request, limit) {
+async function readBoundedBody(request, limit, timeoutMs) {
   const reader = request.body.getReader();
   const chunks = [];
   let total = 0;
+  let timer;
+  let abortHandler;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new BodyReadTimeoutError("request body deadline exceeded")), timeoutMs);
+  });
+  const aborted = new Promise((_, reject) => {
+    abortHandler = () => reject(new BodyReadAbortedError("request body was aborted"));
+    if (request.signal.aborted) abortHandler();
+    else request.signal.addEventListener("abort", abortHandler, { once: true });
+  });
+
   try {
     while (true) {
-      const { done, value } = await reader.read();
+      const { done, value } = await Promise.race([reader.read(), timeout, aborted]);
       if (done) break;
       total += value.byteLength;
       if (total > limit) {
-        await reader.cancel();
+        void reader.cancel().catch(() => {});
         return null;
       }
       chunks.push(value);
     }
   } catch (error) {
-    await reader.cancel().catch(() => {});
+    void reader.cancel().catch(() => {});
     throw error;
+  } finally {
+    clearTimeout(timer);
+    request.signal.removeEventListener("abort", abortHandler);
   }
 
   const body = new Uint8Array(total);
@@ -78,7 +96,8 @@ export function createConformanceApp({
   allowedHostnames,
   allowedOriginHostnames = [],
   oauthMetadata,
-  maxBodyBytes = MAX_BODY_BYTES
+  maxBodyBytes = MAX_BODY_BYTES,
+  maxBodyDurationMs = MAX_BODY_DURATION_MS
 }) {
   if ((!publicKey && !jwksUrl) || typeof issuer !== "string" || typeof resourceUrl !== "string") {
     throw new TypeError("publicKey or jwksUrl, issuer, and resourceUrl are required");
@@ -215,7 +234,19 @@ export function createConformanceApp({
           }
         }
 
-        const body = await readBoundedBody(request, maxBodyBytes);
+        let body;
+        try {
+          body = await readBoundedBody(request, maxBodyBytes, maxBodyDurationMs);
+        } catch (error) {
+          const timedOut = error instanceof BodyReadTimeoutError;
+          const aborted = error instanceof BodyReadAbortedError;
+          return new Response(JSON.stringify({
+            error: timedOut ? "request_timeout" : aborted ? "request_aborted" : "request_body_read_failed"
+          }), {
+            status: timedOut || aborted ? 408 : 400,
+            headers: { "content-type": "application/json", "cache-control": "no-store" }
+          });
+        }
         if (body === null) {
           return new Response(JSON.stringify({ error: "request_too_large" }), {
             status: 413,
