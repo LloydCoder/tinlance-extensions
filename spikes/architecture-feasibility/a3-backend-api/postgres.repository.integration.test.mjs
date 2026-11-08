@@ -55,7 +55,7 @@ test("PostgreSQL API adapter enforces tenant isolation and resets pooled session
     server = createApiServer({
       repository,
       verifyBearer: async (token) => token === "postgres-api-test-token-0001"
-        ? { subject: "api-test-user", tenantId: tenantA }
+        ? { subject: "api-test-user", tenantId: tenantA, requestId: "mcp-0123456789abcdef0123456789abcdef" }
         : null,
       authorizeJobCancellation: async ({ principal }) => principal.subject === "api-test-user",
       authorizeOutboxReplay: async ({ principal }) => principal.subject === "api-test-user"
@@ -81,6 +81,7 @@ test("PostgreSQL API adapter enforces tenant isolation and resets pooled session
     assert.equal(cancelled.status, 200);
     assert.deepEqual(await cancelled.json(), { status: "cancelled" });
     const cancellationRequestId = cancelled.headers.get("x-request-id");
+    assert.equal(cancellationRequestId, "mcp-0123456789abcdef0123456789abcdef");
     const repeatedCancellation = await fetch(`${baseUrl}/v1/jobs/${jobA}/cancel`, { method: "POST", headers });
     assert.equal(repeatedCancellation.status, 200);
     assert.deepEqual(await repeatedCancellation.json(), { status: "cancelled" });
@@ -123,6 +124,7 @@ test("PostgreSQL API adapter enforces tenant isolation and resets pooled session
     assert.equal(replayed.status, 200);
     assert.deepEqual(await replayed.json(), { status: "requeued" });
     const replayRequestId = replayed.headers.get("x-request-id");
+    assert.equal(replayRequestId, "mcp-0123456789abcdef0123456789abcdef");
     const crossTenantReplay = await fetch(`${baseUrl}/v1/outbox/dead-letters/${eventB}/replay`, { method: "POST", headers });
     assert.equal(crossTenantReplay.status, 404);
     assert.equal((await crossTenantReplay.json()).error, "not_found");
