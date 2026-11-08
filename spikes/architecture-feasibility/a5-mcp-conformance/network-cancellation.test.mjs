@@ -19,8 +19,11 @@ const { publicKey, privateKey } = await generateKeyPair("EdDSA");
 async function signedToken(resourceUrl) {
   const now = Math.floor(Date.now() / 1000);
   return new SignJWT({
+    jti: "0123456789abcdef0123456789abcdef",
     client_id: "a5-network-cancellation-client",
     tenant_id: "tenant-test-001",
+    principal_type: "service",
+    request_id: "a5-network-cancellation-request",
     scope: REQUIRED_SCOPE + " " + ACTION_SCOPE,
     purpose: platformActionPurpose(
       "tenant-test-001",

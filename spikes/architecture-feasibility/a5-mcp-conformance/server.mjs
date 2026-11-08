@@ -91,6 +91,7 @@ async function readBoundedBody(request, limit, timeoutMs) {
 export function createConformanceApp({
   publicKey,
   jwksUrl,
+  allowedAlgorithms = ["EdDSA"],
   issuer,
   resourceUrl,
   allowedHostnames,
@@ -105,6 +106,16 @@ export function createConformanceApp({
   if ((!publicKey && !jwksUrl) || typeof issuer !== "string" || typeof resourceUrl !== "string") {
     throw new TypeError("publicKey or jwksUrl, issuer, and resourceUrl are required");
   }
+
+  const supportedAlgorithms = new Set(["EdDSA", "RS256"]);
+  if (!Array.isArray(allowedAlgorithms) || allowedAlgorithms.length < 1 ||
+      allowedAlgorithms.length > supportedAlgorithms.size ||
+      new Set(allowedAlgorithms).size !== allowedAlgorithms.length ||
+      allowedAlgorithms.some((algorithm) => !supportedAlgorithms.has(algorithm))) {
+    throw new TypeError("allowedAlgorithms must be a non-empty unique subset of EdDSA and RS256");
+  }
+
+  const verificationAlgorithms = Object.freeze([...allowedAlgorithms]);
 
   if (isTokenRevoked !== undefined && typeof isTokenRevoked !== "function") {
     throw new TypeError("isTokenRevoked must be a function when configured");
@@ -129,29 +140,52 @@ export function createConformanceApp({
     async verifyAccessToken(token) {
       try {
         const { payload, protectedHeader } = await jwtVerify(token, verificationKey, {
-          algorithms: ["EdDSA"],
+          algorithms: verificationAlgorithms,
           issuer,
           audience: resourceUrl
         });
 
+        const identifierPattern = /^[A-Za-z0-9][A-Za-z0-9._:@/-]{0,255}$/;
+        const scopePattern = /^[A-Za-z0-9][A-Za-z0-9:._/-]{0,127}$/;
+        const principalTypes = new Set(["user", "service", "agent", "workload"]);
         if (
           protectedHeader.typ !== "at+jwt" ||
           typeof payload.sub !== "string" ||
-          payload.sub.trim().length === 0 ||
+          !identifierPattern.test(payload.sub) ||
           typeof payload.client_id !== "string" ||
-          payload.client_id.trim().length === 0 ||
+          !identifierPattern.test(payload.client_id) ||
           typeof payload.tenant_id !== "string" ||
-          payload.tenant_id.trim().length === 0 ||
+          !identifierPattern.test(payload.tenant_id) ||
+          typeof payload.principal_type !== "string" ||
+          !principalTypes.has(payload.principal_type) ||
+          typeof payload.request_id !== "string" ||
+          !identifierPattern.test(payload.request_id) ||
+          typeof payload.jti !== "string" ||
+          !/^[a-f0-9]{32}$/.test(payload.jti) ||
           typeof payload.scope !== "string" ||
+          payload.scope.length < 1 ||
+          payload.scope.length > 1024 ||
+          payload.scope !== payload.scope.trim() ||
+          payload.scope.includes("  ") ||
           typeof payload.purpose !== "string" ||
           !/^extensions-action-v1:[a-f0-9]{64}$/.test(payload.purpose) ||
-          typeof payload.exp !== "number"
+          !Number.isFinite(payload.iat) ||
+          !Number.isFinite(payload.exp) ||
+          payload.exp <= payload.iat ||
+          payload.exp - payload.iat > 300
         ) {
-          throw new Error("required access-token claims are missing");
+          throw new Error("required access-token claims are missing or invalid");
         }
 
-        const scopes = payload.scope.split(" ").filter(Boolean);
-        if (scopes.length === 0) throw new Error("access token has no scopes");
+        const scopes = payload.scope.split(" ");
+        if (
+          scopes.length < 1 ||
+          scopes.length > 32 ||
+          scopes.some((scope) => !scopePattern.test(scope)) ||
+          new Set(scopes).size !== scopes.length
+        ) {
+          throw new Error("access token scopes are invalid");
+        }
 
         if (isTokenRevoked) {
           if (typeof payload.jti !== "string" || payload.jti.trim().length === 0) {

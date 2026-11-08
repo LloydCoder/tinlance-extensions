@@ -16,9 +16,11 @@ const { publicKey, privateKey } = await generateKeyPair("EdDSA");
 async function signedToken() {
   const now = Math.floor(Date.now() / 1000);
   return new SignJWT({
-    jti: "a5-revocation-token-001",
+    jti: "0123456789abcdef0123456789abcdef",
     client_id: "a5-revocation-client",
     tenant_id: "tenant-test-001",
+    principal_type: "service",
+    request_id: "a5-revocation-request-001",
     scope: REQUIRED_SCOPE,
     purpose: platformActionPurpose(
       "tenant-test-001",
@@ -80,7 +82,7 @@ test("revoked access tokens are rejected using the verified issuer and jti", asy
     const response = await requestWithToken(app, await signedToken());
     assert.equal(response.status, 401);
     assert.equal(observed.issuer, ISSUER);
-    assert.equal(observed.jti, "a5-revocation-token-001");
+    assert.equal(observed.jti, "0123456789abcdef0123456789abcdef");
     assert.equal(observed.subject, "a5-revocation-subject");
     assert.equal(observed.clientId, "a5-revocation-client");
     assert.equal(observed.tenantId, "tenant-test-001");
