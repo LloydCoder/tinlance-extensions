@@ -3,7 +3,9 @@ import {
   McpServer,
   OAuthError,
   OAuthErrorCode,
+  getOAuthProtectedResourceMetadataUrl,
   hostHeaderValidationResponse,
+  oauthMetadataResponse,
   originValidationResponse,
   requireBearerAuth,
   requireScopes
@@ -56,10 +58,17 @@ export function createConformanceApp({
   }
 
   const resource = new URL(resourceUrl);
-  const resourceMetadataUrl = new URL(
-    "/.well-known/oauth-protected-resource/mcp",
-    resource.origin
-  ).toString();
+  const resourceMetadataUrl = getOAuthProtectedResourceMetadataUrl(resource);
+  const oauthMetadata = {
+    issuer,
+    authorization_endpoint: new URL("/authorize", issuer).toString(),
+    token_endpoint: new URL("/token", issuer).toString(),
+    response_types_supported: ["code"],
+    grant_types_supported: ["authorization_code"],
+    code_challenge_methods_supported: ["S256"],
+    token_endpoint_auth_methods_supported: ["none"],
+    scopes_supported: [REQUIRED_SCOPE]
+  };
 
   const verifier = {
     async verifyAccessToken(token) {
@@ -137,6 +146,12 @@ export function createConformanceApp({
 
       const originRejected = originValidationResponse(request, allowedOriginHostnames);
       if (originRejected) return originRejected;
+
+      const metadataResponse = oauthMetadataResponse(request, {
+        oauthMetadata,
+        resourceServerUrl: resource
+      });
+      if (metadataResponse) return metadataResponse;
 
       const authInfo = await authGate(request);
       if (authInfo instanceof Response) return authInfo;
