@@ -65,3 +65,6 @@ The authorization-code test explicitly rejects a mismatched callback state and a
 ## Revocation contract update — PR #103
 
 The fixture exposes an optional `isTokenRevoked` callback after cryptographic and claim validation. When configured, the callback receives only verified issuer, JWT ID, subject, client, tenant and expiry; revocation rejects the token and lookup errors fail closed. This is a contract seam only: no durable production revocation store or issuer integration is included.
+## Agent Platform RS256 compatibility — PRs #105 and #106
+
+The A5 verifier now supports an explicitly configured RS256 allowlist and validates the Agent Platform service-token claim contract (`sub`, `aud`, `jti`, `iat`, `exp`, `tenant_id`, `principal_type`, `client_id`, `scope`, `request_id`, `purpose`). Token lifetime is capped at five minutes; algorithm configuration is required, validated, copied and frozen. The suite includes positive and negative RS256 cases. This is synthetic-key conformance evidence only; live KMS/JWKS deployment and Platform integration remain open.
