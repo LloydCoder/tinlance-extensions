@@ -1,7 +1,7 @@
 # Phase 02 Closeout Audit and Phase 03 Architecture Review
 
-**Review date:** 2026-11-07
-**Repository baseline:** `main` after PR #59 merge, commit `d3c3cc37aee68c4f6bfcb6c9329a19e8a249b9c1`
+**Review date:** 2026-11-08
+**Repository baseline:** `main` after PR #65 merge, commit `9715a0c0541b9244124e11228057d60bf7c9e2fa`
 **Status:** Phase 02 documentary audit completed; Phase 02 exit criteria remain open; ADRs 0003–0014 accepted and merged by PR #17; feasibility A1 passed, A2 partial (Chromium/Firefox/Edge/Brave/Opera MV3 permission-sensitive runtime checks passed in PRs #30/#32/#34/#38; Safari Xcode app/extension compile and package inspection passed in PR #36; Safari runtime/signing/notarization/store review remain open), A3 partial after PR #44 PostgreSQL-backed HTTP adapter proof, A4–A7 open
 **Decision owner:** Tinlance Limited
 **Authority:** This record is a review and recommendation package. It does not authorize application, infrastructure, paid-vendor or production MCP implementation.
@@ -265,3 +265,10 @@ Platform PR #193 exact-head CI, R10 certification, reference-agent, CodeQL and s
 **This is a code-level integration, not a live production connection.** Deployment still needs a real Platform KMS asymmetric signing key, issuer/client ID, published HTTPS JWKS endpoint, Extensions API base URL, and matching `PLATFORM_OIDC_ISSUER`, `PLATFORM_OIDC_AUDIENCE`, `PLATFORM_OIDC_JWKS_URI`, and `PLATFORM_OIDC_CLIENT_ID` configuration. The Platform-side tool registration currently covers job cancellation only; the Extensions receiver has a separate replay scope, but the Platform-side high-risk, approval-bound dead-letter replay tool is not yet registered. Production deployment, provider identity mapping, secret rotation, and live end-to-end proof remain open.
 
 The earlier A3 database-side cancellation audit evidence remains valid. This update does not close A3, Phase 02, A2 Safari runtime/distribution, A4–A7, or any customer/product-owner/legal/commercial approval gate.
+
+
+## 12. PR #65 checkpoint update
+
+PR #65 fixes the OIDC/Platform OIDC integer environment parser regression and adds coverage for all configured cache, token lifetime, clock tolerance, JWKS timeout and refresh settings. Exact-head Repository Quality [42456413690](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42456413690), A3 API [42456413743](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42456413743), and PostgreSQL [42456413585](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42456413585) passed. PR #65 merged as `9715a0c0541b9244124e11228057d60bf7c9e2fa`; post-merge Repository Quality [42456480565](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42456480565), A3 API [42456480483](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42456480483), and PostgreSQL [42456480506](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42456480506) passed.
+
+The A3 feasibility spike now includes HTTP/PostgreSQL composition, RS256 OIDC/JWKS verification, restricted login role, tenant-scoped worker and outbox processes, crash recovery/heartbeat, durable consumer inbox, retries/dead letters, audited cancellation/replay, and logical backup/restore. PR #63 and Agent Platform PR #193 provide the code-level delegated-token receiving/issuing path for job cancellation. This remains a feasibility integration, not a deployed live service. Live Platform KMS/JWKS/configuration, Platform-side approval-bound dead-letter replay, production credential rotation, operations and security/legal reviews remain open. Phase 02 remains open; A2 Safari runtime/distribution and A4–A7 remain open.
