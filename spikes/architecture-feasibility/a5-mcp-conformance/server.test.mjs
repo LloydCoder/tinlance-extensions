@@ -2,29 +2,49 @@ import assert from "node:assert/strict";
 import http from "node:http";
 import test from "node:test";
 import { Client, StreamableHTTPClientTransport } from "@modelcontextprotocol/client";
+import { generateKeyPair, SignJWT } from "jose";
 import { createConformanceApp, REQUIRED_SCOPE } from "./server.mjs";
 
-const validToken = "synthetic-test-token";
-const authInfo = {
-  token: validToken,
-  clientId: "a5-conformance-test-client",
-  scopes: [REQUIRED_SCOPE]
-};
+const ISSUER = "https://issuer.test";
+const RESOURCE = "https://extensions.test/mcp";
+const RESOURCE_METADATA = "https://extensions.test/.well-known/oauth-protected-resource/mcp";
+const { publicKey, privateKey } = await generateKeyPair("EdDSA");
+
+async function signedToken(overrides = {}) {
+  const now = Math.floor(Date.now() / 1000);
+  const claims = {
+    client_id: "a5-conformance-client",
+    tenant_id: "tenant-test-001",
+    scope: REQUIRED_SCOPE,
+    ...overrides.claims
+  };
+  return new SignJWT(claims)
+    .setProtectedHeader({ alg: "EdDSA", typ: overrides.typ ?? "at+jwt" })
+    .setIssuer(overrides.issuer ?? ISSUER)
+    .setAudience(overrides.audience ?? RESOURCE)
+    .setSubject("synthetic-user-001")
+    .setIssuedAt(now)
+    .setExpirationTime(overrides.expiresAt ?? now + 300)
+    .sign(privateKey);
+}
 
 function createApp(overrides = {}) {
   return createConformanceApp({
-    verifyBearerToken: async (token) => token === validToken ? authInfo : null,
-    allowedHosts: ["test.local"],
-    allowedOrigins: ["https://trusted.test", "http://test.local"],
+    publicKey,
+    issuer: ISSUER,
+    resourceUrl: RESOURCE,
+    allowedHostnames: ["test.local"],
+    allowedOriginHostnames: ["test.local", "trusted.test"],
     ...overrides
   });
 }
 
-function inProcessTransport(app, token = validToken) {
+function inProcessTransport(app, token) {
   return new StreamableHTTPClientTransport(new URL("http://test.local/mcp"), {
     fetch: (url, init) => {
       const headers = new Headers(init?.headers);
-      headers.set("authorization", `Bearer ${token}`);
+      headers.set("host", new URL(url).host);
+      if (token) headers.set("authorization", `Bearer ${token}`);
       return app.fetch(new Request(url, { ...init, headers }));
     }
   });
@@ -55,12 +75,11 @@ async function startHttpServer() {
   });
 
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  app = createApp({ allowedHostnames: ["127.0.0.1"], allowedOriginHostnames: ["127.0.0.1"] });
   const address = server.address();
   const host = `127.0.0.1:${address.port}`;
-  app = createApp({ allowedHosts: [host] });
   return {
     url: `http://${host}/mcp`,
-    app,
     close: async () => {
       await app.close();
       await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
@@ -75,11 +94,23 @@ function modernClient(name) {
   );
 }
 
-test("official v2 client discovers and calls a synthetic read-only tool on the modern protocol", async () => {
+async function rawRequest(app, { token, host = "test.local", origin, body = "{}" } = {}) {
+  const headers = { host, "content-type": "application/json" };
+  if (token) headers.authorization = `Bearer ${token}`;
+  if (origin) headers.origin = origin;
+  return app.fetch(new Request(`http://${host}/mcp`, {
+    method: "POST",
+    headers,
+    body
+  }));
+}
+
+test("signed EdDSA access token passes the official SDK bearer gate and modern MCP client call", async () => {
   const app = createApp();
-  const client = modernClient("a5-test-client");
+  const token = await signedToken();
+  const client = modernClient("a5-signed-token-client");
   try {
-    await client.connect(inProcessTransport(app));
+    await client.connect(inProcessTransport(app, token));
     assert.equal(client.getProtocolEra(), "modern");
     const result = await client.callTool({
       name: "extensions_health_read",
@@ -96,13 +127,14 @@ test("official v2 client discovers and calls a synthetic read-only tool on the m
   }
 });
 
-test("the same SDK client completes discovery and a tool call over real HTTP", async () => {
+test("signed token completes discovery and read-only call over real loopback HTTP", async () => {
   const network = await startHttpServer();
-  const client = modernClient("a5-network-test-client");
+  const token = await signedToken();
+  const client = modernClient("a5-network-signed-token-client");
   const transport = new StreamableHTTPClientTransport(new URL(network.url), {
     fetch: (input, init) => {
       const headers = new Headers(init?.headers);
-      headers.set("authorization", `Bearer ${validToken}`);
+      headers.set("authorization", `Bearer ${token}`);
       return fetch(input, { ...init, headers });
     }
   });
@@ -123,68 +155,77 @@ test("the same SDK client completes discovery and a tool call over real HTTP", a
   }
 });
 
-test("requests without bearer credentials are rejected before MCP dispatch", async () => {
+test("missing and malformed bearer credentials return SDK OAuth 401 challenges", async () => {
   const app = createApp();
   try {
-    const response = await app.fetch(new Request("http://test.local/mcp", {
-      method: "POST",
-      headers: { host: "test.local", "content-type": "application/json" },
-      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "server/discover" })
-    }));
-    assert.equal(response.status, 401);
-    assert.match(response.headers.get("www-authenticate"), /^Bearer /);
-    assert.equal(response.headers.get("cache-control"), "no-store");
+    const missing = await rawRequest(app);
+    assert.equal(missing.status, 401);
+    assert.match(missing.headers.get("www-authenticate"), /Bearer/);
+    assert.match(missing.headers.get("www-authenticate"), new RegExp(RESOURCE_METADATA.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+
+    const malformed = await rawRequest(app, { token: "not-a-jwt" });
+    assert.equal(malformed.status, 401);
+    assert.match(await malformed.text(), /invalid_token/);
   } finally {
     await app.close();
   }
 });
 
-test("invalid bearer credentials fail closed", async () => {
+test("JWT issuer, audience, expiry and access-token type are validated fail-closed", async () => {
   const app = createApp();
   try {
-    const response = await app.fetch(new Request("http://test.local/mcp", {
-      method: "POST",
-      headers: {
-        host: "test.local",
-        authorization: "Bearer invalid",
-        "content-type": "application/json"
-      },
-      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "server/discover" })
-    }));
-    assert.equal(response.status, 401);
+    const invalidTokens = [
+      await signedToken({ issuer: "https://attacker.test" }),
+      await signedToken({ audience: "https://other-resource.test/mcp" }),
+      await signedToken({ expiresAt: Math.floor(Date.now() / 1000) - 60 }),
+      await signedToken({ typ: "JWT" }),
+      await signedToken({ claims: { tenant_id: undefined } })
+    ];
+    for (const token of invalidTokens) {
+      const response = await rawRequest(app, { token });
+      assert.equal(response.status, 401);
+      assert.match(await response.text(), /invalid_token/);
+    }
   } finally {
     await app.close();
   }
 });
 
-test("untrusted Host and Origin values are rejected before MCP dispatch", async () => {
+test("valid token without the required scope receives 403 insufficient_scope", async () => {
   const app = createApp();
   try {
-    const hostResponse = await app.fetch(new Request("http://attacker.test/mcp", {
-      method: "POST",
-      headers: { host: "attacker.test", authorization: `Bearer ${validToken}` },
-      body: "{}"
-    }));
+    const token = await signedToken({ claims: { scope: "profile:read" } });
+    const response = await rawRequest(app, { token });
+    assert.equal(response.status, 403);
+    assert.match(response.headers.get("www-authenticate"), /insufficient_scope/);
+  } finally {
+    await app.close();
+  }
+});
+
+test("SDK Host and Origin guards reject untrusted authorities", async () => {
+  const app = createApp();
+  try {
+    const hostResponse = await rawRequest(app, {
+      token: await signedToken(),
+      host: "attacker.test"
+    });
     assert.equal(hostResponse.status, 403);
 
-    const originResponse = await app.fetch(new Request("http://test.local/mcp", {
-      method: "POST",
-      headers: {
-        host: "test.local",
-        origin: "https://attacker.test",
-        authorization: `Bearer ${validToken}`
-      },
-      body: "{}"
-    }));
+    const originResponse = await rawRequest(app, {
+      token: await signedToken(),
+      origin: "https://attacker.test"
+    });
     assert.equal(originResponse.status, 403);
   } finally {
     await app.close();
   }
 });
 
-test("oversized streamed request bodies are rejected with a bounded read", async () => {
+test("oversized streamed bodies are rejected after authentication with a bounded read", async () => {
   const app = createApp({ maxBodyBytes: 8 });
   try {
+    const token = await signedToken();
     const stream = new ReadableStream({
       start(controller) {
         controller.enqueue(new TextEncoder().encode("123456"));
@@ -196,7 +237,7 @@ test("oversized streamed request bodies are rejected with a bounded read", async
       method: "POST",
       headers: {
         host: "test.local",
-        authorization: `Bearer ${validToken}`,
+        authorization: `Bearer ${token}`,
         "content-type": "application/json"
       },
       body: stream,
@@ -204,28 +245,6 @@ test("oversized streamed request bodies are rejected with a bounded read", async
     }));
     assert.equal(response.status, 413);
   } finally {
-    await app.close();
-  }
-});
-
-test("authenticated clients without the required tool scope cannot call the tool", async () => {
-  const app = createApp({
-    verifyBearerToken: async () => ({
-      token: "scope-limited",
-      clientId: "scope-limited-client",
-      scopes: []
-    })
-  });
-  const client = modernClient("a5-scope-test-client");
-  try {
-    await client.connect(inProcessTransport(app, "scope-limited"));
-    const result = await client.callTool({
-      name: "extensions_health_read",
-      arguments: {}
-    });
-    assert.equal(result.isError, true);
-  } finally {
-    await client.close();
     await app.close();
   }
 });
