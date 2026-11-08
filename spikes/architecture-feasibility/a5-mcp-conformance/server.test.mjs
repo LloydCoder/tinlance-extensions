@@ -117,6 +117,8 @@ async function startOAuthIntegrationServer() {
         tokenRequests.push({
           grant_type: form.get("grant_type"),
           client_id: receivedClientId,
+          client_secret_valid: receivedClientSecret === clientSecret,
+          auth_scheme: authorization.startsWith("Basic ") ? "client_secret_basic" : "missing_or_unsupported",
           scope,
           resource
         });
@@ -868,9 +870,13 @@ test("official ClientCredentialsProvider completes RFC 9728/8414 discovery, toke
     scope: `${REQUIRED_SCOPE} ${ACTION_SCOPE}`
   });
   try {
-    await client.connect(new StreamableHTTPClientTransport(new URL(network.url), {
-      authProvider: provider
-    }));
+    try {
+      await client.connect(new StreamableHTTPClientTransport(new URL(network.url), {
+        authProvider: provider
+      }));
+    } catch (error) {
+      throw new Error(`Client credentials discovery/token flow failed: ${error.message}; observed token requests: ${JSON.stringify(network.tokenRequests)}`);
+    }
     const result = await client.callTool({
       name: "extensions_health_read",
       arguments: {}
