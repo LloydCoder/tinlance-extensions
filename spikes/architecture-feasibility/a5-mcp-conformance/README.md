@@ -28,8 +28,10 @@ The dependency graph is pinned by `package.json` and `package-lock.json`. CI ver
 - Cross-service hash vectors shared with the A3 Platform delegation fixture.
 - Platform action-purpose binding using the shared `extensions-action-v1:` SHA-256 canonical tuple contract, with exact tenant, subject, tool, and resource checks plus action-specific scope challenges.
 - Cross-service hash vectors shared with the A3 Platform delegation fixture.
-- Bounded streaming request-body enforcement, including chunked bodies without Content-Length.
-- Negative tests for invalid issuer, audience, expiry, token type, missing tenant claim, missing scope, untrusted Host/Origin, and oversized bodies.
+- Platform action-purpose binding using the shared `extensions-action-v1:` SHA-256 canonical tuple contract, with exact tenant, subject, tool, and resource checks plus action-specific scope challenges.
+- Cross-service hash vectors shared with the A3 Platform delegation fixture.
+- Bounded streaming request-body enforcement, including chunked bodies without Content-Length, with a configurable total read deadline and abort handling.
+- Negative tests for invalid issuer, audience, expiry, token type, missing tenant claim, missing scope, untrusted Host/Origin, oversized bodies, slow-body timeout, client abort, unknown JWKS key ID, and invalid signature.
 
 ## Security and readiness boundary
 
