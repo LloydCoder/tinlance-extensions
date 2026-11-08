@@ -649,3 +649,60 @@ test("remote JWKS endpoints require HTTPS except for loopback test hosts", () =>
     /JWKS endpoint must use HTTPS/
   );
 });
+
+
+test("slow request bodies are rejected at the configured read deadline", async () => {
+  const app = createApp({ maxBodyDurationMs: 25 });
+  try {
+    const token = await signedToken();
+    const stream = new ReadableStream({
+      pull() {
+        return new Promise(() => {});
+      }
+    });
+    const response = await app.fetch(new Request("http://test.local/mcp", {
+      method: "POST",
+      headers: {
+        host: "test.local",
+        authorization: \`Bearer \${token}\`,
+        "content-type": "application/json"
+      },
+      body: stream,
+      duplex: "half"
+    }));
+    assert.equal(response.status, 408);
+    assert.deepEqual(await response.json(), { error: "request_timeout" });
+  } finally {
+    await app.close();
+  }
+});
+
+test("aborted request bodies stop reading and fail closed", async () => {
+  const app = createApp({ maxBodyDurationMs: 5_000 });
+  const controller = new AbortController();
+  try {
+    const token = await signedToken();
+    const stream = new ReadableStream({
+      pull() {
+        return new Promise(() => {});
+      }
+    });
+    const pending = app.fetch(new Request("http://test.local/mcp", {
+      method: "POST",
+      headers: {
+        host: "test.local",
+        authorization: \`Bearer \${token}\`,
+        "content-type": "application/json"
+      },
+      body: stream,
+      signal: controller.signal,
+      duplex: "half"
+    }));
+    setTimeout(() => controller.abort(), 20);
+    const response = await pending;
+    assert.equal(response.status, 408);
+    assert.deepEqual(await response.json(), { error: "request_aborted" });
+  } finally {
+    await app.close();
+  }
+});
