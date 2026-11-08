@@ -27,8 +27,11 @@ async function signedToken(overrides = {}) {
   const now = Math.floor(Date.now() / 1000);
   const subject = overrides.subject ?? "synthetic-user-001";
   const claims = {
+    jti: "0123456789abcdef0123456789abcdef",
     client_id: "a5-conformance-client",
     tenant_id: "tenant-test-001",
+    principal_type: "user",
+    request_id: "a5-conformance-request-001",
     scope: REQUIRED_SCOPE + " " + ACTION_SCOPE,
     ...overrides.claims
   };
