@@ -9,6 +9,18 @@ import { createConformanceApp, REQUIRED_SCOPE } from "./server.mjs";
 const ISSUER = "https://issuer.test";
 const RESOURCE = "https://extensions.test/mcp";
 const RESOURCE_METADATA = "https://extensions.test/.well-known/oauth-protected-resource/mcp";
+const OAUTH_METADATA = {
+  issuer: ISSUER,
+  authorization_endpoint: `${ISSUER}/authorize`,
+  token_endpoint: `${ISSUER}/token`,
+  response_types_supported: ["code"],
+  grant_types_supported: ["authorization_code", "refresh_token"],
+  token_endpoint_auth_methods_supported: ["none"],
+  code_challenge_methods_supported: ["S256"],
+  scopes_supported: [REQUIRED_SCOPE],
+  authorization_response_iss_parameter_supported: true,
+  client_id_metadata_document_supported: true
+};
 const { publicKey, privateKey } = await generateKeyPair("EdDSA");
 
 async function signedToken(overrides = {}) {
@@ -34,6 +46,7 @@ function createApp(overrides = {}) {
     publicKey,
     issuer: ISSUER,
     resourceUrl: RESOURCE,
+    oauthMetadata: OAUTH_METADATA,
     allowedHostnames: ["test.local"],
     allowedOriginHostnames: ["test.local", "trusted.test"],
     ...overrides
@@ -422,6 +435,40 @@ test("raw modern HTTP returns a JSON-RPC parse error for malformed JSON", async 
     assert.equal(response.status, 400);
     const payload = await response.json();
     assert.equal(payload.error?.code, -32700);
+  } finally {
+    await app.close();
+  }
+});
+
+
+test("RFC 9728 protected-resource metadata is publicly served and points to the configured issuer", async () => {
+  const app = createApp();
+  try {
+    const response = await app.fetch(new Request("http://test.local/.well-known/oauth-protected-resource/mcp", {
+      headers: { host: "test.local" }
+    }));
+    assert.equal(response.status, 200);
+    const metadata = await response.json();
+    assert.equal(metadata.resource, RESOURCE);
+    assert.deepEqual(metadata.authorization_servers, [ISSUER]);
+  } finally {
+    await app.close();
+  }
+});
+
+test("RFC 8414 authorization-server metadata mirror preserves issuer and advertises hardened client discovery", async () => {
+  const app = createApp();
+  try {
+    const response = await app.fetch(new Request("http://test.local/.well-known/oauth-authorization-server", {
+      headers: { host: "test.local" }
+    }));
+    assert.equal(response.status, 200);
+    const metadata = await response.json();
+    assert.equal(metadata.issuer, ISSUER);
+    assert.equal(metadata.authorization_response_iss_parameter_supported, true);
+    assert.equal(metadata.client_id_metadata_document_supported, true);
+    assert.ok(metadata.code_challenge_methods_supported.includes("S256"));
+    assert.ok(metadata.scopes_supported.includes(REQUIRED_SCOPE));
   } finally {
     await app.close();
   }

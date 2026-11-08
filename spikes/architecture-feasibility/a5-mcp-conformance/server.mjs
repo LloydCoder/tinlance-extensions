@@ -6,7 +6,8 @@ import {
   hostHeaderValidationResponse,
   originValidationResponse,
   requireBearerAuth,
-  requireScopes
+  requireScopes,
+  oauthMetadataResponse
 } from "@modelcontextprotocol/server";
 import { jwtVerify } from "jose";
 import * as z from "zod/v4";
@@ -49,6 +50,7 @@ export function createConformanceApp({
   resourceUrl,
   allowedHostnames,
   allowedOriginHostnames = [],
+  oauthMetadata,
   maxBodyBytes = MAX_BODY_BYTES
 }) {
   if (!publicKey || typeof issuer !== "string" || typeof resourceUrl !== "string") {
@@ -56,6 +58,9 @@ export function createConformanceApp({
   }
 
   const resource = new URL(resourceUrl);
+  if (!oauthMetadata || oauthMetadata.issuer !== issuer) {
+    throw new TypeError("oauthMetadata with the configured issuer is required");
+  }
   const resourceMetadataUrl = new URL(
     "/.well-known/oauth-protected-resource/mcp",
     resource.origin
@@ -137,6 +142,14 @@ export function createConformanceApp({
 
       const originRejected = originValidationResponse(request, allowedOriginHostnames);
       if (originRejected) return originRejected;
+
+      const metadataResponse = oauthMetadataResponse(request, {
+        oauthMetadata,
+        resourceServerUrl: resource,
+        scopesSupported: [REQUIRED_SCOPE],
+        resourceName: "Tinlance Extensions A5 conformance fixture"
+      });
+      if (metadataResponse) return metadataResponse;
 
       const authInfo = await authGate(request);
       if (authInfo instanceof Response) return authInfo;
