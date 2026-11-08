@@ -264,3 +264,29 @@ test("oversized streamed bodies are rejected after authentication with a bounded
     await app.close();
   }
 });
+
+test("oversized chunked bodies are bounded across the actual HTTP adapter", async () => {
+  const network = await startHttpServer({ maxBodyBytes: 8 });
+  try {
+    const token = await signedToken();
+    const stream = new ReadableStream({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode("123456"));
+        controller.enqueue(new TextEncoder().encode("7890"));
+        controller.close();
+      }
+    });
+    const response = await fetch(network.url, {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${token}`,
+        "content-type": "application/json"
+      },
+      body: stream,
+      duplex: "half"
+    });
+    assert.equal(response.status, 413);
+  } finally {
+    await network.close();
+  }
+});
