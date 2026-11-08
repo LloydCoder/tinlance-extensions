@@ -426,3 +426,31 @@ test("raw modern HTTP returns a JSON-RPC parse error for malformed JSON", async 
     await app.close();
   }
 });
+
+test("publishes RFC 9728 protected-resource and RFC 8414 authorization metadata without bearer auth", async () => {
+  const app = createApp();
+  try {
+    const resourceResponse = await app.fetch(new Request(
+      "http://test.local/.well-known/oauth-protected-resource/mcp",
+      { headers: { host: "test.local" } }
+    ));
+    assert.equal(resourceResponse.status, 200);
+    const resourceMetadata = await resourceResponse.json();
+    assert.equal(resourceMetadata.resource, RESOURCE);
+    assert.ok(resourceMetadata.authorization_servers.includes(ISSUER));
+    assert.ok(resourceMetadata.scopes_supported.includes(REQUIRED_SCOPE));
+
+    const authorizationResponse = await app.fetch(new Request(
+      "http://test.local/.well-known/oauth-authorization-server",
+      { headers: { host: "test.local" } }
+    ));
+    assert.equal(authorizationResponse.status, 200);
+    const authorizationMetadata = await authorizationResponse.json();
+    assert.equal(authorizationMetadata.issuer, ISSUER);
+    assert.equal(authorizationMetadata.authorization_endpoint, "https://issuer.test/authorize");
+    assert.equal(authorizationMetadata.token_endpoint, "https://issuer.test/token");
+    assert.ok(authorizationMetadata.code_challenge_methods_supported.includes("S256"));
+  } finally {
+    await app.close();
+  }
+});
