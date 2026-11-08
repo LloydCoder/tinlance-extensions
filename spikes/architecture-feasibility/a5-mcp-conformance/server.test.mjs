@@ -295,7 +295,10 @@ test("JWT issuer, audience, expiry and access-token type are validated fail-clos
       await signedToken({ audience: "https://other-resource.test/mcp" }),
       await signedToken({ expiresAt: Math.floor(Date.now() / 1000) - 60 }),
       await signedToken({ typ: "JWT" }),
-      await signedToken({ claims: { tenant_id: undefined } })
+      await signedToken({ claims: { tenant_id: undefined } }),
+      await signedToken({ subject: "" }),
+      await signedToken({ claims: { client_id: "" } }),
+      await signedToken({ claims: { tenant_id: "" } })
     ];
     for (const token of invalidTokens) {
       const response = await rawRequest(app, { token });
