@@ -286,6 +286,8 @@ test("JWT issuer, audience, expiry and access-token type are validated fail-clos
       await signedToken({ expiresAt: Math.floor(Date.now() / 1000) - 60 }),
       await signedToken({ typ: "invalid" }),
       await signedToken({ claims: { tenant_id: undefined } }),
+      await signedToken({ claims: { principal_type: "root" } }),
+      await signedToken({ claims: { request_id: " " } }),
       await signedToken({ subject: "" }),
       await signedToken({ claims: { client_id: "" } }),
       await signedToken({ claims: { tenant_id: "" } })
@@ -571,6 +573,12 @@ test("MCP tool action requires exact Platform purpose, tenant, resource, and act
     });
     const tenantDenied = await rawModernToolRequest(app, otherTenant);
     assert.equal(tenantDenied.status, 403);
+
+    const wrongClient = await signedToken({
+      claims: { client_id: "another-platform-client" }
+    });
+    const clientDenied = await rawModernToolRequest(app, wrongClient);
+    assert.equal(clientDenied.status, 403);
   } finally {
     await app.close();
   }
@@ -654,14 +662,6 @@ test("Platform OIDC verifier requires HTTPS for issuer and JWKS URLs", () => {
   assert.throws(
     () => createApp({ jwksUrl: "http://127.0.0.1/.well-known/jwks.json" }),
     /valid HTTPS URL/
-  );
-});
-
-
-test("remote JWKS endpoints require HTTPS except for loopback test hosts", () => {
-  assert.throws(
-    () => createApp({ jwksUrl: "http://jwks.attacker.test/.well-known/jwks.json" }),
-    /JWKS endpoint must use HTTPS/
   );
 });
 
