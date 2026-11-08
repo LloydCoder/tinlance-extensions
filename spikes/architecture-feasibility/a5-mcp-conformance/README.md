@@ -56,3 +56,6 @@ Passing this spike is one layer of evidence; it does not close A5.
 ## Cancellation evidence update — PRs #96 and #97
 
 The suite now includes both in-process cancellation propagation and a real loopback HTTP client-disconnect test. The network fixture explicitly bridges Node's incoming-request abort / premature outgoing-response close events to the web-standard request AbortSignal; the synthetic tool verifies that the server handler observes cancellation and stops before its five-second deadline. This is a test-adapter contract, not proof of the production reverse-proxy/ingress topology or durable worker cancellation. Those remain Gate 0 requirements.
+## Authorization-code PKCE evidence — PR #99
+
+The fixture now drives the official SDK v2 `OAuthClientProvider` through dynamic client registration, authorization redirect, PKCE S256, callback state comparison, RFC 9207 issuer validation, RFC 8707 resource binding, remote JWKS validation and an authenticated MCP tool call. A mismatched authorization-response issuer is rejected before token exchange. This is a synthetic authorization server with ephemeral keys and no real user login; production IdP onboarding, secure token storage, key lifecycle, revocation and live Platform authorization remain unproven.
