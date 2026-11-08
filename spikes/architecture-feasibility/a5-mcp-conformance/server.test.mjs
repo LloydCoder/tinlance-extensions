@@ -911,3 +911,32 @@ test("official ClientCredentialsProvider completes RFC 9728/8414 discovery, toke
     await network.close();
   }
 });
+
+
+test("in-flight MCP tool work observes client cancellation and stops before its deadline", async () => {
+  let markStarted;
+  const started = new Promise((resolve) => { markStarted = resolve; });
+  let abortObserved = false;
+  const app = createApp({
+    onToolStart: () => markStarted(),
+    onToolAbort: () => { abortObserved = true; }
+  });
+  const client = modernClient("a5-cancellation-client");
+  try {
+    await client.connect(inProcessTransport(app, await signedToken()));
+    const controller = new AbortController();
+    const pending = client.callTool(
+      { name: "extensions_cancel_probe", arguments: { delayMs: 5000 } },
+      { signal: controller.signal }
+    );
+    await started;
+    controller.abort();
+    await assert.rejects(pending, (error) =>
+      error?.name === "AbortError" || /abort/i.test(String(error?.message))
+    );
+    assert.equal(abortObserved, true, "server handler must observe the request abort signal");
+  } finally {
+    await client.close();
+    await app.close();
+  }
+});
