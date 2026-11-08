@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 
 const JOB_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const EVENT_ID_PATTERN = JOB_ID_PATTERN;
+const IDEMPOTENCY_KEY_PATTERN = /^[A-Za-z0-9._:-]{16,128}$/;
 const REQUEST_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:@/-]{0,255}$/;
 
 const json = (res, status, body, requestId) => {
@@ -94,7 +95,8 @@ export function createApiServer({
 
       if (req.method === "POST" && isReplayRoute) {
         const eventId = replayMatch[1].toLowerCase();
-        const authorized = await authorizeOutboxReplay({ principal, eventId, requestId });
+        const idempotencyKey = req.headers["idempotency-key"];
+        const authorized = await authorizeOutboxReplay({ principal, eventId, requestId, idempotencyKey });
         if (authorized !== true) {
           return json(res, 403, { error: "forbidden", requestId }, requestId);
         }
