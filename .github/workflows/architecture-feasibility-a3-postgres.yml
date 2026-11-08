@@ -103,6 +103,10 @@ jobs:
         env:
           PGPASSWORD: postgres
         run: psql "host=127.0.0.1 port=5432 dbname=tinlance_test user=postgres" -v ON_ERROR_STOP=1 -f spikes/architecture-feasibility/a3-backend-api/migrations/010_job_cancellation_audit.sql
+      - name: Apply Platform-compatible audit request ID migration
+        env:
+          PGPASSWORD: postgres
+        run: psql "host=127.0.0.1 port=5432 dbname=tinlance_test user=postgres" -v ON_ERROR_STOP=1 -f spikes/architecture-feasibility/a3-backend-api/migrations/011_platform_request_id_text.sql
       - name: Provision restricted application login role for integration
         env:
           PGPASSWORD: postgres
