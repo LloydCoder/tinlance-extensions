@@ -128,8 +128,7 @@ async function startOAuthIntegrationServer() {
           receivedClientId !== clientId ||
           receivedClientSecret !== clientSecret ||
           resource !== `${origin}/mcp` ||
-          !scope.split(" ").includes(REQUIRED_SCOPE) ||
-          !scope.split(" ").includes(ACTION_SCOPE)
+          !scope.split(" ").includes(REQUIRED_SCOPE)
         ) {
           invalidClientAttempts += 1;
           outgoing.writeHead(401, {
@@ -885,12 +884,13 @@ test("official ClientCredentialsProvider completes RFC 9728/8414 discovery, toke
       status: "ok",
       protocol: "2026-07-28"
     });
-    assert.ok(network.tokenRequests.length >= 1);
+    assert.ok(network.tokenRequests.length >= 2, "the per-tool scope challenge must trigger a second token exchange");
     assert.equal(network.tokenRequests[0].grant_type, "client_credentials");
     assert.equal(network.tokenRequests[0].client_id, network.clientId);
     assert.equal(network.tokenRequests[0].resource, network.url);
+    assert.deepEqual(network.tokenRequests[0].scope.split(" "), [REQUIRED_SCOPE]);
     assert.deepEqual(
-      network.tokenRequests[0].scope.split(" ").sort(),
+      network.tokenRequests[1].scope.split(" ").sort(),
       [REQUIRED_SCOPE, ACTION_SCOPE].sort()
     );
 
