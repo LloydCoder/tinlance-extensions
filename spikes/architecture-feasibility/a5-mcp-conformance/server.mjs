@@ -4,28 +4,44 @@ import * as z from "zod/v4";
 export const REQUIRED_SCOPE = "extensions:conformance.read";
 export const MAX_BODY_BYTES = 64 * 1024;
 
-function unauthorized() {
-  return new Response(JSON.stringify({ error: "unauthorized" }), {
-    status: 401,
+function jsonError(status, code, extraHeaders = {}) {
+  return new Response(JSON.stringify({ error: code }), {
+    status,
     headers: {
       "content-type": "application/json",
       "cache-control": "no-store",
-      "www-authenticate": 'Bearer realm="tinlance-extensions-mcp"'
+      ...extraHeaders
     }
   });
 }
 
-function forbidden() {
-  return new Response(JSON.stringify({ error: "forbidden" }), {
-    status: 403,
-    headers: { "content-type": "application/json", "cache-control": "no-store" }
-  });
-}
-
-function tooLarge() {
-  return new Response(JSON.stringify({ error: "request_too_large" }), {
-    status: 413,
-    headers: { "content-type": "application/json", "cache-control": "no-store" }
+function readBoundedBody(request, limit) {
+  return new Promise(async (resolve, reject) => {
+    const reader = request.body.getReader();
+    const chunks = [];
+    let total = 0;
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        total += value.byteLength;
+        if (total > limit) {
+          await reader.cancel();
+          resolve(null);
+          return;
+        }
+        chunks.push(value);
+      }
+      const body = new Uint8Array(total);
+      let offset = 0;
+      for (const chunk of chunks) {
+        body.set(chunk, offset);
+        offset += chunk.byteLength;
+      }
+      resolve(body);
+    } catch (error) {
+      reject(error);
+    }
   });
 }
 
@@ -84,38 +100,59 @@ export function createConformanceApp({
 
   return {
     async fetch(request) {
-      const requestHost = new URL(request.url).host.toLowerCase();
+      const requestUrl = new URL(request.url);
+      const requestHost = requestUrl.host.toLowerCase();
       const suppliedHost = request.headers.get("host")?.toLowerCase();
-      // Web-standard Request objects may omit the forbidden Host header. The
-      // URL authority is then the normalized host supplied by the HTTP adapter.
-      // If both are present, reject disagreement rather than trusting either.
-      if (suppliedHost && suppliedHost !== requestHost) return forbidden();
-      if (!hosts.has(requestHost)) return forbidden();
+      // Fetch Request objects may omit the forbidden Host header. The URL
+      // authority is then the normalized host supplied by the HTTP adapter.
+      if (suppliedHost && suppliedHost !== requestHost) return jsonError(403, "forbidden");
+      if (!hosts.has(requestHost)) return jsonError(403, "forbidden");
 
       const origin = request.headers.get("origin");
-      if (origin !== null && !origins.has(origin)) return forbidden();
-
-      const declaredLength = Number(request.headers.get("content-length") ?? 0);
-      if (Number.isFinite(declaredLength) && declaredLength > maxBodyBytes) {
-        return tooLarge();
-      }
-
-      if (request.body) {
-        const body = await request.clone().arrayBuffer();
-        if (body.byteLength > maxBodyBytes) return tooLarge();
-      }
+      if (origin !== null && !origins.has(origin)) return jsonError(403, "forbidden");
 
       const authorization = request.headers.get("authorization") ?? "";
-      const match = /^Bearer ([^\s]+)$/.exec(authorization);
-      if (!match) return unauthorized();
+      const match = /^Bearer ([^\\s]+)$/.exec(authorization);
+      if (!match) {
+        return jsonError(401, "unauthorized", {
+          "www-authenticate": 'Bearer realm="tinlance-extensions-mcp"'
+        });
+      }
 
       let authInfo;
       try {
         authInfo = await verifyBearerToken(match[1]);
       } catch {
-        return unauthorized();
+        return jsonError(401, "unauthorized", {
+          "www-authenticate": 'Bearer realm="tinlance-extensions-mcp"'
+        });
       }
-      if (!authInfo || !Array.isArray(authInfo.scopes)) return unauthorized();
+      if (!authInfo || !Array.isArray(authInfo.scopes)) {
+        return jsonError(401, "unauthorized", {
+          "www-authenticate": 'Bearer realm="tinlance-extensions-mcp"'
+        });
+      }
+
+      if (request.body) {
+        const declared = request.headers.get("content-length");
+        if (declared !== null) {
+          const declaredLength = Number(declared);
+          if (!Number.isSafeInteger(declaredLength) || declaredLength < 0) {
+            return jsonError(400, "invalid_content_length");
+          }
+          if (declaredLength > maxBodyBytes) return jsonError(413, "request_too_large");
+        }
+
+        const body = await readBoundedBody(request, maxBodyBytes);
+        if (body === null) return jsonError(413, "request_too_large");
+        const forwarded = new Request(request.url, {
+          method: request.method,
+          headers: request.headers,
+          body,
+          signal: request.signal
+        });
+        return handler.fetch(forwarded, { authInfo });
+      }
 
       return handler.fetch(request, { authInfo });
     },
