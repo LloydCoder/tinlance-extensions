@@ -519,3 +519,10 @@ The next work must continue against the accepted 25-phase plan, starting with th
 The new [Security Data-Flow Inventory and Threat Model](SECURITY-DATA-FLOW-AND-THREAT-MODEL.md) records current A1–A3 data flows, trust boundaries, data classifications, the first-seven product input categories, a STRIDE-oriented threat register, privacy/data-lifecycle controls and explicit A4 acceptance gates.
 
 **Disposition: A4 remains open.** The document is an evidence-backed baseline and gap register, not product-owner approval or a completed privacy assessment. The first-seven product local/cloud paths, lawful bases, processors/transfers, retention periods, export/deletion behaviour, telemetry policy and product-specific residual-risk decisions still require accountable owner and legal/security review. Executable retention/deletion/redaction tests and production data-lifecycle controls are not yet evidenced.
+
+
+## A5 SDK selection research checkpoint — 2026-11-08
+
+The new [A5 MCP Conformance Plan](A5-MCP-CONFORMANCE-PLAN.md) and updated [ADR 0002](adr/0002-mcp-protocol-baseline.md) select the official TypeScript SDK v2 package line for the accepted 2026-07-28 protocol: `@modelcontextprotocol/server@2.4.0`, `@modelcontextprotocol/client@2.4.0`, `@modelcontextprotocol/core@2.4.0` and `zod@4.2.0`, with exact pins and a committed lockfile required. The legacy monolithic `@modelcontextprotocol/sdk` v1 line is explicitly rejected for this protocol revision.
+
+**Disposition: A5 Gate 0 remains open.** This is SDK selection and conformance planning, not an executable MCP server, OAuth/resource-server implementation, network Host/Origin test, committed dependency lockfile, real-client compatibility result or production gateway authorization. The next A5 deliverable is the isolated SDK v2 conformance spike with negative tests and real-client evidence, followed by explicit Gate 0 architecture approval.
