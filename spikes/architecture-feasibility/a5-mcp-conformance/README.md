@@ -62,3 +62,6 @@ The fixture now drives the official SDK v2 `OAuthClientProvider` through dynamic
 ## OAuth negative-case update — PR #101
 
 The authorization-code test explicitly rejects a mismatched callback state and an incorrect PKCE verifier. It also records the official SDK's `invalid_grant` retry behavior and proves that only the correct verifier succeeds. This remains synthetic fixture evidence; no production issuer or credential storage is included.
+## Revocation contract update — PR #103
+
+The fixture exposes an optional `isTokenRevoked` callback after cryptographic and claim validation. When configured, the callback receives only verified issuer, JWT ID, subject, client, tenant and expiry; revocation rejects the token and lookup errors fail closed. This is a contract seam only: no durable production revocation store or issuer integration is included.

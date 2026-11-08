@@ -761,3 +761,8 @@ This is a synthetic, ephemeral authorization server and does not constitute prod
 The synthetic authorization-code fixture now asserts callback state mismatch rejection, wrong PKCE verifier rejection (including SDK retry behavior), and successful exchange only with the correct verifier. PR #101 merged as `36d0a94bd6074b481c3723bbfd22180e3b781967`; post-merge A5 MCP [42527262821](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42527262821) and Repository Quality [42527262823](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42527262823) passed. The suite remains 28/28 passing.
 
 Production OAuth issuer, secure token persistence, revocation, key custody/rotation, live Platform token/purpose enforcement, external-client interoperability and formal Gate 0 approval remain open.
+## A5 revocation contract checkpoint — 2026-11-08 (PR #103)
+
+The isolated resource-server fixture now supports an optional revocation lookup after signature/claim verification, requires a non-empty `jti` when enabled, rejects revoked tokens, fails closed on lookup errors, and accepts non-revoked tokens. PR #103 merged as `52b350295c1af1959018f86826314207a7ccde60`; exact-head checks passed and post-merge A5 MCP [42527529036](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42527529036) plus Repository Quality [42527529005](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42527529005) passed. The suite reports 31/31 passing.
+
+This is an optional fixture callback, not a durable production revocation/introspection service. Production issuer integration, revocation storage and cache semantics, KMS/key lifecycle, live Platform authorization, external-client certification and formal Gate 0 approval remain open.
