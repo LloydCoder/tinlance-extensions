@@ -68,3 +68,6 @@ The fixture exposes an optional `isTokenRevoked` callback after cryptographic an
 ## Agent Platform RS256 compatibility — PRs #105 and #106
 
 The A5 verifier now supports an explicitly configured RS256 allowlist and validates the Agent Platform service-token claim contract (`sub`, `aud`, `jti`, `iat`, `exp`, `tenant_id`, `principal_type`, `client_id`, `scope`, `request_id`, `purpose`). Token lifetime is capped at five minutes; algorithm configuration is required, validated, copied and frozen. The suite includes positive and negative RS256 cases. This is synthetic-key conformance evidence only; live KMS/JWKS deployment and Platform integration remain open.
+## Cross-service tenant ID alignment — PRs #214 and #108
+
+The Platform service-token issuer, A3 PostgreSQL schema/verifier and A5 RS256 verifier now share the tenant ID contract `^[a-z0-9_-]{1,64}$`. Platform refuses to mint tokens for uppercase/dotted IDs that Extensions cannot store or verify; A5 rejects them too. This removes a code-level mismatch but does not prove live KMS/JWKS or production cross-service traffic.
