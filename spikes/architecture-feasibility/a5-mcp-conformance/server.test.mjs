@@ -388,7 +388,7 @@ test("raw modern HTTP rejects protocol-version header that disagrees with reques
 test("raw modern HTTP returns the supported-version list for an unsupported protocol revision", async () => {
   const app = createApp();
   try {
-    const response = await rawModernToolRequest(app, {
+    const response = await rawModernToolRequest(app, await signedToken(), {
       protocolHeader: "1900-01-01",
       bodyProtocol: "1900-01-01"
     });
@@ -405,11 +405,12 @@ test("raw modern HTTP returns the supported-version list for an unsupported prot
 test("raw modern HTTP returns a JSON-RPC parse error for malformed JSON", async () => {
   const app = createApp();
   try {
+    const token = await signedToken();
     const response = await app.fetch(new Request("http://test.local/mcp", {
       method: "POST",
       headers: {
         host: "test.local",
-        authorization: `Bearer ${validToken}`,
+        authorization: `Bearer ${token}`,
         "content-type": "application/json",
         accept: "application/json, text/event-stream",
         "mcp-protocol-version": "2026-07-28",
