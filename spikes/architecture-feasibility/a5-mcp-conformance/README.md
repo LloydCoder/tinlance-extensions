@@ -31,6 +31,7 @@ The dependency graph is pinned by `package.json` and `package-lock.json`. CI ver
 - Platform action-purpose binding using the shared `extensions-action-v1:` SHA-256 canonical tuple contract, with exact tenant, subject, tool and resource checks plus action-specific scope challenges.
 - Cross-service hash vectors shared with the A3 Platform delegation fixture.
 - Bounded streaming request-body enforcement for declared and chunked bodies, with byte limits, a configurable total read deadline and request-abort handling.
+- In-flight tool cancellation propagation from the official SDK client's `AbortSignal` to the server handler's `ctx.mcpReq.signal`, verified with a synthetic long-running read-only tool.
 - Negative tests for invalid issuer, audience, expiry, token type, missing/empty identity claims, missing scope, untrusted Host/Origin, oversized bodies, slow-body timeout, client abort, unknown JWKS key ID, invalid signature, wrong action/resource and cross-tenant purpose.
 
 ## Security and readiness boundary
@@ -39,14 +40,14 @@ This is a test fixture only. Signing keys are generated ephemerally and are not 
 
 The tenant, subject, action and resource claims are bound in a synthetic fixture using the same action-purpose canonicalization contract as the A3 Platform delegation tests. The fixture pins one expected tenant/resource and proves mismatched tenant/action/resource purposes are denied. It does not call the live Agent Platform, validate Platform-issued tokens, resolve real resource ownership, or authorize real tenant-scoped data. Host/Origin allowlists are fixture inputs and must be replaced with reviewed production host/proxy policy.
 
-No product adapters, database access, customer data, browser actions, write tools, cancellation of in-flight tool work, replay protection, or consequential execution are exposed. This fixture does not authorize a production MCP endpoint or deployment.
+No product adapters, database access, customer data, browser actions, write tools, replay protection, or consequential execution are exposed. Cancellation is tested only for the synthetic in-process handler; network-proxy cancellation and durable job cancellation remain separate production concerns. This fixture does not authorize a production MCP endpoint or deployment.
 
 ## Gate 0 still requires
 
 - Production issuer integration, JWKS/key custody and rotation, revocation/introspection, and a reviewed production OAuth client flow (the synthetic client-credentials interoperability test is not production issuer evidence).
 - Production trusted Host/Origin and reverse-proxy topology tests, including DNS-rebinding and forwarded-header trust.
 - Live tenant/action-bound authorization integration with the Tinlance Agent Platform, including real delegated-token verification, resource ownership resolution, deny-by-default tests and approval requirements.
-- Full lifecycle/abuse coverage: in-flight cancellation, replay/idempotency, session lifecycle, connection limits, rate limits and production ingress timeouts.
+- Full lifecycle/abuse coverage: network-level cancellation propagation through production proxies, replay/idempotency, session lifecycle, connection limits, rate limits and production ingress timeouts.
 - Real-client interoperability evidence for the approved support matrix.
 - Tool catalogue, risk/approval matrix, security/privacy review and formal architecture approval.
 
