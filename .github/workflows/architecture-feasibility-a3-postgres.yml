@@ -46,6 +46,10 @@ jobs:
           node-version: "24.22.2"
       - name: Install PostgreSQL client
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
+      - name: Verify guarded A3 migration rollback on an isolated empty database
+        env:
+          PGPASSWORD: postgres
+        run: bash spikes/architecture-feasibility/a3-backend-api/verify-migration-rollback.sh
       - name: Apply core schema migration
         env:
           PGPASSWORD: postgres

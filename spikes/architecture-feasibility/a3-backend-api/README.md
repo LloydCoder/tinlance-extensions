@@ -31,8 +31,20 @@ This isolated spike is evidence, not a production API or service.
 - A separate two-session PostgreSQL 16 CI test holds concurrent transactions open while two runtime-role workers claim jobs, asserting `FOR UPDATE SKIP LOCKED` yields distinct jobs exactly once. The child-process worker suite independently proves concurrent process claims, process crash/restart recovery, lease heartbeat and cancellation.
 - The outbox publisher process now has isolated at-least-once delivery, retry/dead-letter, heartbeat and crash-after-delivery recovery evidence. Its test receiver persists deduplication in the PostgreSQL consumer inbox and commits the local effect atomically with inbox acceptance. This does not provide exactly-once semantics for external side effects: production transports must still use provider idempotency keys or explicitly accept duplicate side effects. No production external provider adapter, operator review UI, or deployed publisher service is included. The Agent Platform approval-bound cancellation and dead-letter replay issuing paths are integrated at code level only; live KMS/JWKS deployment and a durable production approval verifier remain outstanding.
 - The backup/restore CI test validates a single-database custom-format pg_dump archive restored into a fresh database in the same ephemeral PostgreSQL cluster. Cluster-global roles/tablespaces are not part of pg_dump; they already exist in this CI cluster. This test does not prove cross-region recovery, PITR, encryption/key management, backup retention, production RPO/RTO, managed backup operations or a production restore runbook.
-- The feasibility HTTP API exposes `POST /v1/jobs/{jobId}/cancel` and `POST /v1/outbox/dead-letters/{eventId}/replay`. Without Platform OIDC configuration, authorization callbacks default to deny-all. With Platform OIDC configured, the API requires the trusted issuer, exact client ID and action-specific scope; production still requires live KMS/JWKS provisioning, durable approval/idempotency semantics and cross-service verification. Both actions persist tenant-scoped actor/request audit records. The Platform approval flow is code-level integration evidence, not a deployed operator workflow; no operator UI is deployed.
+- The feasibility HTTP API exposes `POST /v1/jobs/{jobId}/cancel` and `POST /v1/outbox/dead-letters/{eventId}/replay`. Without Platform OIDC configuration, authorization callbacks default to deny-all. With Platform OIDC configured, the API requires the trusted issuer, exact client ID, action-specific scope and a signed purpose fingerprint bound to tenant, subject, tool, exact resource and (for replay) idempotency key. Both actions persist tenant-scoped actor/request audit records. The Platform approval flow is code-level integration evidence, not a deployed operator workflow; live KMS/JWKS provisioning, durable approval/idempotency semantics, deployment and live cross-service verification remain open; no operator UI is deployed.
 - The RS256 OIDC/JWKS verifier and least-privilege login-role contract are implemented as feasibility components, but no production identity deployment/configuration, secret rotation, rate limiting, deployment, secrets manager, backup/restore, object storage, retention/deletion, or legal/privacy review is included.
+
+## Migration rollback safety
+
+The spike includes a destructive **test-only** full-schema rollback at `rollback/rollback-all-test-only.sql`. It is restricted to the isolated database named `tinlance_rollback_test`, requires an explicit psql confirmation variable, and refuses to run while any application data exists. The PostgreSQL CI workflow proves both refusal on a non-empty schema and successful teardown of an empty migrated schema before it creates the normal integration database.
+
+Run the guard test with:
+
+```bash
+PGPASSWORD=postgres bash verify-migration-rollback.sh
+```
+
+This is not a production rollback runbook. It does not reverse live data transformations, preserve production data, restore backups, coordinate rolling deployments, or prove compatibility with older application versions. Production rollback still requires versioned migration-specific down plans, backup/restore rehearsal, owner approval and an explicit data-loss/forward-fix decision.
 
 Run locally against PostgreSQL 16+ after applying migrations 001–011. Install the pinned test driver with `npm install --no-save --package-lock=false --ignore-scripts pg@8.16.3`, then run:
 
@@ -58,7 +70,7 @@ DATABASE_URL="$DATABASE_URL" ADMIN_DATABASE_URL="$ADMIN_DATABASE_URL" node --tes
 DATABASE_URL="$DATABASE_URL" ADMIN_DATABASE_URL="$ADMIN_DATABASE_URL" node --test outbox.process.integration.test.mjs
 ```
 
-A3 remains **partial** until approved production issuer/audience/JWKS configuration and provider-specific claim mapping, managed credential provisioning/rotation, production worker/publisher supervision, provider-specific delivery adapters and provider-side idempotency contracts, Agent Platform-backed cancellation/replay authorization and approvals, operator UI, migration rollback, production backup/restore runbook, observability/SLOs and legal/security review are implemented and tested.
+A3 remains **partial** until approved production issuer/audience/JWKS configuration and provider-specific claim mapping, managed credential provisioning/rotation, production worker/publisher supervision, provider-specific delivery adapters and provider-side idempotency contracts, durable production approval/idempotency services, operator UI, production migration/rollback runbook, production backup/restore runbook, observability/SLOs and legal/security review are implemented and tested.
 
 
 The inbox relies on PostgreSQL's unique constraint and INSERT ... ON CONFLICT DO NOTHING concurrency semantics; acceptance and local database effects must commit in one transaction. See the [PostgreSQL 16 INSERT documentation](https://www.postgresql.org/docs/16/sql-insert.html) and [unique-index concurrency notes](https://www.postgresql.org/docs/16/index-unique-checks.html).
