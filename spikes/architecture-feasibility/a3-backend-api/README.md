@@ -77,3 +77,8 @@ The inbox relies on PostgreSQL's unique constraint and INSERT ... ON CONFLICT DO
 ## Platform delegated-token JWT ID validation — PR #110
 
 The A3 RS256 verifier now requires a canonical 32-character lowercase-hex `jti` for Platform delegated tokens, matching `PlatformServiceTokenIssuer` (`uuid4().hex`) and the A5 verifier. Missing or malformed IDs are rejected before authorization. Ordinary user OIDC tokens remain unaffected. No durable revocation/introspection service is implied.
+## Signed webhook transport — PR #112
+
+The A3 spike now includes a generic `createSignedWebhookTransport` adapter. It uses exact-host allowlisting, HTTPS-only production endpoints, HMAC-SHA256 over timestamp plus exact request bytes, a stable event UUID idempotency key, a 1 MiB body cap, bounded timeout, cancellation, redirect rejection and retry-classified upstream errors. HTTP is allowed only for explicit loopback tests.
+
+This adapter is not wired to a production provider or deployed worker. The receiver must verify the HMAC and timestamp replay window and enforce idempotency; production secret storage and egress/DNS controls are still required.
