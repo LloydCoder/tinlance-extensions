@@ -130,8 +130,11 @@ export function createConformanceApp({
         if (
           protectedHeader.typ !== "at+jwt" ||
           typeof payload.sub !== "string" ||
+          payload.sub.trim().length === 0 ||
           typeof payload.client_id !== "string" ||
+          payload.client_id.trim().length === 0 ||
           typeof payload.tenant_id !== "string" ||
+          payload.tenant_id.trim().length === 0 ||
           typeof payload.scope !== "string" ||
           typeof payload.purpose !== "string" ||
           !/^extensions-action-v1:[a-f0-9]{64}$/.test(payload.purpose) ||
