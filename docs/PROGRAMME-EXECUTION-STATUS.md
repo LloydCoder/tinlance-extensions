@@ -312,3 +312,18 @@ The new [Security Data-Flow Inventory and Threat Model](SECURITY-DATA-FLOW-AND-T
 The new [A5 MCP Conformance Plan](A5-MCP-CONFORMANCE-PLAN.md) and updated [ADR 0002](adr/0002-mcp-protocol-baseline.md) select the official TypeScript SDK v2 package line for the accepted 2026-07-28 protocol: `@modelcontextprotocol/server@2.4.0`, `@modelcontextprotocol/client@2.4.0`, `@modelcontextprotocol/core@2.4.0` and `zod@4.2.0`, with exact pins and a committed lockfile required. The legacy monolithic `@modelcontextprotocol/sdk` v1 line is explicitly rejected for this protocol revision.
 
 **Disposition: A5 Gate 0 remains open.** This is SDK selection and conformance planning, not an executable MCP server, OAuth/resource-server implementation, network Host/Origin test, committed dependency lockfile, real-client compatibility result or production gateway authorization. The next A5 deliverable is the isolated SDK v2 conformance spike with negative tests and real-client evidence, followed by explicit Gate 0 architecture approval.
+
+
+## A5 executable SDK conformance checkpoint — 2026-11-08 (PRs #77–#79)
+
+The live repository checkpoint is `main` commit `7e0e4d132d4fa3ed0191dd7ff650cb30fccea594`.
+
+- PR #77 merged the isolated official MCP TypeScript SDK v2.4.0 conformance fixture as `e30bdc9a4af08f27bd0095ab95e89ee1af474213`.
+- PR #78 merged lockfile/SBOM reproducibility, loopback HTTP client coverage, synthetic bearer/scope checks and bounded streaming body reads as `d1ca2f39b23c3efab6a7a61cdbd988c32fa0c64e`. Exact-head and post-merge Repository Quality/A5 workflows passed; post-merge runs: [Repository Quality 42509494533](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42509494533), [A5 MCP 42509494411](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42509494411).
+- PR #79 merged stateless wire-metadata assertions and a streaming loopback HTTP test adapter as `7e0e4d132d4fa3ed0191dd7ff650cb30fccea594`. Exact-head checks passed on `7fc2d0ad675cb8af0ff8cd122cadfdd81c886bae`; post-merge [Repository Quality 42509656601](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42509656601) and [A5 MCP 42509656452](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42509656452) passed on the merge commit.
+
+The spike exercises the official SDK client's in-process and real loopback HTTP discovery/tool-call path, modern protocol metadata, operation-specific `Mcp-Name`, absence of protocol session IDs, synthetic authentication and scope denial, Host/Origin allowlists, bounded body reads, reproducible dependency installation and CycloneDX SBOM generation.
+
+**A5 remains partial and Gate 0 remains open.** Production OAuth/JWT/JWKS validation, signed-token issuer/audience/client/expiry/revocation negatives, raw malformed JSON-RPC and header mismatch fixtures, trusted reverse-proxy/DNS-rebinding tests, lifecycle/cancellation coverage, live Agent Platform no-bypass integration, and external-client compatibility remain outstanding. The spike does not authorize production deployment.
+
+No phase is promoted to complete by this addendum. Phase 02 external customer/product-owner/legal/commercial evidence, A2 Safari runtime/signing/distribution, A3 production operations, A4 product-specific data/privacy controls, A6 live Platform integration and A7 deployment/residency/budget approval remain gated. The 25-phase implementation and release programme remains conditional on its documented entry and exit criteria.
