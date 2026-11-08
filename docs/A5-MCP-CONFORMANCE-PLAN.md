@@ -205,3 +205,10 @@ Cross-repository review found a second real integration mismatch: the Agent Plat
 This closes the code-level tenant identifier mismatch across the Platform issuer, A3 schema/verifier and A5 RS256 verifier. The A5 suite remains 40/40 passing.
 
 **Boundary:** this does not prove production KMS/JWKS deployment, live Platform-to-Extensions requests, or production database credentials. The Platform issuer's broader multi-product tenant lifecycle still needs the owner-approved canonical tenant ID contract.
+## A5 RS256 remote-JWKS verification — PR #114 (2026-11-08)
+
+PR #114 adds an RS256 Platform-token test against a remote JWKS endpoint, using a synthetic RSA JWK with a `kid`. The test proves successful signature verification and key selection for the published `kid`, and fail-closed rejection when the token references an unpublished key ID. The A5 suite now reports 41 passed, 0 failed, 0 skipped.
+
+PR #114 merged as `5de52db35d22833a09d6fd7460df0bec52951e75`. Exact-head checks passed: A5 MCP [42530547781](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42530547781), Repository Quality [42530547755](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42530547755). Post-merge checks passed: A5 MCP [42530612903](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42530612903), Repository Quality [42530612900](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42530612900).
+
+**Boundary:** the JWKS endpoint and RSA key are local and synthetic. Live Platform KMS/JWKS discovery, TLS/network reachability, key rotation overlap, revocation service, and production Platform-to-Extensions requests remain unproven.
