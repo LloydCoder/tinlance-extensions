@@ -451,7 +451,6 @@ test("RFC 9728 protected-resource metadata is publicly served and points to the 
     const metadata = await response.json();
     assert.equal(metadata.resource, RESOURCE);
     assert.deepEqual(metadata.authorization_servers, [ISSUER]);
-    assert.ok(metadata.scopes_supported.includes(REQUIRED_SCOPE));
     assert.ok(metadata.bearer_methods_supported.includes("header"));
   } finally {
     await app.close();
@@ -470,6 +469,7 @@ test("RFC 8414 authorization-server metadata mirror preserves issuer and adverti
     assert.equal(metadata.authorization_response_iss_parameter_supported, true);
     assert.equal(metadata.client_id_metadata_document_supported, true);
     assert.ok(metadata.code_challenge_methods_supported.includes("S256"));
+    assert.ok(metadata.scopes_supported.includes(REQUIRED_SCOPE));
   } finally {
     await app.close();
   }
