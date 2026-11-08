@@ -15,34 +15,33 @@ function jsonError(status, code, extraHeaders = {}) {
   });
 }
 
-function readBoundedBody(request, limit) {
-  return new Promise(async (resolve, reject) => {
-    const reader = request.body.getReader();
-    const chunks = [];
-    let total = 0;
-    try {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        total += value.byteLength;
-        if (total > limit) {
-          await reader.cancel();
-          resolve(null);
-          return;
-        }
-        chunks.push(value);
+async function readBoundedBody(request, limit) {
+  const reader = request.body.getReader();
+  const chunks = [];
+  let total = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.byteLength;
+      if (total > limit) {
+        await reader.cancel();
+        return null;
       }
-      const body = new Uint8Array(total);
-      let offset = 0;
-      for (const chunk of chunks) {
-        body.set(chunk, offset);
-        offset += chunk.byteLength;
-      }
-      resolve(body);
-    } catch (error) {
-      reject(error);
+      chunks.push(value);
     }
-  });
+  } catch (error) {
+    await reader.cancel().catch(() => {});
+    throw error;
+  }
+
+  const body = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    body.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return body;
 }
 
 export function createConformanceApp({
