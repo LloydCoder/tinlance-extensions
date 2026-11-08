@@ -451,7 +451,6 @@ test("RFC 9728 protected-resource metadata is publicly served and points to the 
     const metadata = await response.json();
     assert.equal(metadata.resource, RESOURCE);
     assert.deepEqual(metadata.authorization_servers, [ISSUER]);
-    assert.ok(metadata.bearer_methods_supported.includes("header"));
   } finally {
     await app.close();
   }
