@@ -174,6 +174,7 @@ function makePlatformToken(scope, requestId = "platform-request-0001", claims = 
   const payload = Buffer.from(JSON.stringify({
     iss: platformIssuer,
     aud: platformAudience,
+    jti: "0123456789abcdef0123456789abcdef",
     sub: "oidc-user-42",
     tenant_id: "tenant-a",
     client_id: platformClientId,
@@ -275,6 +276,27 @@ test("Platform delegated cancellation requires the trusted issuer, client and ex
       headers: { authorization: `Bearer ${userTokenWithForgedScope}` }
     });
     assert.equal(userTokenResponse.status, 403);
+  });
+});
+
+test("Platform delegated tokens require a canonical JWT ID", async () => {
+  await withPlatformOidcServer(async (base) => {
+    const requestId = "platform-cancel-jti-0001";
+    const purpose = platformActionPurpose(
+      "extensions_job_cancel",
+      "a4f6d9e2-1c3b-4a5d-8e7f-9012bc345678"
+    );
+    for (const jti of [undefined, "not-a-canonical-jti"]) {
+      const token = makePlatformToken("extensions:jobs:cancel", requestId, {
+        purpose,
+        jti
+      });
+      const response = await fetch(`${base}/v1/jobs/a4f6d9e2-1c3b-4a5d-8e7f-9012bc345678/cancel`, {
+        method: "POST",
+        headers: { authorization: `Bearer ${token}` }
+      });
+      assert.equal(response.status, 401);
+    }
   });
 });
 
