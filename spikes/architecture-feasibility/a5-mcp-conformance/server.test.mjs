@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import http from "node:http";
 import test from "node:test";
 import { Client, StreamableHTTPClientTransport } from "@modelcontextprotocol/client";
 import { createConformanceApp, REQUIRED_SCOPE } from "./server.mjs";
@@ -29,12 +30,54 @@ function inProcessTransport(app, token = validToken) {
   });
 }
 
-test("official v2 client discovers and calls a synthetic read-only tool on the modern protocol", async () => {
-  const app = createApp();
-  const client = new Client(
-    { name: "a5-test-client", version: "1.0.0" },
+async function startHttpServer() {
+  let app;
+  const server = http.createServer(async (incoming, outgoing) => {
+    try {
+      const chunks = [];
+      for await (const chunk of incoming) chunks.push(chunk);
+      const body = Buffer.concat(chunks);
+      const request = new Request(`http://${incoming.headers.host}${incoming.url}`, {
+        method: incoming.method,
+        headers: incoming.headers,
+        body: body.length ? body : undefined
+      });
+      const response = await app.fetch(request);
+      outgoing.writeHead(response.status, Object.fromEntries(response.headers));
+      if (response.body) {
+        for await (const chunk of response.body) outgoing.write(chunk);
+      }
+      outgoing.end();
+    } catch {
+      outgoing.writeHead(500);
+      outgoing.end();
+    }
+  });
+
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address();
+  const host = `127.0.0.1:${address.port}`;
+  app = createApp({ allowedHosts: [host] });
+  return {
+    url: `http://${host}/mcp`,
+    app,
+    close: async () => {
+      await app.close();
+      await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+    }
+  };
+}
+
+function modernClient(name) {
+  return new Client(
+    { name, version: "1.0.0" },
     { versionNegotiation: { mode: { pin: "2026-07-28" } } }
   );
+}
+
+test("official v2 client discovers and calls a synthetic read-only tool on the modern protocol", async () => {
+  const app = createApp();
+  const client = modernClient("a5-test-client");
   try {
     await client.connect(inProcessTransport(app));
     assert.equal(client.getProtocolEra(), "modern");
@@ -50,6 +93,33 @@ test("official v2 client discovers and calls a synthetic read-only tool on the m
   } finally {
     await client.close();
     await app.close();
+  }
+});
+
+test("the same SDK client completes discovery and a tool call over real HTTP", async () => {
+  const network = await startHttpServer();
+  const client = modernClient("a5-network-test-client");
+  const transport = new StreamableHTTPClientTransport(new URL(network.url), {
+    fetch: (input, init) => {
+      const headers = new Headers(init?.headers);
+      headers.set("authorization", `Bearer ${validToken}`);
+      return fetch(input, { ...init, headers });
+    }
+  });
+  try {
+    await client.connect(transport);
+    const result = await client.callTool({
+      name: "extensions_health_read",
+      arguments: {}
+    });
+    assert.equal(client.getProtocolEra(), "modern");
+    assert.deepEqual(result.structuredContent, {
+      status: "ok",
+      protocol: "2026-07-28"
+    });
+  } finally {
+    await client.close();
+    await network.close();
   }
 });
 
@@ -112,9 +182,16 @@ test("untrusted Host and Origin values are rejected before MCP dispatch", async 
   }
 });
 
-test("oversized request bodies are rejected before MCP dispatch", async () => {
+test("oversized streamed request bodies are rejected with a bounded read", async () => {
   const app = createApp({ maxBodyBytes: 8 });
   try {
+    const stream = new ReadableStream({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode("123456"));
+        controller.enqueue(new TextEncoder().encode("7890"));
+        controller.close();
+      }
+    });
     const response = await app.fetch(new Request("http://test.local/mcp", {
       method: "POST",
       headers: {
@@ -122,10 +199,33 @@ test("oversized request bodies are rejected before MCP dispatch", async () => {
         authorization: `Bearer ${validToken}`,
         "content-type": "application/json"
       },
-      body: "0123456789"
+      body: stream,
+      duplex: "half"
     }));
     assert.equal(response.status, 413);
   } finally {
+    await app.close();
+  }
+});
+
+test("authenticated clients without the required tool scope cannot call the tool", async () => {
+  const app = createApp({
+    verifyBearerToken: async () => ({
+      token: "scope-limited",
+      clientId: "scope-limited-client",
+      scopes: []
+    })
+  });
+  const client = modernClient("a5-scope-test-client");
+  try {
+    await client.connect(inProcessTransport(app, "scope-limited"));
+    const result = await client.callTool({
+      name: "extensions_health_read",
+      arguments: {}
+    });
+    assert.equal(result.isError, true);
+  } finally {
+    await client.close();
     await app.close();
   }
 });

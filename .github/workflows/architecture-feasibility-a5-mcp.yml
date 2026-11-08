@@ -30,9 +30,19 @@ jobs:
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
         with:
           node-version: "24.22.2"
-      - name: Install exact SDK versions
+      - name: Install from committed lockfile
         working-directory: spikes/architecture-feasibility/a5-mcp-conformance
-        run: npm install --ignore-scripts --no-audit --no-fund
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Generate CycloneDX SBOM
+        working-directory: spikes/architecture-feasibility/a5-mcp-conformance
+        run: npm sbom --sbom-format cyclonedx > sbom.cdx.json
+      - name: Export generated SBOM for review
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: a5-cyclonedx-sbom
+          path: spikes/architecture-feasibility/a5-mcp-conformance/sbom.cdx.json
+          if-no-files-found: error
+          retention-days: 1
       - name: Run A5 conformance tests
         working-directory: spikes/architecture-feasibility/a5-mcp-conformance
         run: npm test

@@ -1,5 +1,6 @@
 {
   "name": "@tinlance/spike-a5-mcp-conformance",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "scripts": {
