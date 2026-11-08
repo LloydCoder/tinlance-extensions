@@ -281,6 +281,10 @@ async function startAuthorizationCodeFixture() {
   };
 }
 
+function assertCallbackState(params, expectedState) {
+  if (params.get("state") !== expectedState) throw new Error("OAuth state mismatch");
+}
+
 test("official SDK authorization-code flow enforces PKCE S256, state, issuer and resource binding", async () => {
   const fixture = await startAuthorizationCodeFixture();
   const provider = new TestOAuthProvider();
@@ -304,7 +308,10 @@ test("official SDK authorization-code flow enforces PKCE S256, state, issuer and
     assert.equal(authorizationResponse.status, 302);
     const callback = new URL(authorizationResponse.headers.get("location"));
     const params = callback.searchParams;
-    assert.equal(params.get("state"), provider.lastState);
+    const wrongState = new URLSearchParams(params);
+    wrongState.set("state", "attacker-controlled-state");
+    assert.throws(() => assertCallbackState(wrongState, provider.lastState), /OAuth state mismatch/);
+    assertCallbackState(params, provider.lastState);
     assert.equal(params.get("iss"), fixture.origin);
 
     const wrongIssuer = new URLSearchParams(params);
@@ -312,12 +319,19 @@ test("official SDK authorization-code flow enforces PKCE S256, state, issuer and
     await assert.rejects(initialTransport.finishAuth(wrongIssuer), (error) => error instanceof IssuerMismatchError);
     assert.equal(fixture.tokenRequests.length, 0, "issuer mismatch must be rejected before token exchange");
 
-    await initialTransport.finishAuth(params);
+    const validVerifier = provider.verifier;
+    provider.verifier = "incorrect-pkce-verifier";
+    await assert.rejects(initialTransport.finishAuth(params));
     assert.equal(fixture.tokenRequests.length, 1);
-    assert.equal(fixture.tokenRequests[0].grantType, "authorization_code");
-    assert.equal(fixture.tokenRequests[0].clientId, "a5-pkce-client");
-    assert.equal(fixture.tokenRequests[0].resource, fixture.resourceUrl);
-    assert.equal(fixture.tokenRequests[0].pkceValid, true);
+    assert.equal(fixture.tokenRequests[0].pkceValid, false, "incorrect PKCE verifier must be rejected");
+
+    provider.verifier = validVerifier;
+    await initialTransport.finishAuth(params);
+    assert.equal(fixture.tokenRequests.length, 2);
+    assert.equal(fixture.tokenRequests[1].grantType, "authorization_code");
+    assert.equal(fixture.tokenRequests[1].clientId, "a5-pkce-client");
+    assert.equal(fixture.tokenRequests[1].resource, fixture.resourceUrl);
+    assert.equal(fixture.tokenRequests[1].pkceValid, true);
 
     await initialTransport.close().catch(() => {});
     const authenticatedTransport = new StreamableHTTPClientTransport(new URL(fixture.resourceUrl), {
