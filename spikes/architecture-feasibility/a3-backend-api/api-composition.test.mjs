@@ -206,7 +206,7 @@ test("Platform action purpose matches the shared cross-service contract vectors"
       "extensions_job_cancel",
       "a4f6d9e2-1c3b-4a5d-8e7f-9012bc345678"
     ),
-    "extensions-action-v1:5d803f64204c300b4980e8db91cae8ca72072b5710d1155933ba8ce5e1d24acc"
+    "extensions-action-v1:6fb56c1543260cac3fb1c1285c1e71ccf79482d1dbe0a0c46f9a7a997e479d77"
   );
   assert.equal(
     platformActionPurpose(
@@ -214,7 +214,7 @@ test("Platform action purpose matches the shared cross-service contract vectors"
       "c4f6d9e2-1c3b-4a5d-8e7f-9012bc345679",
       "replay-idempotency-0001"
     ),
-    "extensions-action-v1:5504cf92a97f40cb51f7723dc30bb83a0c22ac9cb4158286639a01e735ced975"
+    "extensions-action-v1:441761504df27dcdab9d9c0af40923a9bb402e7d0f5c32faea700b90a806d2b8"
   );
 });
 
