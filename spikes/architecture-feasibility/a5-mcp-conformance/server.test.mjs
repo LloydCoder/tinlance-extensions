@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import http from "node:http";
+import { Readable } from "node:stream";
 import test from "node:test";
 import { Client, StreamableHTTPClientTransport } from "@modelcontextprotocol/client";
 import { generateKeyPair, SignJWT } from "jose";
@@ -50,17 +51,18 @@ function inProcessTransport(app, token) {
   });
 }
 
-async function startHttpServer() {
+async function startHttpServer(overrides = {}) {
   let app;
+  const receivedHeaders = [];
   const server = http.createServer(async (incoming, outgoing) => {
     try {
-      const chunks = [];
-      for await (const chunk of incoming) chunks.push(chunk);
-      const body = Buffer.concat(chunks);
+      receivedHeaders.push({ ...incoming.headers });
+      const body = ["GET", "HEAD"].includes(incoming.method) ? undefined : Readable.toWeb(incoming);
       const request = new Request(`http://${incoming.headers.host}${incoming.url}`, {
         method: incoming.method,
         headers: incoming.headers,
-        body: body.length ? body : undefined
+        body,
+        ...(body ? { duplex: "half" } : {})
       });
       const response = await app.fetch(request);
       outgoing.writeHead(response.status, Object.fromEntries(response.headers));
@@ -75,11 +77,12 @@ async function startHttpServer() {
   });
 
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
-  app = createApp({ allowedHostnames: ["127.0.0.1"], allowedOriginHostnames: ["127.0.0.1"] });
+  app = createApp({ allowedHostnames: ["127.0.0.1"], allowedOriginHostnames: ["127.0.0.1"], ...overrides });
   const address = server.address();
   const host = `127.0.0.1:${address.port}`;
   return {
     url: `http://${host}/mcp`,
+    receivedHeaders,
     close: async () => {
       await app.close();
       await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
@@ -149,6 +152,19 @@ test("signed token completes discovery and read-only call over real loopback HTT
       status: "ok",
       protocol: "2026-07-28"
     });
+    assert.ok(network.receivedHeaders.length >= 2);
+    for (const headers of network.receivedHeaders) {
+      assert.equal(headers["mcp-protocol-version"], "2026-07-28");
+      assert.ok(headers["mcp-method"], "every stateless request carries Mcp-Method");
+      if (["tools/call", "prompts/get", "resources/read"].includes(headers["mcp-method"])) {
+        assert.ok(headers["mcp-name"], "named MCP operations carry Mcp-Name");
+      }
+      assert.equal(headers["mcp-session-id"], undefined, "modern requests must not use protocol sessions");
+    }
+    assert.ok(network.receivedHeaders.some((headers) =>
+      headers["mcp-method"] === "tools/call" &&
+      headers["mcp-name"] === "extensions_health_read"
+    ));
   } finally {
     await client.close();
     await network.close();
