@@ -58,11 +58,15 @@ function createApp(isTokenRevoked) {
 
 async function requestWithToken(app, token) {
   return app.fetch(new Request(RESOURCE, {
-    method: "GET",
+    method: "POST",
     headers: {
       host: "extensions.test",
-      authorization: `Bearer ${token}`
-    }
+      authorization: `Bearer ${token}`,
+      "content-type": "application/json",
+      accept: "application/json, text/event-stream",
+      "mcp-protocol-version": "2026-07-28"
+    },
+    body: "{}"
   }));
 }
 
