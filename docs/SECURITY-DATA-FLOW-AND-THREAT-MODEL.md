@@ -1,9 +1,9 @@
 # Tinlance Extensions — Security Data-Flow Inventory and Threat Model
 
-**Status:** A4 baseline draft; product-specific owner review, privacy/legal review and implementation verification are outstanding.  
-**Date:** 2026-11-08  
-**Owner:** Tinlance Limited  
-**Scope:** Current A1–A3 feasibility spikes, the shared Extensions architecture, and the first seven portfolio candidates.  
+**Status:** A4 baseline draft; product-specific owner review, privacy/legal review and implementation verification are outstanding.
+**Date:** 2026-11-08
+**Owner:** Tinlance Limited
+**Scope:** Current A1–A3 feasibility spikes, the shared Extensions architecture, and the first seven portfolio candidates.
 **Normative references:** [System architecture](SYSTEM-ARCHITECTURE.md), [26-product catalogue](PRODUCT-CATALOGUE.md), [Phase 02 requirements](PHASE-02-PRODUCT-REQUIREMENTS.md), [A3 API spike](../spikes/architecture-feasibility/a3-backend-api/README.md).
 
 > This is an evidence-backed threat-model baseline and a gap register. It is not a completed product-specific privacy assessment, DPIA, legal opinion, penetration test, security certification, or release approval. Unknown data paths are explicitly marked unknown rather than assumed safe.
