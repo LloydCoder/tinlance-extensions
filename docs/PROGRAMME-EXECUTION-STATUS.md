@@ -382,3 +382,13 @@ Cross-repository inspection found that the Agent Platform service-token issuer u
 The A5 suite now reports 40 passing tests. The RS256 fixture proves token compatibility against the Platform claim shape using synthetic RSA keys.
 
 **Boundary:** Agent Platform ADR-0042 remains Proposed; the Platform KMS issuer and JWKS endpoint are not evidenced as deployed. This work does not configure live KMS/JWKS, production issuer/key rotation, revocation storage, or live Platform-to-Extensions traffic. It closes the code-level algorithm/claim incompatibility in the fixture, not A6 production integration.
+## Cross-service tenant identifier contract — Agent Platform PR #214 and Extensions PR #108 (2026-11-08)
+
+Cross-repository review found a second real integration mismatch: the Agent Platform token issuer previously accepted tenant identifiers using a broad identifier pattern, while the A3 PostgreSQL `tenants.id` constraint and A3 RS256 verifier require `^[a-z0-9_-]{1,64}$`. Such tokens could be validly signed by Platform but rejected by the Extensions API/database.
+
+- Agent Platform **PR #214** now enforces the downstream tenant ID contract before issuing service tokens. It merged as `f88ee8c04677fafcb2b124177ba0c5d8bbef1373`. Post-merge CI [42528749123](https://github.com/LloydCoder/tinlance-agent-platform/actions/runs/42528749123), Reference Agents [42528749124](https://github.com/LloydCoder/tinlance-agent-platform/actions/runs/42528749124), R10 [42528749121](https://github.com/LloydCoder/tinlance-agent-platform/actions/runs/42528749121), CodeQL [42528749114](https://github.com/LloydCoder/tinlance-agent-platform/actions/runs/42528749114), Supply Chain Attestation [42528749113](https://github.com/LloydCoder/tinlance-agent-platform/actions/runs/42528749113) and Secret Scan [42528749110](https://github.com/LloydCoder/tinlance-agent-platform/actions/runs/42528749110) passed.
+- Extensions **PR #108** aligned the A5 RS256 verifier to the same lower-case tenant contract and added a negative test for uppercase/dotted tenant IDs. It merged as `19337f7ce1d21ede3d9785fef4e37ddb4f663734`; post-merge A5 MCP [42529096061](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42529096061) and Repository Quality [42529096025](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42529096025) passed.
+
+This closes the code-level tenant identifier mismatch across the Platform issuer, A3 schema/verifier and A5 RS256 verifier. The A5 suite remains 40/40 passing.
+
+**Boundary:** this does not prove production KMS/JWKS deployment, live Platform-to-Extensions requests, or production database credentials. The Platform issuer's broader multi-product tenant lifecycle still needs the owner-approved canonical tenant ID contract.
