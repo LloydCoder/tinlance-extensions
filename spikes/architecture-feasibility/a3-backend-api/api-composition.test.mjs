@@ -260,3 +260,33 @@ test("partial Platform OIDC configuration is rejected instead of silently disabl
     env: { ...env, PLATFORM_OIDC_ISSUER: platformIssuer }
   }), /must provide issuer, audience, JWKS URI and client ID together/);
 });
+
+
+test("OIDC and Platform OIDC integer environment settings accept valid decimal integers", () => {
+  const configured = {
+    ...env,
+    OIDC_JWKS_CACHE_TTL_SECONDS: "240",
+    OIDC_MAX_TOKEN_LIFETIME_SECONDS: "1800",
+    OIDC_CLOCK_TOLERANCE_SECONDS: "45",
+    OIDC_JWKS_TIMEOUT_MS: "4000",
+    OIDC_JWKS_MIN_REFRESH_INTERVAL_MS: "750",
+    PLATFORM_OIDC_ISSUER: platformIssuer,
+    PLATFORM_OIDC_AUDIENCE: platformAudience,
+    PLATFORM_OIDC_JWKS_URI: platformJwksUri,
+    PLATFORM_OIDC_CLIENT_ID: platformClientId,
+    PLATFORM_OIDC_JWKS_CACHE_TTL_SECONDS: "45",
+    PLATFORM_OIDC_MAX_TOKEN_LIFETIME_SECONDS: "240",
+    PLATFORM_OIDC_CLOCK_TOLERANCE_SECONDS: "20",
+    PLATFORM_OIDC_JWKS_TIMEOUT_MS: "3500",
+    PLATFORM_OIDC_JWKS_MIN_REFRESH_INTERVAL_MS: "900"
+  };
+
+  assert.doesNotThrow(() => createApiServerFromEnvironment({
+    repository,
+    env: configured,
+    fetchImpl: async () => new Response(JSON.stringify({ keys: [] }), {
+      status: 200,
+      headers: { "content-type": "application/json" }
+    })
+  }));
+});
