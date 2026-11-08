@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { createApiServer } from "./server.mjs";
 import { createOidcBearerVerifier } from "./oidc-verifier.mjs";
 
@@ -55,6 +56,23 @@ function createCompositeVerifier({ oidcConfig, platformOidcConfig, fetchImpl }) 
   };
 }
 
+function expectedPlatformActionPurpose(principal, toolName, resourceId, idempotencyKey = null) {
+  if (!principal || typeof principal.tenantId !== "string" || typeof principal.subject !== "string") return null;
+  const canonical = JSON.stringify([
+    principal.tenantId,
+    principal.subject,
+    toolName,
+    resourceId,
+    idempotencyKey
+  ]);
+  return "extensions-action-v1:" + createHash("sha256").update(canonical, "utf8").digest("hex");
+}
+
+function hasPlatformActionPurpose(input, toolName, resourceId, idempotencyKey = null) {
+  const expected = expectedPlatformActionPurpose(input?.principal, toolName, resourceId, idempotencyKey);
+  return typeof expected === "string" && input?.principal?.purpose === expected;
+}
+
 function hasPlatformScope(principal, platformOidcConfig, requiredScope) {
   return Boolean(
     principal &&
@@ -94,11 +112,13 @@ export function createOidcApiServer({
   const effectiveCancelAuthorization = platformAuthorize
     ? async (input) =>
         hasPlatformScope(input?.principal, platformOidcConfig, "extensions:jobs:cancel") &&
+        hasPlatformActionPurpose(input, "extensions_job_cancel", input?.jobId) &&
         (authorizeJobCancellation ? await authorizeJobCancellation(input) : true)
     : authorizeJobCancellation;
   const effectiveReplayAuthorization = platformAuthorize
     ? async (input) =>
         hasPlatformScope(input?.principal, platformOidcConfig, "extensions:outbox:replay") &&
+        hasPlatformActionPurpose(input, "extensions_dead_letter_replay", input?.eventId, input?.idempotencyKey) &&
         (authorizeOutboxReplay ? await authorizeOutboxReplay(input) : true)
     : authorizeOutboxReplay;
 
