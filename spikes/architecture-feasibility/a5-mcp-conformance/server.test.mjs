@@ -596,7 +596,7 @@ test("strict tool input schema prevents caller-supplied tenant or resource overr
     assert.equal(response.status, 200);
     const payload = await response.json();
     assert.notEqual(payload.result?.structuredContent?.status, "ok");
-    assert.ok(payload.error);
+    assert.equal(payload.result?.isError, true);
   } finally {
     await app.close();
   }
