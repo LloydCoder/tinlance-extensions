@@ -16,7 +16,7 @@ The dependency graph is pinned by `package.json` and `package-lock.json`. CI ver
 
 ## What is exercised
 
-- Official TypeScript SDK v2.4.0 `Client`, `StreamableHTTPClientTransport`, `createMcpHandler`, and `requireBearerAuth`.
+- Official TypeScript SDK v2.4.0 `Client`, `ClientCredentialsProvider`, `StreamableHTTPClientTransport`, `createMcpHandler`, and `requireBearerAuth`.
 - Modern protocol negotiation pinned to `2026-07-28`; legacy protocol handling is rejected.
 - In-process handler and real loopback HTTP discovery/tool-call paths.
 - Stateless wire metadata: protocol-version and method headers, operation-specific `Mcp-Name`, no `Mcp-Session-Id`, and header/body mismatch rejection.
@@ -25,6 +25,8 @@ The dependency graph is pinned by `package.json` and `package-lock.json`. CI ver
 - Configurable remote JWKS verification through `jose.createRemoteJWKSet`, tested against a loopback JWKS endpoint with valid signatures, unknown `kid`, and invalid-signature rejection.
 - SDK-native Bearer challenges for missing/invalid tokens and insufficient scopes.
 - SDK-served RFC 9728 Protected Resource Metadata and RFC 8414 Authorization Server Metadata discovery documents.
+- A synthetic loopback authorization server that exercises the official `ClientCredentialsProvider` through resource/issuer discovery, `client_secret_basic` token exchange, resource indicator binding, remote JWKS validation, and a real MCP tool call.
+- Per-tool `insufficient_scope` step-up from the conformance scope to the combined conformance/action scopes; invalid client secrets are rejected.
 - SDK Host/Origin validation helpers.
 - Platform action-purpose binding using the shared `extensions-action-v1:` SHA-256 canonical tuple contract, with exact tenant, subject, tool and resource checks plus action-specific scope challenges.
 - Cross-service hash vectors shared with the A3 Platform delegation fixture.
@@ -33,7 +35,7 @@ The dependency graph is pinned by `package.json` and `package-lock.json`. CI ver
 
 ## Security and readiness boundary
 
-This is a test fixture only. Signing keys are generated ephemerally and are not deployed issuer keys. The remote JWKS URL is a loopback fixture; HTTPS is required for non-loopback endpoints, but no production JWKS hosting, key custody or rotation policy is implemented. The RFC 9728 and RFC 8414 documents are synthetic metadata; their authorization/token endpoint URLs are not hosted. There is no production authorization server, token revocation/introspection, client registration, PKCE exchange, or live trust configuration. Metadata publication proves document shape and discovery routing, not a working OAuth authorization-code flow.
+This is a test fixture only. Signing keys are generated ephemerally and are not deployed issuer keys. The remote JWKS URL is a loopback fixture; HTTPS is required for non-loopback endpoints, but no production JWKS hosting, key custody or rotation policy is implemented. The RFC 9728 and RFC 8414 documents are synthetic metadata; their authorization/token endpoint URLs are not hosted. There is no production authorization server, token revocation/introspection, client registration, PKCE exchange, or live trust configuration. The client-credentials flow is a fixed-credential synthetic integration test only; metadata publication proves document shape and discovery routing, not a production OAuth authorization-code flow.
 
 The tenant, subject, action and resource claims are bound in a synthetic fixture using the same action-purpose canonicalization contract as the A3 Platform delegation tests. The fixture pins one expected tenant/resource and proves mismatched tenant/action/resource purposes are denied. It does not call the live Agent Platform, validate Platform-issued tokens, resolve real resource ownership, or authorize real tenant-scoped data. Host/Origin allowlists are fixture inputs and must be replaced with reviewed production host/proxy policy.
 
@@ -41,7 +43,7 @@ No product adapters, database access, customer data, browser actions, write tool
 
 ## Gate 0 still requires
 
-- Production issuer integration, JWKS/key custody and rotation, revocation/introspection, and a reviewed OAuth client flow.
+- Production issuer integration, JWKS/key custody and rotation, revocation/introspection, and a reviewed production OAuth client flow (the synthetic client-credentials interoperability test is not production issuer evidence).
 - Production trusted Host/Origin and reverse-proxy topology tests, including DNS-rebinding and forwarded-header trust.
 - Live tenant/action-bound authorization integration with the Tinlance Agent Platform, including real delegated-token verification, resource ownership resolution, deny-by-default tests and approval requirements.
 - Full lifecycle/abuse coverage: in-flight cancellation, replay/idempotency, session lifecycle, connection limits, rate limits and production ingress timeouts.
