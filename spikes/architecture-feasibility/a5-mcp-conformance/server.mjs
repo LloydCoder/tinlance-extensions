@@ -9,7 +9,7 @@ import {
   oauthMetadataResponse
 } from "@modelcontextprotocol/server";
 import { createHash } from "node:crypto";
-import { createRemoteJWKSet, jwtVerify } from "jose";
+import { createOidcBearerVerifier } from "../a3-backend-api/oidc-verifier.mjs";
 import * as z from "zod/v4";
 
 export const REQUIRED_SCOPE = "extensions:conformance.read";
@@ -29,7 +29,7 @@ export function platformActionPurpose(tenantId, subject, toolName, resourceId, i
   return "extensions-action-v1:" + createHash("sha256").update(canonical, "utf8").digest("hex");
 }
 
-function hasPlatformActionPurpose(authInfo) {
+function hasPlatformActionPurpose(authInfo, { issuer, clientId }) {
   const expected = platformActionPurpose(
     EXPECTED_TENANT_ID,
     authInfo?.subject,
@@ -38,7 +38,11 @@ function hasPlatformActionPurpose(authInfo) {
   );
   return Boolean(
     authInfo &&
+    authInfo.issuer === issuer &&
+    authInfo.clientId === clientId &&
     authInfo.tenantId === EXPECTED_TENANT_ID &&
+    ["user", "service", "agent", "workload"].includes(authInfo.principalType) &&
+    typeof authInfo.requestId === "string" &&
     authInfo.scopes?.includes(ACTION_SCOPE) &&
     typeof expected === "string" &&
     authInfo.purpose === expected
@@ -89,27 +93,28 @@ async function readBoundedBody(request, limit, timeoutMs) {
 }
 
 export function createConformanceApp({
-  publicKey,
-  jwksUrl,
   issuer,
   resourceUrl,
+  jwksUrl,
+  platformClientId,
+  jwksFetchImpl,
   allowedHostnames,
   allowedOriginHostnames = [],
   oauthMetadata,
   maxBodyBytes = MAX_BODY_BYTES,
   maxBodyDurationMs = MAX_BODY_DURATION_MS
 }) {
-  if ((!publicKey && !jwksUrl) || typeof issuer !== "string" || typeof resourceUrl !== "string") {
-    throw new TypeError("publicKey or jwksUrl, issuer, and resourceUrl are required");
+  if (
+    typeof issuer !== "string" ||
+    typeof resourceUrl !== "string" ||
+    typeof jwksUrl !== "string" ||
+    typeof platformClientId !== "string" ||
+    typeof jwksFetchImpl !== "function"
+  ) {
+    throw new TypeError("issuer, resourceUrl, jwksUrl, platformClientId and jwksFetchImpl are required");
   }
 
   const resource = new URL(resourceUrl);
-  const jwksEndpoint = jwksUrl ? new URL(jwksUrl) : undefined;
-  if (jwksEndpoint && jwksEndpoint.protocol !== "https:" &&
-      !["localhost", "127.0.0.1", "[::1]"].includes(jwksEndpoint.hostname)) {
-    throw new TypeError("JWKS endpoint must use HTTPS outside loopback tests");
-  }
-  const verificationKey = jwksEndpoint ? createRemoteJWKSet(jwksEndpoint) : publicKey;
   if (!oauthMetadata || oauthMetadata.issuer !== issuer) {
     throw new TypeError("oauthMetadata with the configured issuer is required");
   }
@@ -118,46 +123,56 @@ export function createConformanceApp({
     resource.origin
   ).toString();
 
+  const platformVerifier = createOidcBearerVerifier({
+    issuer,
+    audience: resourceUrl,
+    jwksUri: jwksUrl,
+    tenantClaim: "tenant_id",
+    jwksCacheTtlSeconds: 60,
+    maxTokenLifetimeSeconds: 300,
+    clockToleranceSeconds: 30,
+    timeoutMs: 5_000,
+    minRefreshIntervalMs: 0,
+    maxJwksBytes: 65_536,
+    fetchImpl: jwksFetchImpl
+  });
+
   const verifier = {
     async verifyAccessToken(token) {
       try {
-        const { payload, protectedHeader } = await jwtVerify(token, verificationKey, {
-          algorithms: ["EdDSA"],
-          issuer,
-          audience: resourceUrl
-        });
-
+        const principal = await platformVerifier(token);
         if (
-          protectedHeader.typ !== "at+jwt" ||
-          typeof payload.sub !== "string" ||
-          payload.sub.trim().length === 0 ||
-          typeof payload.client_id !== "string" ||
-          payload.client_id.trim().length === 0 ||
-          typeof payload.tenant_id !== "string" ||
-          payload.tenant_id.trim().length === 0 ||
-          typeof payload.scope !== "string" ||
-          typeof payload.purpose !== "string" ||
-          !/^extensions-action-v1:[a-f0-9]{64}$/.test(payload.purpose) ||
-          typeof payload.exp !== "number"
+          !principal ||
+          typeof principal.clientId !== "string" ||
+          typeof principal.issuer !== "string" ||
+          typeof principal.principalType !== "string" ||
+          typeof principal.requestId !== "string" ||
+          typeof principal.purpose !== "string" ||
+          !Array.isArray(principal.scopes)
         ) {
-          throw new Error("required access-token claims are missing");
+          throw new Error("token is not a complete Platform delegation principal");
         }
 
-        const scopes = payload.scope.split(" ").filter(Boolean);
-        if (scopes.length === 0) throw new Error("access token has no scopes");
+        // The A3 verifier has already verified the signature and all JWT claims.
+        // Read exp only after that verification so the MCP SDK can enforce expiry.
+        const claims = JSON.parse(Buffer.from(token.split(".")[1], "base64url").toString("utf8"));
+        if (!Number.isFinite(claims.exp)) throw new Error("verified token has no expiry");
 
         return {
           token,
-          clientId: payload.client_id,
-          scopes,
-          expiresAt: payload.exp,
+          clientId: principal.clientId,
+          scopes: principal.scopes,
+          expiresAt: claims.exp,
           resource,
-          tenantId: payload.tenant_id,
-          subject: payload.sub,
-          purpose: payload.purpose
+          tenantId: principal.tenantId,
+          subject: principal.subject,
+          issuer: principal.issuer,
+          principalType: principal.principalType,
+          requestId: principal.requestId,
+          purpose: principal.purpose
         };
       } catch {
-        throw new OAuthError(OAuthErrorCode.InvalidToken, "Invalid access token");
+        throw new OAuthError(OAuthErrorCode.InvalidToken, "Invalid Platform access token");
       }
     }
   };
@@ -172,11 +187,11 @@ export function createConformanceApp({
   const handler = createMcpHandler(({ era }) => {
     const server = new McpServer({
       name: "tinlance-extensions-a5-conformance",
-      version: "0.2.0"
+      version: "0.3.0"
     });
 
     server.registerTool(
-      "extensions_health_read",
+      ACTION_TOOL_NAME,
       {
         description: "Return a synthetic, read-only conformance health result.",
         inputSchema: z.object({}).strict(),
@@ -184,11 +199,14 @@ export function createConformanceApp({
           status: z.literal("ok"),
           protocol: z.literal("2026-07-28")
         }),
-        scopeChallenge: ({ authInfo }) => hasPlatformActionPurpose(authInfo)
+        scopeChallenge: ({ authInfo }) => hasPlatformActionPurpose(authInfo, {
+          issuer,
+          clientId: platformClientId
+        })
           ? undefined
           : {
               scopes: [ACTION_SCOPE],
-              errorDescription: "A matching tenant, action, and resource authorization is required"
+              errorDescription: "A matching tenant, client, action, and resource authorization is required"
             }
       },
       async () => ({
@@ -211,7 +229,7 @@ export function createConformanceApp({
       const metadataResponse = oauthMetadataResponse(request, {
         oauthMetadata,
         resourceServerUrl: resource,
-        scopesSupported: [REQUIRED_SCOPE],
+        scopesSupported: [REQUIRED_SCOPE, ACTION_SCOPE],
         resourceName: "Tinlance Extensions A5 conformance fixture"
       });
       if (metadataResponse) return metadataResponse;
