@@ -292,6 +292,12 @@ test("Platform delegated dead-letter replay requires the separate replay scope",
       headers: { authorization: `Bearer ${token}`, "Idempotency-Key": "replay-idempotency-0002" }
     });
     assert.equal(otherIdempotencyKey.status, 403);
+
+    const missingIdempotencyKey = await fetch(`${base}/v1/outbox/dead-letters/c4f6d9e2-1c3b-4a5d-8e7f-9012bc345679/replay`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${token}` }
+    });
+    assert.equal(missingIdempotencyKey.status, 403);
   });
 });
 
