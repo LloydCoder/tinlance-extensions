@@ -96,6 +96,9 @@ export function createApiServer({
       if (req.method === "POST" && isReplayRoute) {
         const eventId = replayMatch[1].toLowerCase();
         const idempotencyKey = req.headers["idempotency-key"];
+        if (typeof idempotencyKey !== "string" || !IDEMPOTENCY_KEY_PATTERN.test(idempotencyKey)) {
+          return json(res, 400, { error: "invalid_idempotency_key", requestId }, requestId);
+        }
         const authorized = await authorizeOutboxReplay({ principal, eventId, requestId, idempotencyKey });
         if (authorized !== true) {
           return json(res, 403, { error: "forbidden", requestId }, requestId);
