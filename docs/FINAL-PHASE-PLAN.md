@@ -794,3 +794,10 @@ A3 now has a generic signed HTTP webhook transport factory for the outbox publis
 Exact-head: A3 API [42529976874](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42529976874), PostgreSQL [42529976824](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42529976824), Repository Quality [42529976839](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42529976839). Post-merge: A3 API [42530199551](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42530199551), PostgreSQL [42530199433](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42530199433), Repository Quality [42530199780](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42530199780).
 
 **Remaining A3 boundary:** the adapter is not configured or deployed with a real provider. Receiver signature/replay-window enforcement, durable idempotency, production secret management, egress/DNS policy and real upstream delivery/retry behavior remain unproven.
+## A5 RS256 remote-JWKS checkpoint — 2026-11-08 (PR #114)
+
+The A5 suite now tests the Platform RS256 token against a remote JWKS endpoint, validating the published `kid` and rejecting an unknown `kid`. PR #114 merged as `5de52db35d22833a09d6fd7460df0bec52951e75`; exact-head and post-merge A5 MCP / Repository Quality checks passed. Test result: 41/41 passed, 0 skipped.
+
+Exact-head runs: A5 MCP [42530547781](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42530547781), Repository Quality [42530547755](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42530547755). Post-merge runs: A5 MCP [42530612903](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42530612903), Repository Quality [42530612900](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42530612900).
+
+Live KMS/JWKS discovery, TLS/network reachability, key rotation overlap, revocation service and production cross-service requests remain open.
