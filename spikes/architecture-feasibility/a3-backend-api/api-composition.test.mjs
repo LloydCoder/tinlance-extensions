@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { generateKeyPairSync, sign } from "node:crypto";
+import { createHash, generateKeyPairSync, sign } from "node:crypto";
 import { createApiServerFromEnvironment } from "./api-composition.mjs";
 
 const issuer = "https://identity.example.test";
@@ -189,6 +189,17 @@ function makePlatformToken(scope, requestId = "platform-request-0001", claims = 
   return `${content}.${signature}`;
 }
 
+function platformActionPurpose(toolName, resourceId, idempotencyKey = null) {
+  const canonical = JSON.stringify([
+    "tenant-a",
+    "oidc-user-42",
+    toolName,
+    resourceId,
+    idempotencyKey
+  ]);
+  return "extensions-action-v1:" + createHash("sha256").update(canonical, "utf8").digest("hex");
+}
+
 async function withPlatformOidcServer(fn) {
   const fetchImpl = async (url) => {
     const keys = url === jwksUri ? [jwk] : url === platformJwksUri ? [platformJwk] : null;
@@ -218,13 +229,21 @@ async function withPlatformOidcServer(fn) {
 test("Platform delegated cancellation requires the trusted issuer, client and exact scope", async () => {
   await withPlatformOidcServer(async (base) => {
     const requestId = "platform-cancel-request-0001";
-    const token = makePlatformToken("extensions:jobs:cancel", requestId);
+    const token = makePlatformToken("extensions:jobs:cancel", requestId, {
+      purpose: platformActionPurpose("extensions_job_cancel", "a4f6d9e2-1c3b-4a5d-8e7f-9012bc345678")
+    });
     const allowed = await fetch(`${base}/v1/jobs/a4f6d9e2-1c3b-4a5d-8e7f-9012bc345678/cancel`, {
       method: "POST",
       headers: { authorization: `Bearer ${token}` }
     });
     assert.equal(allowed.status, 200);
     assert.equal(allowed.headers.get("x-request-id"), requestId);
+
+    const replayedResource = await fetch(`${base}/v1/jobs/b4f6d9e2-1c3b-4a5d-8e7f-9012bc345679/cancel`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${token}` }
+    });
+    assert.equal(replayedResource.status, 403);
 
     const wrongScope = await fetch(`${base}/v1/jobs/a4f6d9e2-1c3b-4a5d-8e7f-9012bc345678/cancel`, {
       method: "POST",
@@ -244,13 +263,35 @@ test("Platform delegated cancellation requires the trusted issuer, client and ex
 test("Platform delegated dead-letter replay requires the separate replay scope", async () => {
   await withPlatformOidcServer(async (base) => {
     const requestId = "platform-replay-request-0001";
+    const token = makePlatformToken("extensions:outbox:replay", requestId, {
+      purpose: platformActionPurpose(
+        "extensions_dead_letter_replay",
+        "c4f6d9e2-1c3b-4a5d-8e7f-9012bc345679",
+        "replay-idempotency-0001"
+      )
+    });
     const response = await fetch(`${base}/v1/outbox/dead-letters/c4f6d9e2-1c3b-4a5d-8e7f-9012bc345679/replay`, {
       method: "POST",
-      headers: { authorization: `Bearer ${makePlatformToken("extensions:outbox:replay", requestId)}` }
+      headers: {
+        authorization: `Bearer ${token}`,
+        "Idempotency-Key": "replay-idempotency-0001"
+      }
     });
     assert.equal(response.status, 200);
     assert.equal(response.headers.get("x-request-id"), requestId);
     assert.deepEqual(await response.json(), { status: "requeued" });
+
+    const otherEvent = await fetch(`${base}/v1/outbox/dead-letters/d4f6d9e2-1c3b-4a5d-8e7f-9012bc345670/replay`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${token}`, "Idempotency-Key": "replay-idempotency-0001" }
+    });
+    assert.equal(otherEvent.status, 403);
+
+    const otherIdempotencyKey = await fetch(`${base}/v1/outbox/dead-letters/c4f6d9e2-1c3b-4a5d-8e7f-9012bc345679/replay`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${token}`, "Idempotency-Key": "replay-idempotency-0002" }
+    });
+    assert.equal(otherIdempotencyKey.status, 403);
   });
 });
 
