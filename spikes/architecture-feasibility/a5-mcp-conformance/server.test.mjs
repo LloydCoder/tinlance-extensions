@@ -656,9 +656,7 @@ test("slow request bodies are rejected at the configured read deadline", async (
   try {
     const token = await signedToken();
     const stream = new ReadableStream({
-      pull() {
-        return new Promise(() => {});
-      }
+      start() {}
     });
     const response = await app.fetch(new Request("http://test.local/mcp", {
       method: "POST",
@@ -683,9 +681,7 @@ test("aborted request bodies stop reading and fail closed", async () => {
   try {
     const token = await signedToken();
     const stream = new ReadableStream({
-      pull() {
-        return new Promise(() => {});
-      }
+      start() {}
     });
     const pending = app.fetch(new Request("http://test.local/mcp", {
       method: "POST",
