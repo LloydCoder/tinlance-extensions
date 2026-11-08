@@ -17,17 +17,27 @@ const OAUTH_METADATA = {
   grant_types_supported: ["authorization_code", "refresh_token"],
   token_endpoint_auth_methods_supported: ["none"],
   code_challenge_methods_supported: ["S256"],
-  scopes_supported: [REQUIRED_SCOPE],
+  scopes_supported: [REQUIRED_SCOPE, ACTION_SCOPE],
   authorization_response_iss_parameter_supported: true,
   client_id_metadata_document_supported: true
 };
-const { publicKey, privateKey } = await generateKeyPair("EdDSA");
+const { publicKey, privateKey } = await generateKeyPair("RS256", { modulusLength: 2048 });
+const initialJwk = await exportJWK(publicKey);
+initialJwk.kid = "a5-test-key-1";
+initialJwk.alg = "RS256";
+initialJwk.use = "sig";
+initialJwk.key_ops = ["verify"];
+let jwksKeys = [initialJwk];
+const JWKS_URL = "https://issuer.test/.well-known/jwks.json";
+const PLATFORM_CLIENT_ID = "a5-conformance-client";
 
 async function signedToken(overrides = {}) {
   const now = Math.floor(Date.now() / 1000);
   const subject = overrides.subject ?? "synthetic-user-001";
   const claims = {
-    client_id: "a5-conformance-client",
+    client_id: PLATFORM_CLIENT_ID,
+    principal_type: "agent",
+    request_id: "a5-request-001",
     tenant_id: "tenant-test-001",
     scope: REQUIRED_SCOPE + " " + ACTION_SCOPE,
     ...overrides.claims
@@ -42,9 +52,9 @@ async function signedToken(overrides = {}) {
   }
   return new SignJWT(claims)
     .setProtectedHeader({
-      alg: "EdDSA",
+      alg: "RS256",
       typ: overrides.typ ?? "at+jwt",
-      ...(overrides.kid ? { kid: overrides.kid } : {})
+      kid: overrides.kid ?? initialJwk.kid
     })
     .setIssuer(overrides.issuer ?? ISSUER)
     .setAudience(overrides.audience ?? RESOURCE)
@@ -55,36 +65,16 @@ async function signedToken(overrides = {}) {
 }
 
 
-async function startJwksServer(initialKeys) {
-  let keys = initialKeys;
-  const server = http.createServer((request, response) => {
-    if (request.method !== "GET" || request.url !== "/.well-known/jwks.json") {
-      response.writeHead(404);
-      response.end();
-      return;
-    }
-    response.writeHead(200, {
-      "content-type": "application/json",
-      "cache-control": "public, max-age=60"
-    });
-    response.end(JSON.stringify({ keys }));
-  });
-  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
-  const address = server.address();
-  return {
-    url: `http://127.0.0.1:${address.port}/.well-known/jwks.json`,
-    setKeys(nextKeys) { keys = nextKeys; },
-    close: async () => new Promise((resolve, reject) =>
-      server.close((error) => error ? reject(error) : resolve())
-    )
-  };
-}
-
 function createApp(overrides = {}) {
   return createConformanceApp({
-    publicKey,
     issuer: ISSUER,
     resourceUrl: RESOURCE,
+    jwksUrl: JWKS_URL,
+    platformClientId: PLATFORM_CLIENT_ID,
+    jwksFetchImpl: async () => new Response(JSON.stringify({ keys: jwksKeys }), {
+      status: 200,
+      headers: { "content-type": "application/json" }
+    }),
     oauthMetadata: OAUTH_METADATA,
     allowedHostnames: ["test.local"],
     allowedOriginHostnames: ["test.local", "trusted.test"],
@@ -294,7 +284,7 @@ test("JWT issuer, audience, expiry and access-token type are validated fail-clos
       await signedToken({ issuer: "https://attacker.test" }),
       await signedToken({ audience: "https://other-resource.test/mcp" }),
       await signedToken({ expiresAt: Math.floor(Date.now() / 1000) - 60 }),
-      await signedToken({ typ: "JWT" }),
+      await signedToken({ typ: "invalid" }),
       await signedToken({ claims: { tenant_id: undefined } }),
       await signedToken({ subject: "" }),
       await signedToken({ claims: { client_id: "" } }),
@@ -603,17 +593,12 @@ test("strict tool input schema prevents caller-supplied tenant or resource overr
 });
 
 
-test("remote JWKS verifies signed access tokens and rejects unknown kids or invalid signatures", async () => {
-  const { publicKey: remotePublicKey, privateKey: remotePrivateKey } = await generateKeyPair("EdDSA");
-  const jwk = await exportJWK(remotePublicKey);
-  jwk.kid = "a5-jwks-key-1";
-  jwk.alg = "EdDSA";
-  jwk.use = "sig";
-  const jwks = await startJwksServer([jwk]);
-  const app = createApp({ jwksUrl: jwks.url });
-  const client = modernClient("a5-remote-jwks-client");
+test("shared A3 Platform verifier validates remote JWKS signatures, unknown kids, and key rotation", async () => {
+  const originalKeys = jwksKeys;
+  const app = createApp();
+  const client = modernClient("a5-shared-platform-verifier-client");
   try {
-    const token = await signedToken({ signingKey: remotePrivateKey, kid: jwk.kid });
+    const token = await signedToken();
     await client.connect(inProcessTransport(app, token));
     const result = await client.callTool({
       name: "extensions_health_read",
@@ -625,26 +610,53 @@ test("remote JWKS verifies signed access tokens and rejects unknown kids or inva
     });
     await client.close();
 
-    const unknownKidToken = await signedToken({
-      signingKey: remotePrivateKey,
-      kid: "unknown-key"
-    });
+    const unknownKidToken = await signedToken({ kid: "unknown-key" });
     const unknownKidResponse = await rawRequest(app, { token: unknownKidToken });
     assert.equal(unknownKidResponse.status, 401);
 
-    const { privateKey: wrongPrivateKey } = await generateKeyPair("EdDSA");
-    const invalidSignatureToken = await signedToken({
-      signingKey: wrongPrivateKey,
-      kid: jwk.kid
-    });
+    const { privateKey: wrongPrivateKey } = await generateKeyPair("RS256", { modulusLength: 2048 });
+    const invalidSignatureToken = await signedToken({ signingKey: wrongPrivateKey });
     const invalidSignatureResponse = await rawRequest(app, { token: invalidSignatureToken });
     assert.equal(invalidSignatureResponse.status, 401);
+
+    const { publicKey: rotatedPublicKey, privateKey: rotatedPrivateKey } =
+      await generateKeyPair("RS256", { modulusLength: 2048 });
+    const rotatedJwk = await exportJWK(rotatedPublicKey);
+    rotatedJwk.kid = "a5-test-key-rotation-2";
+    rotatedJwk.alg = "RS256";
+    rotatedJwk.use = "sig";
+    rotatedJwk.key_ops = ["verify"];
+    jwksKeys = [rotatedJwk];
+
+    const rotatedToken = await signedToken({
+      signingKey: rotatedPrivateKey,
+      kid: rotatedJwk.kid
+    });
+    const rotatedClient = modernClient("a5-jwks-rotation-client");
+    await rotatedClient.connect(inProcessTransport(app, rotatedToken));
+    const rotatedResult = await rotatedClient.callTool({
+      name: "extensions_health_read",
+      arguments: {}
+    });
+    assert.deepEqual(rotatedResult.structuredContent, {
+      status: "ok",
+      protocol: "2026-07-28"
+    });
+    await rotatedClient.close();
   } finally {
     await client.close().catch(() => {});
     await app.close();
-    await jwks.close();
+    jwksKeys = originalKeys;
   }
 });
+
+test("Platform OIDC verifier requires HTTPS for issuer and JWKS URLs", () => {
+  assert.throws(
+    () => createApp({ jwksUrl: "http://127.0.0.1/.well-known/jwks.json" }),
+    /valid HTTPS URL/
+  );
+});
+
 
 test("remote JWKS endpoints require HTTPS except for loopback test hosts", () => {
   assert.throws(
