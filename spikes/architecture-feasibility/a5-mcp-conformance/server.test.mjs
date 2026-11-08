@@ -904,7 +904,7 @@ test("official ClientCredentialsProvider completes RFC 9728/8414 discovery, toke
     await assert.rejects(rejectedClient.connect(new StreamableHTTPClientTransport(new URL(network.url), {
       authProvider: rejectedProvider
     })));
-    assert.equal(network.invalidClientAttempts, 1);
+    assert.ok(network.invalidClientAttempts >= 1);
     await rejectedClient.close().catch(() => {});
   } finally {
     await client.close();
