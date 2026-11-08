@@ -112,7 +112,7 @@ export function createConformanceApp({
       if (origin !== null && !origins.has(origin)) return jsonError(403, "forbidden");
 
       const authorization = request.headers.get("authorization") ?? "";
-      const match = /^Bearer ([^\\s]+)$/.exec(authorization);
+      const match = /^Bearer (\S+)$/.exec(authorization);
       if (!match) {
         return jsonError(401, "unauthorized", {
           "www-authenticate": 'Bearer realm="tinlance-extensions-mcp"'
