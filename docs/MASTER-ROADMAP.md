@@ -477,3 +477,38 @@ This addendum supersedes earlier repository-checkpoint statements in this docume
 - **Programme disposition:** no phase is promoted to complete by this checkpoint. Phase 02 external customer/owner/commercial/legal evidence remains open; A2 Safari runtime/signing/notarization/store review remains partial; A3 remains a feasibility spike rather than a production backend; A4–A7 and production implementation phases remain gated. Customer interviews, owner decisions, legal/provider approvals, production credentials, live infrastructure and budget approval must be supplied or explicitly approved by the accountable human owner; they cannot be inferred from repository CI.
 
 The next engineering work must continue against the accepted 25-phase plan, with the next bounded deliverable selected from the still-open A2/A3/A4–A7 evidence gates. Do not treat this checkpoint or a green documentation workflow as authorization to deploy, incur spend, or release products.
+
+
+## Current cross-repository checkpoint — 2026-11-08 (PRs #71/#72 and Platform #213)
+
+This addendum supersedes earlier status statements in this document where they describe the pre-integration A3 authorization state or an older `main` commit.
+
+### Verified merged changes
+
+- **Tinlance Extensions main:** `30957ee2e124567bc6a25cb54a67459f6f169fb9`.
+- **Extensions PR #71:** [align PostgreSQL audit IDs with Platform MCP](https://github.com/LloydCoder/tinlance-extensions/pull/71), merged as `42d1ce4cfa5295d306ea9bc27645d49c322a146a`. It fixes the cross-service contract mismatch where Platform `mcp-...` request IDs were rejected by UUID-only PostgreSQL audit fields and adapters. It adds migration 011, bounded request-ID validation and real PostgreSQL integration tests for cancellation and replay.
+- **Agent Platform main:** `a8ca3730223879d3e08a213930ccd378fc320495`.
+- **Agent Platform PR #213:** [bind delegated tokens to exact action resources](https://github.com/LloydCoder/tinlance-agent-platform/pull/213), merged as `a8ca3730223879d3e08a213930ccd378fc320495`. It signs a deterministic `purpose` fingerprint bound to tenant, subject, tool, resource ID and (for replay) idempotency key.
+- **Extensions PR #72:** [bind Platform tokens to exact Extensions actions](https://github.com/LloydCoder/tinlance-extensions/pull/72), merged as `30957ee2e124567bc6a25cb54a67459f6f169fb9`. The receiver verifies the signed purpose against the requested job/event and replay idempotency key. Shared Python/JavaScript test vectors prevent canonicalization drift.
+
+### CI evidence
+
+**Extensions PR #71 exact-head checks:** Repository Quality [42505355178](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42505355178), A3 API [42505355149](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42505355149), PostgreSQL [42505354971](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42505354971) — all passed. Post-merge checks on `42d1ce4`: [A3 API 42505465530](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42505465530), [Repository Quality 42505465517](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42505465517), [PostgreSQL 42505465486](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42505465486) — all passed.
+
+**Agent Platform PR #213 exact-head checks:** CI [42506502066](https://github.com/LloydCoder/tinlance-agent-platform/actions/runs/42506502066), CodeQL [42506502065](https://github.com/LloydCoder/tinlance-agent-platform/actions/runs/42506502065), Reference Agents [42506502059](https://github.com/LloydCoder/tinlance-agent-platform/actions/runs/42506502059), Secret Scan [42506502008](https://github.com/LloydCoder/tinlance-agent-platform/actions/runs/42506502008), R10 Certification [42506501975](https://github.com/LloydCoder/tinlance-agent-platform/actions/runs/42506501975) — all passed.
+
+**Extensions PR #72 exact-head checks:** Repository Quality [42506517333](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42506517333), A3 API [42506517392](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42506517392), PostgreSQL [42506517324](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42506517324) — all passed.
+
+**Post-merge checks:** Agent Platform CI [42506677783](https://github.com/LloydCoder/tinlance-agent-platform/actions/runs/42506677783), CodeQL [42506677770](https://github.com/LloydCoder/tinlance-agent-platform/actions/runs/42506677770), Reference Agents [42506677789](https://github.com/LloydCoder/tinlance-agent-platform/actions/runs/42506677789), Supply Chain Attestation [42506677786](https://github.com/LloydCoder/tinlance-agent-platform/actions/runs/42506677786), R10 [42506677773](https://github.com/LloydCoder/tinlance-agent-platform/actions/runs/42506677773), Secret Scan [42506677762](https://github.com/LloydCoder/tinlance-agent-platform/actions/runs/42506677762) — all passed. Extensions post-merge Repository Quality [42506704459](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42506704459), A3 API [42506704472](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42506704472), PostgreSQL [42506704481](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42506704481) — all passed.
+
+### Current queue and remaining gates
+
+- Live GitHub searches returned **zero open PRs and zero open issues** in both `LloydCoder/tinlance-extensions` and `LloydCoder/tinlance-agent-platform`.
+- Extensions `main` is still **unprotected** and the repository rulesets endpoint is empty. The connected GitHub integration exposes read-only settings access, not the repository-administration mutation needed to enforce required checks. This remains an operational governance blocker; green CI alone does not protect `main`.
+- The A3 Platform token contract is now action-bound at code level. This does **not** prove live KMS/JWKS provisioning, production issuer onboarding, durable approval verification, production API deployment, real provider delivery, operator workflows or live cross-service connectivity.
+- A3 remains a feasibility spike. External provider adapters, provider idempotency/duplicate-side-effect guarantees, production retry/backoff/dead-letter operations, durable consumer processing, production secrets/rotation, deployment, and cross-region backup/restore evidence remain open.
+- A2 Safari runtime verification, signing/notarization and store/distribution review remain partial.
+- Phase 02 still requires accountable owner/customer interviews, product decisions, legal/provider review and commercial validation. A4–A7 and subsequent production implementation/release phases remain gated.
+- No phase is promoted to complete by this checkpoint. Do not infer production readiness, deployment approval, budget approval or customer validation from repository CI.
+
+The next work must continue against the accepted 25-phase plan, starting with the remaining A3 production-boundary and A4 privacy/threat-model gates while preserving the distinction between feasibility evidence and deployable product capability.
