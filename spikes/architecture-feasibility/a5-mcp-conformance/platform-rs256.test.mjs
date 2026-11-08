@@ -36,15 +36,16 @@ function createApp() {
 
 async function signedPlatformToken(overrides = {}) {
   const now = Math.floor(Date.now() / 1000);
+  const tenantId = overrides.claims?.tenant_id ?? "tenant-test-001";
   const claims = {
     jti: "0123456789abcdef0123456789abcdef",
     client_id: "tinlance-agent-platform",
-    tenant_id: "tenant-test-001",
+    tenant_id: tenantId,
     principal_type: "service",
     request_id: "mcp-0123456789abcdef0123456789abcdef",
     scope: REQUIRED_SCOPE,
     purpose: platformActionPurpose(
-      "tenant-test-001",
+      tenantId,
       "platform-service-subject",
       ACTION_TOOL_NAME,
       ACTION_RESOURCE_ID
@@ -82,6 +83,16 @@ test("Platform RS256 service token with complete delegated claims is accepted", 
   try {
     const response = await requestWithToken(app, await signedPlatformToken());
     assert.notEqual(response.status, 401);
+  } finally {
+    await app.close();
+  }
+});
+
+test("Platform tenant identifiers use the Platform normalized identifier contract", async () => {
+  const app = createApp();
+  try {
+    const token = await signedPlatformToken({ claims: { tenant_id: "Tenant.A" } });
+    assert.notEqual((await requestWithToken(app, token)).status, 401);
   } finally {
     await app.close();
   }
