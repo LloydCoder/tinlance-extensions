@@ -232,6 +232,7 @@ export function createOidcBearerVerifier({
       return Object.freeze({ subject: claims.sub, tenantId });
     }
     const clientId = claims.client_id;
+    const tokenId = claims.jti;
     const principalType = claims.principal_type;
     const scope = claims.scope;
     const requestId = claims.request_id;
@@ -240,6 +241,7 @@ export function createOidcBearerVerifier({
     const scopePattern = /^[A-Za-z0-9][A-Za-z0-9:._/-]{0,127}$/;
     const allowedPrincipalTypes = new Set(["user", "service", "agent", "workload"]);
     if (
+      typeof tokenId !== "string" || !/^[a-f0-9]{32}$/.test(tokenId) ||
       typeof clientId !== "string" || !identifierPattern.test(clientId) ||
       typeof principalType !== "string" || !allowedPrincipalTypes.has(principalType) ||
       typeof requestId !== "string" || !identifierPattern.test(requestId) ||

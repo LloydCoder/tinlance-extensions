@@ -152,6 +152,7 @@ test("Platform-issued service tokens expose only validated delegation claims", a
     issuer, audience, jwksUri, fetchImpl: fetchJwks([key.jwk])
   });
   const delegated = tokenFor(key, {
+    jti: "0123456789abcdef0123456789abcdef",
     client_id: "tinlance-extensions-platform",
     principal_type: "user",
     scope: "extensions:jobs:cancel extensions:outbox:replay",
