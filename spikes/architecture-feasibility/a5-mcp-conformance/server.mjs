@@ -6,7 +6,6 @@ import {
   hostHeaderValidationResponse,
   originValidationResponse,
   requireBearerAuth,
-  requireScopes,
   oauthMetadataResponse
 } from "@modelcontextprotocol/server";
 import { createHash } from "node:crypto";
