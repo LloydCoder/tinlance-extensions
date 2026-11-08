@@ -438,7 +438,6 @@ test("publishes RFC 9728 protected-resource and RFC 8414 authorization metadata 
     const resourceMetadata = await resourceResponse.json();
     assert.equal(resourceMetadata.resource, RESOURCE);
     assert.ok(resourceMetadata.authorization_servers.includes(ISSUER));
-    assert.ok(resourceMetadata.scopes_supported.includes(REQUIRED_SCOPE));
 
     const authorizationResponse = await app.fetch(new Request(
       "http://test.local/.well-known/oauth-authorization-server",
@@ -450,6 +449,7 @@ test("publishes RFC 9728 protected-resource and RFC 8414 authorization metadata 
     assert.equal(authorizationMetadata.authorization_endpoint, "https://issuer.test/authorize");
     assert.equal(authorizationMetadata.token_endpoint, "https://issuer.test/token");
     assert.ok(authorizationMetadata.code_challenge_methods_supported.includes("S256"));
+    assert.ok(authorizationMetadata.scopes_supported.includes(REQUIRED_SCOPE));
   } finally {
     await app.close();
   }
