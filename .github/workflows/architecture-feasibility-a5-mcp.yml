@@ -33,6 +33,13 @@ jobs:
       - name: Install exact SDK versions
         working-directory: spikes/architecture-feasibility/a5-mcp-conformance
         run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Export generated npm lockfile for review
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: a5-npm-lockfile
+          path: spikes/architecture-feasibility/a5-mcp-conformance/package-lock.json
+          if-no-files-found: error
+          retention-days: 1
       - name: Run A5 conformance tests
         working-directory: spikes/architecture-feasibility/a5-mcp-conformance
-        run: npm test
+        run: npm ci --ignore-scripts --no-audit --no-fund && npm test
