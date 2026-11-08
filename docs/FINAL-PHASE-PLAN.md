@@ -731,3 +731,10 @@ This addendum supersedes earlier status statements in this document where they d
 - No phase is promoted to complete by this checkpoint. Do not infer production readiness, deployment approval, budget approval or customer validation from repository CI.
 
 The next work must continue against the accepted 25-phase plan, starting with the remaining A3 production-boundary and A4 privacy/threat-model gates while preserving the distinction between feasibility evidence and deployable product capability.
+
+
+## A4 data-flow and threat-model baseline — 2026-11-08
+
+The new [Security Data-Flow Inventory and Threat Model](SECURITY-DATA-FLOW-AND-THREAT-MODEL.md) records current A1–A3 data flows, trust boundaries, data classifications, the first-seven product input categories, a STRIDE-oriented threat register, privacy/data-lifecycle controls and explicit A4 acceptance gates.
+
+**Disposition: A4 remains open.** The document is an evidence-backed baseline and gap register, not product-owner approval or a completed privacy assessment. The first-seven product local/cloud paths, lawful bases, processors/transfers, retention periods, export/deletion behaviour, telemetry policy and product-specific residual-risk decisions still require accountable owner and legal/security review. Executable retention/deletion/redaction tests and production data-lifecycle controls are not yet evidenced.
