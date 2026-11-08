@@ -20,6 +20,7 @@ The dependency graph is pinned by `package.json` and `package-lock.json`. CI ver
 - Modern protocol negotiation pinned to `2026-07-28`; legacy protocol handling is rejected.
 - In-process handler and real loopback HTTP discovery/tool-call paths.
 - EdDSA-signed JWT access-token verification with `jose`: algorithm, `typ=at+jwt`, issuer, audience/resource, expiry, subject, client ID, tenant claim presence, and scope.
+- Configurable remote JWKS verification through `jose` `createRemoteJWKSet`, exercised against a loopback JWKS endpoint with positive signature, unknown-`kid`, and invalid-signature cases.
 - SDK-native Bearer challenges for missing/invalid tokens and insufficient scopes.
 - SDK-served RFC 9728 Protected Resource Metadata and RFC 8414 Authorization Server Metadata discovery documents, including issuer and S256/CIMD capability declarations.
 - SDK Host/Origin validation helpers.
@@ -28,7 +29,7 @@ The dependency graph is pinned by `package.json` and `package-lock.json`. CI ver
 
 ## Security and readiness boundary
 
-This is a test fixture only. The signing key is generated ephemerally for tests and is not a deployed issuer key. The RFC 9728 and RFC 8414 documents are synthetic conformance metadata only: their authorization/token endpoint URLs are not hosted. There is no production authorization server, JWKS endpoint or rotation, token revocation/introspection, client registration, PKCE flow, or live trust configuration. Metadata publication proves document shape and discovery routing, not a working OAuth authorization-code flow.
+This is a test fixture only. The signing key is generated ephemerally for tests and is not a deployed issuer key. The RFC 9728 and RFC 8414 documents are synthetic conformance metadata only: their authorization/token endpoint URLs are not hosted. The remote JWKS URL is a fixture input backed by an ephemeral loopback server; there is no production JWKS hosting, signing-key rotation policy, token revocation/introspection, client registration, PKCE flow, or live trust configuration. Metadata publication proves document shape and discovery routing, not a working OAuth authorization-code flow.
 
 The tenant claim is required and parsed as part of token verification, but it is not yet bound to tenant-scoped data or a Platform authorization decision. Host/Origin allowlists are fixture inputs and must be replaced with reviewed production host/proxy policy.
 

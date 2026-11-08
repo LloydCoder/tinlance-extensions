@@ -3,7 +3,7 @@ import http from "node:http";
 import { Readable } from "node:stream";
 import test from "node:test";
 import { Client, StreamableHTTPClientTransport } from "@modelcontextprotocol/client";
-import { generateKeyPair, SignJWT } from "jose";
+import { exportJWK, generateKeyPair, SignJWT } from "jose";
 import { createConformanceApp, REQUIRED_SCOPE } from "./server.mjs";
 
 const ISSUER = "https://issuer.test";
@@ -32,13 +32,43 @@ async function signedToken(overrides = {}) {
     ...overrides.claims
   };
   return new SignJWT(claims)
-    .setProtectedHeader({ alg: "EdDSA", typ: overrides.typ ?? "at+jwt" })
+    .setProtectedHeader({
+      alg: "EdDSA",
+      typ: overrides.typ ?? "at+jwt",
+      ...(overrides.kid ? { kid: overrides.kid } : {})
+    })
     .setIssuer(overrides.issuer ?? ISSUER)
     .setAudience(overrides.audience ?? RESOURCE)
     .setSubject("synthetic-user-001")
     .setIssuedAt(now)
     .setExpirationTime(overrides.expiresAt ?? now + 300)
-    .sign(privateKey);
+    .sign(overrides.signingKey ?? privateKey);
+}
+
+
+async function startJwksServer(initialKeys) {
+  let keys = initialKeys;
+  const server = http.createServer((request, response) => {
+    if (request.method !== "GET" || request.url !== "/.well-known/jwks.json") {
+      response.writeHead(404);
+      response.end();
+      return;
+    }
+    response.writeHead(200, {
+      "content-type": "application/json",
+      "cache-control": "public, max-age=60"
+    });
+    response.end(JSON.stringify({ keys }));
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address();
+  return {
+    url: `http://127.0.0.1:${address.port}/.well-known/jwks.json`,
+    setKeys(nextKeys) { keys = nextKeys; },
+    close: async () => new Promise((resolve, reject) =>
+      server.close((error) => error ? reject(error) : resolve())
+    )
+  };
 }
 
 function createApp(overrides = {}) {
@@ -471,5 +501,49 @@ test("RFC 8414 authorization-server metadata mirror preserves issuer and adverti
     assert.ok(metadata.scopes_supported.includes(REQUIRED_SCOPE));
   } finally {
     await app.close();
+  }
+});
+
+
+test("remote JWKS verifies signed access tokens and rejects unknown keys or invalid signatures", async () => {
+  const [jwksPublicKey, jwksPrivateKey] = Object.values(await generateKeyPair("EdDSA"));
+  const jwk = await exportJWK(jwksPublicKey);
+  jwk.kid = "a5-jwks-key-1";
+  jwk.alg = "EdDSA";
+  jwk.use = "sig";
+  const jwks = await startJwksServer([jwk]);
+  const app = createApp({ jwksUrl: jwks.url });
+  const client = modernClient("a5-remote-jwks-client");
+  try {
+    const token = await signedToken({ signingKey: jwksPrivateKey, kid: jwk.kid });
+    await client.connect(inProcessTransport(app, token));
+    const result = await client.callTool({
+      name: "extensions_health_read",
+      arguments: {}
+    });
+    assert.deepEqual(result.structuredContent, {
+      status: "ok",
+      protocol: "2026-07-28"
+    });
+    await client.close();
+
+    const unknownKidToken = await signedToken({
+      signingKey: jwksPrivateKey,
+      kid: "unknown-key"
+    });
+    const unknownKidResponse = await rawRequest(app, { token: unknownKidToken });
+    assert.equal(unknownKidResponse.status, 401);
+
+    const [, wrongPrivateKey] = Object.values(await generateKeyPair("EdDSA"));
+    const invalidSignatureToken = await signedToken({
+      signingKey: wrongPrivateKey,
+      kid: jwk.kid
+    });
+    const invalidSignatureResponse = await rawRequest(app, { token: invalidSignatureToken });
+    assert.equal(invalidSignatureResponse.status, 401);
+  } finally {
+    await client.close().catch(() => {});
+    await app.close();
+    await jwks.close();
   }
 });

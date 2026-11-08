@@ -9,7 +9,7 @@ import {
   requireScopes,
   oauthMetadataResponse
 } from "@modelcontextprotocol/server";
-import { jwtVerify } from "jose";
+import { createRemoteJWKSet, jwtVerify } from "jose";
 import * as z from "zod/v4";
 
 export const REQUIRED_SCOPE = "extensions:conformance.read";
@@ -46,6 +46,7 @@ async function readBoundedBody(request, limit) {
 
 export function createConformanceApp({
   publicKey,
+  jwksUrl,
   issuer,
   resourceUrl,
   allowedHostnames,
@@ -53,11 +54,17 @@ export function createConformanceApp({
   oauthMetadata,
   maxBodyBytes = MAX_BODY_BYTES
 }) {
-  if (!publicKey || typeof issuer !== "string" || typeof resourceUrl !== "string") {
-    throw new TypeError("publicKey, issuer, and resourceUrl are required");
+  if ((!publicKey && !jwksUrl) || typeof issuer !== "string" || typeof resourceUrl !== "string") {
+    throw new TypeError("publicKey or jwksUrl, issuer, and resourceUrl are required");
   }
 
   const resource = new URL(resourceUrl);
+  const jwksEndpoint = jwksUrl ? new URL(jwksUrl) : undefined;
+  if (jwksEndpoint && jwksEndpoint.protocol !== "https:" &&
+      jwksEndpoint.hostname !== "localhost" && jwksEndpoint.hostname !== "127.0.0.1") {
+    throw new TypeError("JWKS endpoint must use HTTPS outside loopback tests");
+  }
+  const verificationKey = jwksEndpoint ? createRemoteJWKSet(jwksEndpoint) : publicKey;
   if (!oauthMetadata || oauthMetadata.issuer !== issuer) {
     throw new TypeError("oauthMetadata with the configured issuer is required");
   }
@@ -69,7 +76,7 @@ export function createConformanceApp({
   const verifier = {
     async verifyAccessToken(token) {
       try {
-        const { payload, protectedHeader } = await jwtVerify(token, publicKey, {
+        const { payload, protectedHeader } = await jwtVerify(token, verificationKey, {
           algorithms: ["EdDSA"],
           issuer,
           audience: resourceUrl
