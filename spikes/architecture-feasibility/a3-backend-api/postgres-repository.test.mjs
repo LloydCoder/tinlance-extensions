@@ -132,7 +132,7 @@ test("invalid replay audit identities are rejected before acquiring a connection
   const eventId = "c4f6d9e2-1c3b-4a5d-8e7f-9012bc345679";
   const requestId = "mcp-0123456789abcdef0123456789abcdef";
 
-  assert.equal(await repository.replayDeadLetterForTenant(eventId, "tenant-a", "operator-42", "invalid"), false);
+  assert.equal(await repository.replayDeadLetterForTenant(eventId, "tenant-a", "operator-42", "invalid request id"), false);
   assert.equal(await repository.replayDeadLetterForTenant(eventId, "tenant-a", "operator-42", "mcp-bad request id"), false);
   assert.equal(await repository.replayDeadLetterForTenant(eventId, "tenant-a", "", requestId), false);
   assert.equal(await repository.replayDeadLetterForTenant(eventId, "tenant-a", "operator\nforged", requestId), false);
