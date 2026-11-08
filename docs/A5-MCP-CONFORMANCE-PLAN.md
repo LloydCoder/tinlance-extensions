@@ -1,8 +1,8 @@
 # A5 — MCP 2026-07-28 SDK and Conformance Plan
 
-**Status:** SDK selection researched; executable Gate 0 conformance spike and real-client matrix remain open.  
-**Date:** 2026-11-08  
-**Decision owner:** Tinlance Limited  
+**Status:** SDK selection researched; executable Gate 0 conformance spike and real-client matrix remain open.
+**Date:** 2026-11-08
+**Decision owner:** Tinlance Limited
 **Related ADR:** [ADR 0002 — Remote MCP protocol baseline](adr/0002-mcp-protocol-baseline.md)
 
 > This document selects a maintained SDK line and defines a reproducible test plan. It does not authorize a production MCP endpoint, OAuth deployment, tool registry, product adapter or client listing.
