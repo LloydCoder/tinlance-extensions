@@ -30,7 +30,8 @@ function inProcessTransport(app, token = validToken) {
   });
 }
 
-async function startHttpServer(app) {
+async function startHttpServer() {
+  let app;
   const server = http.createServer(async (incoming, outgoing) => {
     try {
       const chunks = [];
@@ -55,33 +56,28 @@ async function startHttpServer(app) {
 
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
   const address = server.address();
+  const host = `127.0.0.1:${address.port}`;
+  app = createApp({ allowedHosts: [host] });
   return {
-    url: `http://127.0.0.1:${address.port}/mcp`,
-    host: `127.0.0.1:${address.port}`,
-    close: () => new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()))
+    url: `http://${host}/mcp`,
+    app,
+    close: async () => {
+      await app.close();
+      await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+    }
   };
 }
 
-function clientFor(url, token = validToken) {
-  const transport = new StreamableHTTPClientTransport(new URL(url), {
-    fetch: (input, init) => {
-      const headers = new Headers(init?.headers);
-      headers.set("authorization", `Bearer ${token}`);
-      return fetch(input, { ...init, headers });
-    }
-  });
+function modernClient(name) {
   return new Client(
-    { name: "a5-test-client", version: "1.0.0" },
+    { name, version: "1.0.0" },
     { versionNegotiation: { mode: { pin: "2026-07-28" } } }
-  ).connect(transport).then((client) => ({ client, transport }));
+  );
 }
 
 test("official v2 client discovers and calls a synthetic read-only tool on the modern protocol", async () => {
   const app = createApp();
-  const client = new Client(
-    { name: "a5-test-client", version: "1.0.0" },
-    { versionNegotiation: { mode: { pin: "2026-07-28" } } }
-  );
+  const client = modernClient("a5-test-client");
   try {
     await client.connect(inProcessTransport(app));
     assert.equal(client.getProtocolEra(), "modern");
@@ -101,54 +97,9 @@ test("official v2 client discovers and calls a synthetic read-only tool on the m
 });
 
 test("the same SDK client completes discovery and a tool call over real HTTP", async () => {
-  const probeApp = createApp({ allowedHosts: ["127.0.0.1"] });
-  const listener = await startHttpServer(probeApp);
-  // Bind the exact ephemeral authority after the operating system allocates it.
-  const app = createApp({ allowedHosts: [listener.host] });
-  await probeApp.close();
-  // The listener routes through the app supplied at creation time, so create a
-  // second listener bound to the app that has the exact host allowlist.
-  await listener.close();
-  const network = await startHttpServer(app);
-  const networkApp = createApp({ allowedHosts: [network.host] });
-  await app.close();
-  await network.close();
-  const server = await startHttpServer(networkApp);
-  // The app's allowlist must match the final ephemeral port; use a URL-derived
-  // host check by recreating the app/listener pair through a late-bound proxy.
-  await networkApp.close();
-  await server.close();
-  const allowed = new Set();
-  let liveApp;
-  const liveServer = http.createServer(async (incoming, outgoing) => {
-    try {
-      const chunks = [];
-      for await (const chunk of incoming) chunks.push(chunk);
-      const body = Buffer.concat(chunks);
-      const request = new Request(`http://${incoming.headers.host}${incoming.url}`, {
-        method: incoming.method,
-        headers: incoming.headers,
-        body: body.length ? body : undefined
-      });
-      const response = await liveApp.fetch(request);
-      outgoing.writeHead(response.status, Object.fromEntries(response.headers));
-      if (response.body) for await (const chunk of response.body) outgoing.write(chunk);
-      outgoing.end();
-    } catch {
-      outgoing.writeHead(500);
-      outgoing.end();
-    }
-  });
-  await new Promise((resolve) => liveServer.listen(0, "127.0.0.1", resolve));
-  const address = liveServer.address();
-  const host = `127.0.0.1:${address.port}`;
-  allowed.add(host);
-  liveApp = createApp({ allowedHosts: [...allowed] });
-  const client = new Client(
-    { name: "a5-network-test-client", version: "1.0.0" },
-    { versionNegotiation: { mode: { pin: "2026-07-28" } } }
-  );
-  const transport = new StreamableHTTPClientTransport(new URL(`http://${host}/mcp`), {
+  const network = await startHttpServer();
+  const client = modernClient("a5-network-test-client");
+  const transport = new StreamableHTTPClientTransport(new URL(network.url), {
     fetch: (input, init) => {
       const headers = new Headers(init?.headers);
       headers.set("authorization", `Bearer ${validToken}`);
@@ -157,7 +108,10 @@ test("the same SDK client completes discovery and a tool call over real HTTP", a
   });
   try {
     await client.connect(transport);
-    const result = await client.callTool({ name: "extensions_health_read", arguments: {} });
+    const result = await client.callTool({
+      name: "extensions_health_read",
+      arguments: {}
+    });
     assert.equal(client.getProtocolEra(), "modern");
     assert.deepEqual(result.structuredContent, {
       status: "ok",
@@ -165,8 +119,7 @@ test("the same SDK client completes discovery and a tool call over real HTTP", a
     });
   } finally {
     await client.close();
-    await liveApp.close();
-    await new Promise((resolve, reject) => liveServer.close((error) => error ? reject(error) : resolve()));
+    await network.close();
   }
 });
 
@@ -263,13 +216,13 @@ test("authenticated clients without the required tool scope cannot call the tool
       scopes: []
     })
   });
-  const client = new Client(
-    { name: "a5-scope-test-client", version: "1.0.0" },
-    { versionNegotiation: { mode: { pin: "2026-07-28" } } }
-  );
+  const client = modernClient("a5-scope-test-client");
   try {
     await client.connect(inProcessTransport(app, "scope-limited"));
-    const result = await client.callTool({ name: "extensions_health_read", arguments: {} });
+    const result = await client.callTool({
+      name: "extensions_health_read",
+      arguments: {}
+    });
     assert.equal(result.isError, true);
   } finally {
     await client.close();
