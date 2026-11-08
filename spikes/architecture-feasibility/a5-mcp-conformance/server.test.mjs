@@ -338,3 +338,45 @@ test("raw modern HTTP rejects a protocol-version header that disagrees with requ
     await app.close();
   }
 });
+
+
+test("raw modern HTTP returns the supported-version list for an unsupported protocol revision", async () => {
+  const app = createApp();
+  try {
+    const response = await rawModernToolRequest(app, {
+      protocolHeader: "1900-01-01",
+      bodyProtocol: "1900-01-01"
+    });
+    assert.equal(response.status, 400);
+    const payload = await response.json();
+    assert.equal(payload.error?.code, -32022);
+    assert.equal(payload.error?.data?.requested, "1900-01-01");
+    assert.ok(payload.error?.data?.supported?.includes("2026-07-28"));
+  } finally {
+    await app.close();
+  }
+});
+
+test("raw modern HTTP returns a JSON-RPC parse error for malformed JSON", async () => {
+  const app = createApp();
+  try {
+    const response = await app.fetch(new Request("http://test.local/mcp", {
+      method: "POST",
+      headers: {
+        host: "test.local",
+        authorization: `Bearer ${validToken}`,
+        "content-type": "application/json",
+        accept: "application/json, text/event-stream",
+        "mcp-protocol-version": "2026-07-28",
+        "mcp-method": "tools/call",
+        "mcp-name": "extensions_health_read"
+      },
+      body: '{"jsonrpc":'
+    }));
+    assert.equal(response.status, 400);
+    const payload = await response.json();
+    assert.equal(payload.error?.code, -32700);
+  } finally {
+    await app.close();
+  }
+});
