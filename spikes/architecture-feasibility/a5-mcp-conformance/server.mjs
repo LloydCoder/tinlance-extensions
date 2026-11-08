@@ -99,10 +99,15 @@ export function createConformanceApp({
   maxBodyBytes = MAX_BODY_BYTES,
   maxBodyDurationMs = MAX_BODY_DURATION_MS,
   onToolStart = () => {},
-  onToolAbort = () => {}
+  onToolAbort = () => {},
+  isTokenRevoked
 }) {
   if ((!publicKey && !jwksUrl) || typeof issuer !== "string" || typeof resourceUrl !== "string") {
     throw new TypeError("publicKey or jwksUrl, issuer, and resourceUrl are required");
+  }
+
+  if (isTokenRevoked !== undefined && typeof isTokenRevoked !== "function") {
+    throw new TypeError("isTokenRevoked must be a function when configured");
   }
 
   const resource = new URL(resourceUrl);
@@ -147,6 +152,21 @@ export function createConformanceApp({
 
         const scopes = payload.scope.split(" ").filter(Boolean);
         if (scopes.length === 0) throw new Error("access token has no scopes");
+
+        if (isTokenRevoked) {
+          if (typeof payload.jti !== "string" || payload.jti.trim().length === 0) {
+            throw new Error("revocation-aware access tokens require a non-empty jti");
+          }
+          const revoked = await isTokenRevoked({
+            issuer: payload.iss,
+            jti: payload.jti,
+            subject: payload.sub,
+            clientId: payload.client_id,
+            tenantId: payload.tenant_id,
+            expiresAt: payload.exp
+          });
+          if (revoked) throw new Error("access token has been revoked");
+        }
 
         return {
           token,
