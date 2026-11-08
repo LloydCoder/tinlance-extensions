@@ -4,7 +4,7 @@ import { Readable } from "node:stream";
 import test from "node:test";
 import { Client, StreamableHTTPClientTransport } from "@modelcontextprotocol/client";
 import { generateKeyPair, SignJWT } from "jose";
-import { createConformanceApp, REQUIRED_SCOPE } from "./server.mjs";
+import { createConformanceApp, REQUIRED_SCOPE, ACTION_SCOPE, ACTION_TOOL_NAME, ACTION_RESOURCE_ID, platformActionPurpose } from "./server.mjs";
 
 const ISSUER = "https://issuer.test";
 const RESOURCE = "https://extensions.test/mcp";
@@ -25,17 +25,26 @@ const { publicKey, privateKey } = await generateKeyPair("EdDSA");
 
 async function signedToken(overrides = {}) {
   const now = Math.floor(Date.now() / 1000);
+  const subject = overrides.subject ?? "synthetic-user-001";
   const claims = {
     client_id: "a5-conformance-client",
     tenant_id: "tenant-test-001",
-    scope: REQUIRED_SCOPE,
+    scope: REQUIRED_SCOPE + " " + ACTION_SCOPE,
     ...overrides.claims
   };
+  if (claims.purpose === undefined && typeof claims.tenant_id === "string") {
+    claims.purpose = platformActionPurpose(
+      claims.tenant_id,
+      subject,
+      ACTION_TOOL_NAME,
+      ACTION_RESOURCE_ID
+    );
+  }
   return new SignJWT(claims)
     .setProtectedHeader({ alg: "EdDSA", typ: overrides.typ ?? "at+jwt" })
     .setIssuer(overrides.issuer ?? ISSUER)
     .setAudience(overrides.audience ?? RESOURCE)
-    .setSubject("synthetic-user-001")
+    .setSubject(subject)
     .setIssuedAt(now)
     .setExpirationTime(overrides.expiresAt ?? now + 300)
     .sign(privateKey);
@@ -110,7 +119,8 @@ async function rawModernToolRequest(app, token, {
   protocolHeader = "2026-07-28",
   bodyMethod = "tools/call",
   bodyName = "extensions_health_read",
-  bodyProtocol = "2026-07-28"
+  bodyProtocol = "2026-07-28",
+  argumentsValue = {}
 } = {}) {
   const headers = {
     host: "test.local",
@@ -130,7 +140,7 @@ async function rawModernToolRequest(app, token, {
       method: bodyMethod,
       params: {
         name: bodyName,
-        arguments: {},
+        arguments: argumentsValue,
         _meta: {
           "io.modelcontextprotocol/protocolVersion": bodyProtocol,
           "io.modelcontextprotocol/clientCapabilities": {},
@@ -469,6 +479,91 @@ test("RFC 8414 authorization-server metadata mirror preserves issuer and adverti
     assert.equal(metadata.client_id_metadata_document_supported, true);
     assert.ok(metadata.code_challenge_methods_supported.includes("S256"));
     assert.ok(metadata.scopes_supported.includes(REQUIRED_SCOPE));
+  } finally {
+    await app.close();
+  }
+});
+
+
+test("Platform action-purpose canonicalization matches the shared A3 contract vectors", () => {
+  assert.equal(
+    platformActionPurpose(
+      "tenant-a",
+      "oidc-user-42",
+      "extensions_job_cancel",
+      "a4f6d9e2-1c3b-4a5d-8e7f-9012bc345678"
+    ),
+    "extensions-action-v1:6fb56c1543260cac3fb1c1285c1e71ccf79482d1dbe0a0c46f9a7a997e479d77"
+  );
+  assert.equal(
+    platformActionPurpose(
+      "tenant-a",
+      "oidc-user-42",
+      "extensions_dead_letter_replay",
+      "c4f6d9e2-1c3b-4a5d-8e7f-9012bc345679",
+      "replay-idempotency-0001"
+    ),
+    "extensions-action-v1:441761504df27dcdab9d9c0af40923a9bb402e7d0f5c32faea700b90a806d2b8"
+  );
+});
+
+test("MCP tool action requires exact Platform purpose, tenant, resource, and action scope", async () => {
+  const app = createApp();
+  try {
+    const noActionScope = await signedToken({ claims: { scope: REQUIRED_SCOPE } });
+    const scopeDenied = await rawModernToolRequest(app, noActionScope);
+    assert.equal(scopeDenied.status, 403);
+    assert.match(scopeDenied.headers.get("www-authenticate"), /insufficient_scope/);
+    assert.match(scopeDenied.headers.get("www-authenticate"), /extensions:health:read/);
+
+    const wrongAction = await signedToken({
+      claims: {
+        purpose: platformActionPurpose(
+          "tenant-test-001",
+          "synthetic-user-001",
+          "extensions_health_write",
+          ACTION_RESOURCE_ID
+        )
+      }
+    });
+    const actionDenied = await rawModernToolRequest(app, wrongAction);
+    assert.equal(actionDenied.status, 403);
+    assert.match(actionDenied.headers.get("www-authenticate"), /insufficient_scope/);
+
+    const wrongResource = await signedToken({
+      claims: {
+        purpose: platformActionPurpose(
+          "tenant-test-001",
+          "synthetic-user-001",
+          ACTION_TOOL_NAME,
+          "another-resource"
+        )
+      }
+    });
+    const resourceDenied = await rawModernToolRequest(app, wrongResource);
+    assert.equal(resourceDenied.status, 403);
+
+    const otherTenant = await signedToken({
+      claims: { tenant_id: "tenant-other-002" }
+    });
+    const tenantDenied = await rawModernToolRequest(app, otherTenant);
+    assert.equal(tenantDenied.status, 403);
+  } finally {
+    await app.close();
+  }
+});
+
+test("strict tool input schema prevents caller-supplied tenant or resource override", async () => {
+  const app = createApp();
+  try {
+    const token = await signedToken();
+    const response = await rawModernToolRequest(app, token, {
+      argumentsValue: { tenant_id: "tenant-other-002", resource_id: "another-resource" }
+    });
+    assert.equal(response.status, 200);
+    const payload = await response.json();
+    assert.notEqual(payload.result?.structuredContent?.status, "ok");
+    assert.ok(payload.error);
   } finally {
     await app.close();
   }
