@@ -1,6 +1,6 @@
 # A5 — MCP 2026-07-28 SDK and Conformance Plan
 
-**Status:** SDK selection researched; executable Gate 0 conformance spike and real-client matrix remain open.
+**Status:** SDK selection and isolated SDK v2 conformance spike implemented; Gate 0 and real-client matrix remain open.
 **Date:** 2026-11-08
 **Decision owner:** Tinlance Limited
 **Related ADR:** [ADR 0002 — Remote MCP protocol baseline](adr/0002-mcp-protocol-baseline.md)
@@ -131,3 +131,16 @@ Gate 0 remains **open** until:
 - [Official `@modelcontextprotocol/server` package](https://www.npmjs.com/package/@modelcontextprotocol/server)
 - [Official `@modelcontextprotocol/client` package](https://www.npmjs.com/package/@modelcontextprotocol/client)
 - [Legacy v1 package compatibility note](https://www.npmjs.com/package/@modelcontextprotocol/sdk)
+
+
+## 9. Executed Gate 0 evidence — 2026-11-08
+
+The isolated conformance spike is now committed under `spikes/architecture-feasibility/a5-mcp-conformance/`.
+
+- **PR #77** introduced the pinned official SDK v2.4.0 server/client fixture, synthetic bearer verification, strict read-only tool schema, in-process protocol negotiation, and negative checks for absent/invalid credentials, untrusted Host/Origin and oversized bodies. It merged to `main` as `e30bdc9a4af08f27bd0095ab95e89ee1af474213`.
+- **PR #78** added a committed npm lockfile with integrity hashes, clean `npm ci`, CycloneDX SBOM generation/upload, a real loopback HTTP SDK client test, required tool-scope denial, and bounded streaming body reads. It merged as `d1ca2f39b23c3efab6a7a61cdbd988c32fa0c64e`. Exact-head Repository Quality and A5 checks passed on `b6035be2d445cd76f4a69c3d4394ac2ca28aa7a0`; post-merge Repository Quality [run 42509494533](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42509494533) and A5 [run 42509494411](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42509494411) passed on the merge commit.
+- **PR #79** added assertions over the actual loopback HTTP requests: modern protocol version and method metadata are present; `Mcp-Name` is asserted for named operations (`tools/call`, `prompts/get`, `resources/read`); no `Mcp-Session-Id` is used; and the test HTTP adapter streams the incoming body rather than buffering it. It merged as `7e0e4d132d4fa3ed0191dd7ff650cb30fccea594`. Exact-head checks passed on `7fc2d0ad675cb8af0ff8cd122cadfdd81c886bae`; post-merge Repository Quality [run 42509656601](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42509656601) and A5 [run 42509656452](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42509656452) passed on the merge commit.
+
+**Evidence boundary:** this proves the official TypeScript SDK v2.4.0 fixture's in-process and loopback HTTP discovery/tool-call path, synthetic bearer gate, required scope denial, host/origin allowlist behavior, body-size rejection, lockfile reproducibility and SBOM generation. It does not prove production OAuth/JWT/JWKS validation, proxy/DNS-rebinding topology, raw malformed-wire matrix, cancellation/lifecycle abuse coverage, tenant/action-bound Platform authorization in a live deployment, or interoperability with ChatGPT, Claude Desktop, VS Code, Cursor or Codex.
+
+**Gate 0 disposition: PARTIAL / OPEN.** Continue with raw HTTP header/body mismatch and protocol-version negative fixtures, signed test-key resource-server validation, Platform no-bypass contract tests, lifecycle/cancellation cases and real-client matrix. Do not authorize a production MCP endpoint or product adapters from this spike alone.
