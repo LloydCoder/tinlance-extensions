@@ -721,3 +721,14 @@ test("aborted request bodies stop reading and fail closed", async () => {
     await app.close();
   }
 });
+
+test("shared A3 Platform verifier rejects non-HTTPS issuer and JWKS endpoints", () => {
+  assert.throws(
+    () => createApp({ jwksUrl: "http://127.0.0.1/.well-known/jwks.json" }),
+    /valid HTTPS URL/
+  );
+  assert.throws(
+    () => createApp({ issuer: "http://issuer.test" }),
+    /valid HTTPS URL/
+  );
+});
