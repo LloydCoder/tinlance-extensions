@@ -16,7 +16,7 @@ import {
 const ISSUER = "https://issuer.test";
 const { publicKey, privateKey } = await generateKeyPair("EdDSA");
 
-async function signedToken() {
+async function signedToken(resourceUrl) {
   const now = Math.floor(Date.now() / 1000);
   return new SignJWT({
     client_id: "a5-network-cancellation-client",
@@ -31,7 +31,7 @@ async function signedToken() {
   })
     .setProtectedHeader({ alg: "EdDSA", typ: "at+jwt" })
     .setIssuer(ISSUER)
-    .setAudience("http://127.0.0.1/mcp")
+    .setAudience(resourceUrl)
     .setSubject("network-cancellation-subject")
     .setIssuedAt(now)
     .setExpirationTime(now + 300)
@@ -66,7 +66,7 @@ async function startNetworkFixture({ onToolStart, onToolAbort }) {
         }
       }
       if (!outgoing.destroyed) outgoing.end();
-    } catch (error) {
+    } catch {
       if (!outgoing.destroyed) {
         outgoing.writeHead(500);
         outgoing.end();
@@ -76,10 +76,11 @@ async function startNetworkFixture({ onToolStart, onToolAbort }) {
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
   const address = server.address();
   const origin = `http://127.0.0.1:${address.port}`;
+  const resourceUrl = `${origin}/mcp`;
   app = createConformanceApp({
     publicKey,
     issuer: ISSUER,
-    resourceUrl: `${origin}/mcp`,
+    resourceUrl,
     oauthMetadata: {
       issuer: ISSUER,
       authorization_endpoint: "https://issuer.test/authorize",
@@ -95,7 +96,7 @@ async function startNetworkFixture({ onToolStart, onToolAbort }) {
     onToolAbort
   });
   return {
-    url: `${origin}/mcp`,
+    url: resourceUrl,
     close: async () => {
       await app.close();
       server.closeAllConnections();
@@ -115,7 +116,7 @@ test("loopback HTTP disconnect propagates cancellation into in-flight MCP tool w
     onToolStart: markStarted,
     onToolAbort: markAborted
   });
-  const token = await signedToken();
+  const token = await signedToken(network.url);
   const client = new Client(
     { name: "a5-network-cancellation-client", version: "1.0.0" },
     { versionNegotiation: { mode: { pin: "2026-07-28" } } }
