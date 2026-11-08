@@ -181,8 +181,11 @@ async function startAuthorizationCodeFixture() {
         authorizationCodes.delete(form.get("code"));
         const now = Math.floor(Date.now() / 1000);
         const token = await new SignJWT({
+          jti: "0123456789abcdef0123456789abcdef",
           client_id: record.clientId,
           tenant_id: "tenant-test-001",
+          principal_type: "user",
+          request_id: "a5-pkce-request-001",
           scope: record.scope,
           purpose: platformActionPurpose(
             "tenant-test-001",
