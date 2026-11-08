@@ -14,7 +14,7 @@ function createApp(overrides = {}) {
   return createConformanceApp({
     verifyBearerToken: async (token) => token === validToken ? authInfo : null,
     allowedHosts: ["test.local"],
-    allowedOrigins: ["https://trusted.test"],
+    allowedOrigins: ["https://trusted.test", "http://test.local"],
     ...overrides
   });
 }
