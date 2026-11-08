@@ -146,6 +146,7 @@ export function createConformanceApp({
         });
 
         const identifierPattern = /^[A-Za-z0-9][A-Za-z0-9._:@/-]{0,255}$/;
+        const tenantIdPattern = /^[a-z0-9_-]{1,64}$/;
         const scopePattern = /^[A-Za-z0-9][A-Za-z0-9:._/-]{0,127}$/;
         const principalTypes = new Set(["user", "service", "agent", "workload"]);
         if (
@@ -155,7 +156,7 @@ export function createConformanceApp({
           typeof payload.client_id !== "string" ||
           !identifierPattern.test(payload.client_id) ||
           typeof payload.tenant_id !== "string" ||
-          !identifierPattern.test(payload.tenant_id) ||
+          !tenantIdPattern.test(payload.tenant_id) ||
           typeof payload.principal_type !== "string" ||
           !principalTypes.has(payload.principal_type) ||
           typeof payload.request_id !== "string" ||

@@ -119,11 +119,11 @@ test("Platform RS256 service token with complete delegated claims is accepted", 
   }
 });
 
-test("Platform tenant identifiers use the Platform normalized identifier contract", async () => {
+test("Platform tenant identifiers outside the A3 tenant schema are rejected", async () => {
   const app = createApp();
   try {
     const token = await signedPlatformToken({ claims: { tenant_id: "Tenant.A" } });
-    assert.notEqual((await requestWithToken(app, token)).status, 401);
+    assert.equal((await requestWithToken(app, token)).status, 401);
   } finally {
     await app.close();
   }
