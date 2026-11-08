@@ -145,7 +145,9 @@ export function createConformanceApp({
 
       const metadataResponse = oauthMetadataResponse(request, {
         oauthMetadata,
-        resourceServerUrl: resource
+        resourceServerUrl: resource,
+        scopesSupported: [REQUIRED_SCOPE],
+        resourceName: "Tinlance Extensions A5 conformance fixture"
       });
       if (metadataResponse) return metadataResponse;
 
