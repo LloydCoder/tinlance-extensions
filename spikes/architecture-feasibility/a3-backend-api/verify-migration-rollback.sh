@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-: "\${PGPASSWORD:?PGPASSWORD is required for the isolated PostgreSQL rollback test}"
-host="\${PGHOST:-127.0.0.1}"
-port="\${PGPORT:-5432}"
-user="\${PGUSER:-postgres}"
+: "${PGPASSWORD:?PGPASSWORD is required for the isolated PostgreSQL rollback test}"
+host="${PGHOST:-127.0.0.1}"
+port="${PGPORT:-5432}"
+user="${PGUSER:-postgres}"
 database="tinlance_rollback_test"
 migration_dir="spikes/architecture-feasibility/a3-backend-api/migrations"
 rollback_file="spikes/architecture-feasibility/a3-backend-api/rollback/rollback-all-test-only.sql"
