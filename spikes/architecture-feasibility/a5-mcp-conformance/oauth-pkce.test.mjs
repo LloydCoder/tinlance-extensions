@@ -322,16 +322,16 @@ test("official SDK authorization-code flow enforces PKCE S256, state, issuer and
     const validVerifier = provider.verifier;
     provider.verifier = "incorrect-pkce-verifier";
     await assert.rejects(initialTransport.finishAuth(params));
-    assert.equal(fixture.tokenRequests.length, 1);
-    assert.equal(fixture.tokenRequests[0].pkceValid, false, "incorrect PKCE verifier must be rejected");
+    assert.equal(fixture.tokenRequests.length, 2, "the SDK retries an invalid_grant exchange once");
+    assert.ok(fixture.tokenRequests.every((request) => !request.pkceValid), "incorrect PKCE verifier must be rejected on every retry");
 
     provider.verifier = validVerifier;
     await initialTransport.finishAuth(params);
-    assert.equal(fixture.tokenRequests.length, 2);
-    assert.equal(fixture.tokenRequests[1].grantType, "authorization_code");
-    assert.equal(fixture.tokenRequests[1].clientId, "a5-pkce-client");
-    assert.equal(fixture.tokenRequests[1].resource, fixture.resourceUrl);
-    assert.equal(fixture.tokenRequests[1].pkceValid, true);
+    assert.equal(fixture.tokenRequests.length, 3);
+    assert.equal(fixture.tokenRequests[2].grantType, "authorization_code");
+    assert.equal(fixture.tokenRequests[2].clientId, "a5-pkce-client");
+    assert.equal(fixture.tokenRequests[2].resource, fixture.resourceUrl);
+    assert.equal(fixture.tokenRequests[2].pkceValid, true);
 
     await initialTransport.close().catch(() => {});
     const authenticatedTransport = new StreamableHTTPClientTransport(new URL(fixture.resourceUrl), {
