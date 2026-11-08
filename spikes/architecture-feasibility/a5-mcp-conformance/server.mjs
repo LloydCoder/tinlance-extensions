@@ -115,6 +115,8 @@ export function createConformanceApp({
     throw new TypeError("allowedAlgorithms must be a non-empty unique subset of EdDSA and RS256");
   }
 
+  const verificationAlgorithms = Object.freeze([...allowedAlgorithms]);
+
   if (isTokenRevoked !== undefined && typeof isTokenRevoked !== "function") {
     throw new TypeError("isTokenRevoked must be a function when configured");
   }
@@ -138,7 +140,7 @@ export function createConformanceApp({
     async verifyAccessToken(token) {
       try {
         const { payload, protectedHeader } = await jwtVerify(token, verificationKey, {
-          algorithms: allowedAlgorithms,
+          algorithms: verificationAlgorithms,
           issuer,
           audience: resourceUrl
         });
@@ -153,7 +155,7 @@ export function createConformanceApp({
           typeof payload.client_id !== "string" ||
           !identifierPattern.test(payload.client_id) ||
           typeof payload.tenant_id !== "string" ||
-          !/^[a-z0-9_-]{1,64}$/.test(payload.tenant_id) ||
+          !identifierPattern.test(payload.tenant_id) ||
           typeof payload.principal_type !== "string" ||
           !principalTypes.has(payload.principal_type) ||
           typeof payload.request_id !== "string" ||
