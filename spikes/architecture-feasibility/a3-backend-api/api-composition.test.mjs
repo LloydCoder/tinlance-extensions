@@ -150,3 +150,113 @@ test("OIDC composition forwards the explicit dead-letter replay authorization po
     assert.deepEqual(await response.json(), { status: "requeued" });
   }, undefined, async ({ principal }) => principal.subject === "oidc-user-42");
 });
+
+const platformIssuer = "https://platform.identity.example.test/";
+const platformAudience = "tinlance-extensions-api";
+const platformJwksUri = "https://platform.identity.example.test/.well-known/jwks.json";
+const platformClientId = "tinlance-extensions-platform";
+const platformKeys = generateKeyPairSync("rsa", { modulusLength: 2048 });
+const platformJwk = {
+  ...platformKeys.publicKey.export({ format: "jwk" }),
+  kid: "platform-service-key",
+  alg: "RS256",
+  use: "sig",
+  key_ops: ["verify"]
+};
+
+function makePlatformToken(scope, requestId = "platform-request-0001", claims = {}) {
+  const now = Math.floor(Date.now() / 1000);
+  const header = Buffer.from(JSON.stringify({
+    alg: "RS256",
+    typ: "at+jwt",
+    kid: platformJwk.kid
+  })).toString("base64url");
+  const payload = Buffer.from(JSON.stringify({
+    iss: platformIssuer,
+    aud: platformAudience,
+    sub: "oidc-user-42",
+    tenant_id: "tenant-a",
+    client_id: platformClientId,
+    principal_type: "user",
+    scope,
+    request_id: requestId,
+    iat: now - 10,
+    exp: now + 120,
+    ...claims
+  })).toString("base64url");
+  const content = `${header}.${payload}`;
+  const signature = sign("RSA-SHA256", Buffer.from(content, "ascii"), platformKeys.privateKey).toString("base64url");
+  return `${content}.${signature}`;
+}
+
+async function withPlatformOidcServer(fn) {
+  const fetchImpl = async (url) => {
+    const keys = url === jwksUri ? [jwk] : url === platformJwksUri ? [platformJwk] : null;
+    if (!keys) throw new Error("unexpected JWKS URL");
+    return new Response(JSON.stringify({ keys }), {
+      status: 200,
+      headers: { "content-type": "application/json" }
+    });
+  };
+  const platformEnv = {
+    ...env,
+    PLATFORM_OIDC_ISSUER: platformIssuer,
+    PLATFORM_OIDC_AUDIENCE: platformAudience,
+    PLATFORM_OIDC_JWKS_URI: platformJwksUri,
+    PLATFORM_OIDC_CLIENT_ID: platformClientId
+  };
+  const server = createApiServerFromEnvironment({ repository, env: platformEnv, fetchImpl });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address();
+  try {
+    await fn(`http://127.0.0.1:${address.port}`);
+  } finally {
+    await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+  }
+}
+
+test("Platform delegated cancellation requires the trusted issuer, client and exact scope", async () => {
+  await withPlatformOidcServer(async (base) => {
+    const requestId = "platform-cancel-request-0001";
+    const token = makePlatformToken("extensions:jobs:cancel", requestId);
+    const allowed = await fetch(`${base}/v1/jobs/a4f6d9e2-1c3b-4a5d-8e7f-9012bc345678/cancel`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${token}` }
+    });
+    assert.equal(allowed.status, 200);
+    assert.equal(allowed.headers.get("x-request-id"), requestId);
+
+    const wrongScope = await fetch(`${base}/v1/jobs/a4f6d9e2-1c3b-4a5d-8e7f-9012bc345678/cancel`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${makePlatformToken("extensions:outbox:replay")}` }
+    });
+    assert.equal(wrongScope.status, 403);
+
+    const userTokenWithForgedScope = makeToken({ scope: "extensions:jobs:cancel" });
+    const userTokenResponse = await fetch(`${base}/v1/jobs/a4f6d9e2-1c3b-4a5d-8e7f-9012bc345678/cancel`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${userTokenWithForgedScope}` }
+    });
+    assert.equal(userTokenResponse.status, 403);
+  });
+});
+
+test("Platform delegated dead-letter replay requires the separate replay scope", async () => {
+  await withPlatformOidcServer(async (base) => {
+    const requestId = "platform-replay-request-0001";
+    const response = await fetch(`${base}/v1/outbox/dead-letters/c4f6d9e2-1c3b-4a5d-8e7f-9012bc345679/replay`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${makePlatformToken("extensions:outbox:replay", requestId)}` }
+    });
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get("x-request-id"), requestId);
+    assert.deepEqual(await response.json(), { status: "requeued" });
+  });
+});
+
+test("partial Platform OIDC configuration is rejected instead of silently disabling delegation", () => {
+  assert.throws(() => createApiServerFromEnvironment({
+    repository,
+    env: { ...env, PLATFORM_OIDC_ISSUER: platformIssuer }
+  }), /must provide issuer, audience, JWKS URI and client ID together/);
+});

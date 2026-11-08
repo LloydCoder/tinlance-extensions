@@ -224,6 +224,39 @@ export function createOidcBearerVerifier({
 
     const tenantId = claims[tenantClaim];
     if (typeof tenantId !== "string" || !TENANT_ID_PATTERN.test(tenantId)) return null;
-    return Object.freeze({ subject: claims.sub, tenantId });
+
+    // Platform delegation claims are exposed only as a complete, validated tuple.
+    // Ordinary OIDC user tokens may contain provider-specific scope claims, but those
+    // claims are never treated as Agent Platform authority.
+    if (claims.client_id === undefined) {
+      return Object.freeze({ subject: claims.sub, tenantId });
+    }
+    const clientId = claims.client_id;
+    const principalType = claims.principal_type;
+    const scope = claims.scope;
+    const requestId = claims.request_id;
+    const identifierPattern = /^[A-Za-z0-9][A-Za-z0-9._:@/-]{0,255}$/;
+    const scopePattern = /^[A-Za-z0-9][A-Za-z0-9:._/-]{0,127}$/;
+    const allowedPrincipalTypes = new Set(["user", "service", "agent", "workload"]);
+    if (
+      typeof clientId !== "string" || !identifierPattern.test(clientId) ||
+      typeof principalType !== "string" || !allowedPrincipalTypes.has(principalType) ||
+      typeof requestId !== "string" || !identifierPattern.test(requestId) ||
+      typeof scope !== "string" || scope.length < 1 || scope.length > 1024 ||
+      scope !== scope.trim() || scope.includes("  ")
+    ) return null;
+    const scopes = scope.split(" ");
+    if (scopes.length < 1 || scopes.length > 32 ||
+        scopes.some((item) => !scopePattern.test(item)) ||
+        new Set(scopes).size !== scopes.length) return null;
+    return Object.freeze({
+      subject: claims.sub,
+      tenantId,
+      issuer: claims.iss,
+      clientId,
+      principalType,
+      scopes: Object.freeze(scopes),
+      requestId
+    });
   };
 }

@@ -31,7 +31,7 @@ export function createApiServer({
   }
 
   return createServer(async (req, res) => {
-    const requestId = randomUUID();
+    let requestId = randomUUID();
     try {
       const url = new URL(req.url ?? "/", "http://localhost");
       if (req.method === "GET" && url.pathname === "/health/live") {
@@ -68,6 +68,9 @@ export function createApiServer({
       if (!principal || typeof principal.subject !== "string" || typeof principal.tenantId !== "string") {
         return json(res, 401, { error: "unauthorized", requestId }, requestId);
       }
+      // A verified Platform service token carries the original trusted request ID.
+      // End-user tokens do not expose this field and retain the server-generated ID.
+      if (typeof principal.requestId === "string") requestId = principal.requestId;
 
       if (req.method === "POST" && isCancellationRoute) {
         const jobId = cancellationMatch[1].toLowerCase();
