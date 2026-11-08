@@ -21,13 +21,14 @@ The dependency graph is pinned by `package.json` and `package-lock.json`. CI ver
 - In-process handler and real loopback HTTP discovery/tool-call paths.
 - EdDSA-signed JWT access-token verification with `jose`: algorithm, `typ=at+jwt`, issuer, audience/resource, expiry, subject, client ID, tenant claim presence, and scope.
 - SDK-native Bearer challenges for missing/invalid tokens and insufficient scopes.
+- Public RFC 9728 Protected Resource Metadata and RFC 8414 authorization-server metadata responses, verified without bearer authentication.
 - SDK Host/Origin validation helpers.
 - Bounded streaming request-body enforcement, including chunked bodies without Content-Length.
 - Negative tests for invalid issuer, audience, expiry, token type, missing tenant claim, missing scope, untrusted Host/Origin, and oversized bodies.
 
 ## Security and readiness boundary
 
-This is a test fixture only. The signing key is generated ephemerally for tests and is not a deployed issuer key. There is no production authorization server, JWKS endpoint or rotation, token revocation/introspection, client registration, PKCE flow, issuer discovery, or live trust configuration. The configured resource metadata URL is a challenge reference; this spike does not yet host the complete production metadata/authorization-server discovery chain.
+This is a test fixture only. The signing key is generated ephemerally for tests and is not a deployed issuer key. There is no production authorization server, JWKS endpoint or rotation, token revocation/introspection, client registration, PKCE flow, or live trust configuration. The published RFC 9728/RFC 8414 metadata is a synthetic fixture whose issuer and endpoints are placeholders; it proves metadata routing and response shape only, not a working authorization-server discovery or authorization-code flow.
 
 The tenant claim is required and parsed as part of token verification, but it is not yet bound to tenant-scoped data or a Platform authorization decision. Host/Origin allowlists are fixture inputs and must be replaced with reviewed production host/proxy policy.
 
@@ -35,7 +36,7 @@ No product adapters, database access, customer data, browser actions, write tool
 
 ## Gate 0 still requires
 
-- Production issuer integration, JWKS/key rotation, revocation/introspection, metadata publication, and a reviewed OAuth client flow.
+- Production issuer integration, JWKS/key rotation, revocation/introspection, real authorization-server metadata, and a reviewed OAuth client flow.
 - Production trusted Host/Origin and reverse-proxy topology tests.
 - Tenant/action-bound authorization integration with the Tinlance Agent Platform, including deny-by-default tests and approval requirements.
 - Full stateless HTTP wire fixtures: malformed JSON-RPC, protocol mismatch, content negotiation, method handling, body/time limits, cancellation, session lifecycle and abuse cases.
