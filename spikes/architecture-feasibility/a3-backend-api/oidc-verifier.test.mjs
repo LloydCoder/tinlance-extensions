@@ -144,3 +144,43 @@ test("JWKS response failures and private key material are rejected", async () =>
   });
   await assert.rejects(leaked(tokenFor(key)), /private key material/);
 });
+
+
+test("Platform-issued service tokens expose only validated delegation claims", async () => {
+  const key = createKey("platform-service-token");
+  const verifyBearer = createOidcBearerVerifier({
+    issuer, audience, jwksUri, fetchImpl: fetchJwks([key.jwk])
+  });
+  const delegated = tokenFor(key, {
+    client_id: "tinlance-extensions-platform",
+    principal_type: "user",
+    scope: "extensions:jobs:cancel extensions:outbox:replay",
+    request_id: "platform-request-0001"
+  });
+  assert.deepEqual(await verifyBearer(delegated), {
+    subject: "user-123",
+    tenantId: "tenant-a",
+    issuer,
+    clientId: "tinlance-extensions-platform",
+    principalType: "user",
+    scopes: ["extensions:jobs:cancel", "extensions:outbox:replay"],
+    requestId: "platform-request-0001"
+  });
+});
+
+test("incomplete or malformed Platform delegation claims fail closed", async () => {
+  const key = createKey("platform-invalid-claims");
+  const verifyBearer = createOidcBearerVerifier({
+    issuer, audience, jwksUri, fetchImpl: fetchJwks([key.jwk])
+  });
+  const invalid = [
+    { client_id: "tinlance-extensions-platform" },
+    { client_id: "tinlance-extensions-platform", principal_type: "user", scope: "extensions:jobs:cancel" },
+    { client_id: "tinlance-extensions-platform", principal_type: "user", scope: "extensions:jobs:cancel", request_id: "bad request" },
+    { client_id: "tinlance-extensions-platform", principal_type: "root", scope: "extensions:jobs:cancel", request_id: "platform-request-0002" },
+    { client_id: "tinlance-extensions-platform", principal_type: "user", scope: "extensions:jobs:cancel\nadmin", request_id: "platform-request-0002" }
+  ];
+  for (const claims of invalid) {
+    assert.equal(await verifyBearer(tokenFor(key, claims)), null);
+  }
+});
