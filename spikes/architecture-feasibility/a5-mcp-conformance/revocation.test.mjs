@@ -41,6 +41,7 @@ async function signedToken() {
 function createApp(isTokenRevoked) {
   return createConformanceApp({
     publicKey,
+    allowedAlgorithms: ["EdDSA"],
     issuer: ISSUER,
     resourceUrl: RESOURCE,
     oauthMetadata: {
