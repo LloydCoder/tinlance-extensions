@@ -155,20 +155,35 @@ test("worker processes recover crashed leases, claim concurrently, renew leases 
     await t.test("queued cancellation is idempotent and cannot cross tenant boundaries", async () => {
       const ownJob = await insertJob(pool, tenantId, `queued-cancel-${suffix}`);
       const otherJob = await insertJob(pool, otherTenantId, `other-cancel-${suffix}`);
-      assert.equal((await asTenant(pool, tenantId, "SELECT public.cancel_job($1) AS cancelled", [ownJob])).cancelled, true);
-      assert.equal((await asTenant(pool, tenantId, "SELECT public.cancel_job($1) AS cancelled", [ownJob])).cancelled, true);
-      assert.equal((await asTenant(pool, tenantId, "SELECT public.cancel_job($1) AS cancelled", [otherJob])).cancelled, false);
+      const requestId = randomUUID();
+      const auditActor = "worker-test-operator";
+      const cancellationSql = "SELECT public.cancel_job_audited($1, $2, $3) AS cancelled";
+      assert.equal((await asTenant(pool, tenantId, cancellationSql, [ownJob, auditActor, requestId])).cancelled, true);
+      assert.equal((await asTenant(pool, tenantId, cancellationSql, [ownJob, auditActor, requestId])).cancelled, true);
+      assert.equal((await asTenant(pool, tenantId, cancellationSql, [otherJob, auditActor, randomUUID()])).cancelled, false);
       const row = await pool.query("SELECT status, cancelled_at, lease_token FROM jobs WHERE id = $1", [ownJob]);
       assert.equal(row.rows[0].status, "cancelled");
       assert.ok(row.rows[0].cancelled_at);
       assert.equal(row.rows[0].lease_token, null);
+      const audit = await pool.query(
+        "SELECT actor_id, request_id, previous_status FROM job_cancellation_audit WHERE tenant_id = $1 AND job_id = $2",
+        [tenantId, ownJob]
+      );
+      assert.deepEqual(audit.rows, [{ actor_id: auditActor, request_id: requestId, previous_status: "queued" }]);
     });
 
     await t.test("running handler receives cancellation and cannot finish after its lease is revoked", async () => {
       const jobId = await insertJob(pool, tenantId, `running-cancel-${suffix}`);
       const child = startChild("slow", tenantId);
       await child.waitForOutput(`HANDLER_STARTED:${jobId}`);
-      const cancellation = await asTenant(pool, tenantId, "SELECT public.cancel_job($1) AS cancelled", [jobId]);
+      const requestId = randomUUID();
+      const auditActor = "worker-test-operator";
+      const cancellation = await asTenant(
+        pool,
+        tenantId,
+        "SELECT public.cancel_job_audited($1, $2, $3) AS cancelled",
+        [jobId, auditActor, requestId]
+      );
       assert.equal(cancellation.cancelled, true);
 
       const result = await child.closed;
@@ -178,6 +193,11 @@ test("worker processes recover crashed leases, claim concurrently, renew leases 
       assert.equal(row.rows[0].status, "cancelled");
       assert.ok(row.rows[0].cancelled_at);
       assert.equal(row.rows[0].lease_token, null);
+      const audit = await pool.query(
+        "SELECT actor_id, request_id, previous_status FROM job_cancellation_audit WHERE tenant_id = $1 AND job_id = $2",
+        [tenantId, jobId]
+      );
+      assert.deepEqual(audit.rows, [{ actor_id: auditActor, request_id: requestId, previous_status: "running" }]);
     });
 
     await t.test("lease heartbeat keeps a long-running handler from losing ownership", async () => {
