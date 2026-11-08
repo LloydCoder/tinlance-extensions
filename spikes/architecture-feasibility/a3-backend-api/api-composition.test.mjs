@@ -200,6 +200,24 @@ function platformActionPurpose(toolName, resourceId, idempotencyKey = null) {
   return "extensions-action-v1:" + createHash("sha256").update(canonical, "utf8").digest("hex");
 }
 
+test("Platform action purpose matches the shared cross-service contract vectors", () => {
+  assert.equal(
+    platformActionPurpose(
+      "extensions_job_cancel",
+      "a4f6d9e2-1c3b-4a5d-8e7f-9012bc345678"
+    ),
+    "extensions-action-v1:5d803f64204c300b4980e8db91cae8ca72072b5710d1155933ba8ce5e1d24acc"
+  );
+  assert.equal(
+    platformActionPurpose(
+      "extensions_dead_letter_replay",
+      "c4f6d9e2-1c3b-4a5d-8e7f-9012bc345679",
+      "replay-idempotency-0001"
+    ),
+    "extensions-action-v1:5504cf92a97f40cb51f7723dc30bb83a0c22ac9cb4158286639a01e735ced975"
+  );
+});
+
 async function withPlatformOidcServer(fn) {
   const fetchImpl = async (url) => {
     const keys = url === jwksUri ? [jwk] : url === platformJwksUri ? [platformJwk] : null;
