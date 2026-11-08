@@ -24,8 +24,8 @@ The dependency graph is pinned by `package.json` and `package-lock.json`. CI ver
 - SDK-native Bearer challenges for missing/invalid tokens and insufficient scopes.
 - SDK-served RFC 9728 Protected Resource Metadata and RFC 8414 Authorization Server Metadata discovery documents, including issuer and S256/CIMD capability declarations.
 - SDK Host/Origin validation helpers.
-- Bounded streaming request-body enforcement, including chunked bodies without Content-Length.
-- Negative tests for invalid issuer, audience, expiry, token type, missing tenant claim, missing scope, untrusted Host/Origin, and oversized bodies.
+- Bounded streaming request-body enforcement, including chunked bodies without Content-Length, with a configurable total read deadline and abort handling.
+- Negative tests for invalid issuer, audience, expiry, token type, missing tenant claim, missing scope, untrusted Host/Origin, oversized bodies, slow-body timeout, and client abort.
 
 ## Security and readiness boundary
 
