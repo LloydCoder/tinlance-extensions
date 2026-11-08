@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import http from "node:http";
 import { Readable } from "node:stream";
 import test from "node:test";
-import { Client, StreamableHTTPClientTransport } from "@modelcontextprotocol/client";
+import { Client, ClientCredentialsProvider, StreamableHTTPClientTransport } from "@modelcontextprotocol/client";
 import { exportJWK, generateKeyPair, SignJWT } from "jose";
 import { createConformanceApp, REQUIRED_SCOPE, ACTION_SCOPE, ACTION_TOOL_NAME, ACTION_RESOURCE_ID, platformActionPurpose } from "./server.mjs";
 
@@ -77,6 +77,154 @@ async function startJwksServer(initialKeys) {
     close: async () => new Promise((resolve, reject) =>
       server.close((error) => error ? reject(error) : resolve())
     )
+  };
+}
+
+
+async function startOAuthIntegrationServer() {
+  const clientId = "a5-machine-client";
+  const clientSecret = "synthetic-client-secret";
+  const keyId = "a5-oauth-signing-key-1";
+  const jwk = await exportJWK(publicKey);
+  jwk.kid = keyId;
+  jwk.alg = "EdDSA";
+  jwk.use = "sig";
+  const tokenRequests = [];
+  let invalidClientAttempts = 0;
+  let app;
+
+  const server = http.createServer(async (incoming, outgoing) => {
+    try {
+      const pathname = new URL(incoming.url, `http://${incoming.headers.host}`).pathname;
+      if (pathname === "/.well-known/jwks.json") {
+        outgoing.writeHead(200, {
+          "content-type": "application/json",
+          "cache-control": "public, max-age=60"
+        });
+        outgoing.end(JSON.stringify({ keys: [jwk] }));
+        return;
+      }
+
+      if (pathname === "/token") {
+        const chunks = [];
+        for await (const chunk of incoming) chunks.push(chunk);
+        const form = new URLSearchParams(Buffer.concat(chunks).toString("utf8"));
+        const authorization = incoming.headers.authorization ?? "";
+        const encoded = authorization.startsWith("Basic ") ? authorization.slice(6) : "";
+        const [receivedClientId, receivedClientSecret] = Buffer.from(encoded, "base64").toString("utf8").split(":");
+        const scope = form.get("scope") ?? "";
+        const resource = form.get("resource");
+        tokenRequests.push({
+          grant_type: form.get("grant_type"),
+          client_id: receivedClientId,
+          client_secret_valid: receivedClientSecret === clientSecret,
+          auth_scheme: authorization.startsWith("Basic ") ? "client_secret_basic" : "missing_or_unsupported",
+          scope,
+          resource
+        });
+        if (
+          incoming.method !== "POST" ||
+          form.get("grant_type") !== "client_credentials" ||
+          receivedClientId !== clientId ||
+          receivedClientSecret !== clientSecret ||
+          resource !== `${origin}/mcp` ||
+          !scope.split(" ").includes(REQUIRED_SCOPE)
+        ) {
+          invalidClientAttempts += 1;
+          outgoing.writeHead(401, {
+            "content-type": "application/json",
+            "cache-control": "no-store"
+          });
+          outgoing.end(JSON.stringify({ error: "invalid_client" }));
+          return;
+        }
+
+        const token = await signedToken({
+          issuer: origin,
+          audience: `${origin}/mcp`,
+          signingKey: privateKey,
+          kid: keyId,
+          claims: {
+            client_id: clientId,
+            tenant_id: "tenant-test-001",
+            scope,
+            purpose: platformActionPurpose(
+              "tenant-test-001",
+              "a5-machine-subject",
+              ACTION_TOOL_NAME,
+              ACTION_RESOURCE_ID
+            )
+          },
+          subject: "a5-machine-subject"
+        });
+        outgoing.writeHead(200, {
+          "content-type": "application/json",
+          "cache-control": "no-store"
+        });
+        outgoing.end(JSON.stringify({
+          access_token: token,
+          token_type: "Bearer",
+          expires_in: 300,
+          scope
+        }));
+        return;
+      }
+
+      const body = ["GET", "HEAD"].includes(incoming.method) ? undefined : Readable.toWeb(incoming);
+      const request = new Request(`http://${incoming.headers.host}${incoming.url}`, {
+        method: incoming.method,
+        headers: incoming.headers,
+        body,
+        ...(body ? { duplex: "half" } : {})
+      });
+      const response = await app.fetch(request);
+      outgoing.writeHead(response.status, Object.fromEntries(response.headers));
+      if (response.body) {
+        for await (const chunk of response.body) outgoing.write(chunk);
+      }
+      outgoing.end();
+    } catch {
+      outgoing.writeHead(500);
+      outgoing.end();
+    }
+  });
+
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address();
+  const origin = `http://127.0.0.1:${address.port}`;
+  const resourceUrl = `${origin}/mcp`;
+  const oauthMetadata = {
+    issuer: origin,
+    authorization_endpoint: `${origin}/authorize`,
+    token_endpoint: `${origin}/token`,
+    response_types_supported: [],
+    grant_types_supported: ["client_credentials"],
+    token_endpoint_auth_methods_supported: ["client_secret_basic"],
+    scopes_supported: [REQUIRED_SCOPE, ACTION_SCOPE],
+    authorization_response_iss_parameter_supported: true,
+    client_id_metadata_document_supported: true
+  };
+  app = createApp({
+    publicKey: undefined,
+    jwksUrl: `${origin}/.well-known/jwks.json`,
+    issuer: origin,
+    resourceUrl,
+    oauthMetadata,
+    allowedHostnames: ["127.0.0.1"],
+    allowedOriginHostnames: ["127.0.0.1"]
+  });
+
+  return {
+    origin,
+    url: resourceUrl,
+    clientId,
+    clientSecret,
+    tokenRequests,
+    get invalidClientAttempts() { return invalidClientAttempts; },
+    close: async () => {
+      await app.close();
+      await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+    }
   };
 }
 
@@ -707,5 +855,59 @@ test("aborted request bodies stop reading and fail closed", async () => {
     assert.deepEqual(await response.json(), { error: "request_aborted" });
   } finally {
     await app.close();
+  }
+});
+
+
+test("official ClientCredentialsProvider completes RFC 9728/8414 discovery, token exchange, JWKS validation, and MCP tool call", async () => {
+  const network = await startOAuthIntegrationServer();
+  const client = modernClient("a5-client-credentials-integration");
+  const provider = new ClientCredentialsProvider({
+    clientId: network.clientId,
+    clientSecret: network.clientSecret,
+    expectedIssuer: network.origin,
+    scope: `${REQUIRED_SCOPE} ${ACTION_SCOPE}`
+  });
+  try {
+    try {
+      await client.connect(new StreamableHTTPClientTransport(new URL(network.url), {
+        authProvider: provider
+      }));
+    } catch (error) {
+      throw new Error(`Client credentials discovery/token flow failed: ${error.message}; observed token requests: ${JSON.stringify(network.tokenRequests)}`);
+    }
+    const result = await client.callTool({
+      name: "extensions_health_read",
+      arguments: {}
+    });
+    assert.deepEqual(result.structuredContent, {
+      status: "ok",
+      protocol: "2026-07-28"
+    });
+    assert.ok(network.tokenRequests.length >= 2, "the per-tool scope challenge must trigger a second token exchange");
+    assert.equal(network.tokenRequests[0].grant_type, "client_credentials");
+    assert.equal(network.tokenRequests[0].client_id, network.clientId);
+    assert.equal(network.tokenRequests[0].resource, network.url);
+    assert.deepEqual(network.tokenRequests[0].scope.split(" "), [REQUIRED_SCOPE]);
+    assert.deepEqual(
+      network.tokenRequests[1].scope.split(" ").sort(),
+      [REQUIRED_SCOPE, ACTION_SCOPE].sort()
+    );
+
+    const rejectedClient = modernClient("a5-client-credentials-invalid-secret");
+    const rejectedProvider = new ClientCredentialsProvider({
+      clientId: network.clientId,
+      clientSecret: "incorrect-secret",
+      expectedIssuer: network.origin,
+      scope: `${REQUIRED_SCOPE} ${ACTION_SCOPE}`
+    });
+    await assert.rejects(rejectedClient.connect(new StreamableHTTPClientTransport(new URL(network.url), {
+      authProvider: rejectedProvider
+    })));
+    assert.ok(network.invalidClientAttempts >= 1);
+    await rejectedClient.close().catch(() => {});
+  } finally {
+    await client.close();
+    await network.close();
   }
 });
