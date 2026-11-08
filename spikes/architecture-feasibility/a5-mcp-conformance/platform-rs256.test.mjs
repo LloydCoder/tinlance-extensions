@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
+import http from "node:http";
 import test from "node:test";
-import { generateKeyPair, SignJWT } from "jose";
+import { exportJWK, generateKeyPair, SignJWT } from "jose";
 import {
   createConformanceApp,
   REQUIRED_SCOPE,
@@ -74,7 +75,7 @@ async function signedPlatformToken(overrides = {}) {
   const key = overrides.signingKey ?? privateKey;
   const alg = overrides.alg ?? "RS256";
   return new SignJWT(claims)
-    .setProtectedHeader({ alg, typ: "at+jwt" })
+    .setProtectedHeader({ alg, typ: "at+jwt", ...(overrides.kid ? { kid: overrides.kid } : {}) })
     .setIssuer(ISSUER)
     .setAudience(RESOURCE)
     .setSubject("platform-service-subject")
@@ -106,6 +107,51 @@ test("JWT algorithm allowlist is copied and cannot be widened by caller mutation
     assert.equal((await requestWithToken(app, token)).status, 401);
   } finally {
     await app.close();
+  }
+});
+
+test("Platform RS256 token is verified through a remote JWKS with kid selection", async () => {
+  const jwk = await exportJWK(publicKey);
+  jwk.kid = "platform-kms-key-1";
+  jwk.alg = "RS256";
+  jwk.use = "sig";
+  const server = http.createServer((_request, response) => {
+    response.writeHead(200, {
+      "content-type": "application/json",
+      "cache-control": "public, max-age=60"
+    });
+    response.end(JSON.stringify({ keys: [jwk] }));
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address();
+  const app = createConformanceApp({
+    jwksUrl: `http://127.0.0.1:${address.port}/.well-known/jwks.json`,
+    allowedAlgorithms: ["RS256"],
+    issuer: ISSUER,
+    resourceUrl: RESOURCE,
+    oauthMetadata: {
+      issuer: ISSUER,
+      authorization_endpoint: "https://platform.issuer.test/authorize",
+      token_endpoint: "https://platform.issuer.test/token",
+      response_types_supported: ["code"],
+      grant_types_supported: ["authorization_code"],
+      token_endpoint_auth_methods_supported: ["none"],
+      code_challenge_methods_supported: ["S256"]
+    },
+    allowedHostnames: ["extensions.test"],
+    allowedOriginHostnames: ["extensions.test"]
+  });
+  try {
+    const valid = await signedPlatformToken({ kid: "platform-kms-key-1" });
+    assert.notEqual((await requestWithToken(app, valid)).status, 401);
+    const unknownKid = await signedPlatformToken({ kid: "unpublished-kms-key" });
+    assert.equal((await requestWithToken(app, unknownKid)).status, 401);
+  } finally {
+    await app.close();
+    server.closeAllConnections();
+    await new Promise((resolve, reject) =>
+      server.close((error) => error ? reject(error) : resolve())
+    );
   }
 });
 
