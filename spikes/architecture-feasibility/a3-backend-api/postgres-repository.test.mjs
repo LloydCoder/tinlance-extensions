@@ -66,7 +66,7 @@ test("job cancellation uses the restricted role and transaction-local tenant con
   };
   const repository = createPostgresRepository({ pool });
   const jobId = "a4f6d9e2-1c3b-4a5d-8e7f-9012bc345678";
-  const requestId = "d4f6d9e2-1c3b-4a5d-8e7f-9012bc345670";
+  const requestId = "mcp-0123456789abcdef0123456789abcdef";
 
   assert.equal(await repository.cancelJobForTenant(jobId, "tenant-a", "operator-42", requestId), true);
   assert.deepEqual(statements, [
@@ -86,7 +86,7 @@ test("invalid job identifiers are rejected before acquiring a database connectio
   };
   const repository = createPostgresRepository({ pool });
 
-  const requestId = "d4f6d9e2-1c3b-4a5d-8e7f-9012bc345670";
+  const requestId = "mcp-0123456789abcdef0123456789abcdef";
   assert.equal(await repository.cancelJobForTenant("not-a-uuid", "tenant-a", "operator-42", requestId), false);
   assert.equal(await repository.cancelJobForTenant("a4f6d9e2-1c3b-4a5d-8e7f-9012bc345678", "tenant-a", "operator\nforged", requestId), false);
   assert.equal(connectionAttempts, 0);
@@ -110,7 +110,7 @@ test("dead-letter replay passes verified tenant, actor and request identity to P
   };
   const repository = createPostgresRepository({ pool });
   const eventId = "c4f6d9e2-1c3b-4a5d-8e7f-9012bc345679";
-  const requestId = "d4f6d9e2-1c3b-4a5d-8e7f-9012bc345670";
+  const requestId = "mcp-0123456789abcdef0123456789abcdef";
 
   assert.equal(await repository.replayDeadLetterForTenant(eventId, "tenant-a", "operator-42", requestId), true);
   assert.deepEqual(statements, [
@@ -130,9 +130,10 @@ test("invalid replay audit identities are rejected before acquiring a connection
   };
   const repository = createPostgresRepository({ pool });
   const eventId = "c4f6d9e2-1c3b-4a5d-8e7f-9012bc345679";
-  const requestId = "d4f6d9e2-1c3b-4a5d-8e7f-9012bc345670";
+  const requestId = "mcp-0123456789abcdef0123456789abcdef";
 
   assert.equal(await repository.replayDeadLetterForTenant(eventId, "tenant-a", "operator-42", "invalid"), false);
+  assert.equal(await repository.replayDeadLetterForTenant(eventId, "tenant-a", "operator-42", "mcp-bad request id"), false);
   assert.equal(await repository.replayDeadLetterForTenant(eventId, "tenant-a", "", requestId), false);
   assert.equal(await repository.replayDeadLetterForTenant(eventId, "tenant-a", "operator\nforged", requestId), false);
   assert.equal(connectionAttempts, 0);
