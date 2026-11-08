@@ -13,6 +13,7 @@
     "@modelcontextprotocol/client": "2.4.0",
     "@modelcontextprotocol/core": "2.4.0",
     "@modelcontextprotocol/server": "2.4.0",
+    "jose": "6.2.16",
     "zod": "4.2.0"
   }
 }
