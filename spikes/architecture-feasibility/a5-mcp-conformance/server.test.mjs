@@ -124,7 +124,9 @@ test("the same SDK client completes discovery and a tool call over real HTTP", a
     for (const headers of network.receivedHeaders) {
       assert.equal(headers["mcp-protocol-version"], "2026-07-28");
       assert.ok(headers["mcp-method"], "every stateless request carries Mcp-Method");
-      assert.ok(headers["mcp-name"], "every stateless request carries Mcp-Name");
+      if (["tools/call", "prompts/get", "resources/read"].includes(headers["mcp-method"])) {
+        assert.ok(headers["mcp-name"], "named MCP operations carry Mcp-Name");
+      }
       assert.equal(headers["mcp-session-id"], undefined, "modern requests must not use protocol sessions");
     }
     assert.ok(network.receivedHeaders.some((headers) =>
