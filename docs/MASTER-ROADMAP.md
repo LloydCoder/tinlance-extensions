@@ -419,7 +419,7 @@ This closes the **database/API cancellation audit feasibility slice**, not the p
 
 ## Agent Platform cancellation integration — PR #63 and Platform PR #193
 
-Current Extensions main checkpoint: `f9c156e51d5ee69400dd34b7df8aea60497e555c`.
+Current Extensions main checkpoint: `7f74412399fedda54da9da2e60a883f50994b3a0`.
 
 The A6 job-cancellation path now has both the receiving and issuing sides implemented:
 
@@ -430,7 +430,7 @@ Extensions PR #63 exact-head checks passed: Repository Quality [42435748336](htt
 
 Platform PR #193 exact-head CI, R10 certification, reference-agent, CodeQL and secret-scan checks passed on `023b0e06a4e3716be97c16b0f79020e8d0eb1859`; post-merge CI, R10, reference-agent, CodeQL, secret-scan and supply-chain attestation passed on `351848b3241ec6768a3fd07ee32d3d44cec41ac3`.
 
-**This is a code-level integration, not a live production connection.** Deployment still needs a real Platform KMS asymmetric signing key, issuer/client ID, published HTTPS JWKS endpoint, Extensions API base URL, and matching `PLATFORM_OIDC_ISSUER`, `PLATFORM_OIDC_AUDIENCE`, `PLATFORM_OIDC_JWKS_URI`, and `PLATFORM_OIDC_CLIENT_ID` configuration. The Platform-side tool registration currently covers job cancellation only; the Extensions receiver has a separate replay scope, but the Platform-side high-risk, approval-bound dead-letter replay tool is not yet registered. Production deployment, provider identity mapping, secret rotation, and live end-to-end proof remain open.
+**This is a code-level integration, not a live production connection.** Deployment still needs a real Platform KMS asymmetric signing key, issuer/client ID, published HTTPS JWKS endpoint, Extensions API base URL, and matching `PLATFORM_OIDC_ISSUER`, `PLATFORM_OIDC_AUDIENCE`, `PLATFORM_OIDC_JWKS_URI`, and `PLATFORM_OIDC_CLIENT_ID` configuration. At that earlier checkpoint, Platform-side registration covered job cancellation only; this limitation is superseded by Agent Platform PR #195, recorded below. Production deployment, provider identity mapping, secret rotation, and live end-to-end proof remain open.
 
 The earlier A3 database-side cancellation audit evidence remains valid. This update does not close A3, Phase 02, A2 Safari runtime/distribution, A4–A7, or any customer/product-owner/legal/commercial approval gate.
 
@@ -442,3 +442,22 @@ PR #65 merged to `main` as `9715a0c0541b9244124e11228057d60bf7c9e2fa`. A test-fi
 The regression test was committed first and the A3 API workflow failed as expected on the test-only head `faa35d9dbe3cb7a2bea3e1f0fd09544c0c6fa85a` (A3 API run 42456390501). After the implementation fix, exact-head checks passed on `4b3ec256e2980b08806786430ab21a8e7976b939`: Repository Quality [42456413690](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42456413690), A3 API [42456413743](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42456413743), and PostgreSQL 16 [42456413585](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42456413585). Post-merge checks passed on `9715a0c0541b9244124e11228057d60bf7c9e2fa`: Repository Quality [42456480565](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42456480565), A3 API [42456480483](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42456480483), and PostgreSQL 16 [42456480506](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42456480506).
 
 This closes the environment integer parsing regression only. It does not close A3 production readiness, production identity-provider onboarding, live KMS/JWKS deployment, secret rotation, provider delivery, operator workflows, migration rollback, production recovery objectives, observability/SLOs, retention/deletion or legal/security review. Phase 02 external evidence gates, A2 Safari runtime/distribution, and A4–A7 remain open as previously recorded.
+
+
+## Platform approval-bound dead-letter replay — Agent Platform PR #195
+
+The historical A6 integration note above is superseded: Agent Platform PR #195 now adds the issuing-side, high-risk dead-letter replay operation. PR #195 merged to Agent Platform `main` as `a2cd923b7d187de2f0b983a169ea0f03ff96aa94` (PR head `f4ba45893cf0261deff58629ba964a24e28e953d`).
+
+The merged Platform implementation adds:
+
+- MCP tool `extensions_dead_letter_replay`, capability `extensions.outbox.dead_letter.replay`, HIGH risk, explicit approval requirement, and an idempotency argument.
+- A tenant-, subject-, request-, run-, event- and idempotency-bound approval fingerprint. The gateway consumes the approved intent before invoking the downstream transport; absent approval verification fails closed.
+- MCP tool schema publication and request-ID derivation compatible with the stateless MCP protocol adapter, including reconstruction of the idempotency key that the adapter moves into request metadata.
+- A short-lived, audience-bound Platform service token for `tinlance-extensions-api` carrying only `extensions:outbox:replay`. The inbound user bearer token is not forwarded.
+- Platform API idempotency guarding for the replay operation. Tests cover approved replay, missing verifier, altered event intent, one-time approval consumption, same-key retry without a second downstream side effect, and MCP request-ID derivation.
+
+Exact-head PR #195 workflows passed on `f4ba45893cf0261deff58629ba964a24e28e953d`: CI [42457556036](https://github.com/LloydCoder/tinlance-agent-platform/actions/runs/42457556036), R10 Certification [42457556104](https://github.com/LloydCoder/tinlance-agent-platform/actions/runs/42457556104), Reference Agents [42457556084](https://github.com/LloydCoder/tinlance-agent-platform/actions/runs/42457556084), CodeQL [42457556048](https://github.com/LloydCoder/tinlance-agent-platform/actions/runs/42457556048), and Secret Scan [42457556050](https://github.com/LloydCoder/tinlance-agent-platform/actions/runs/42457556050). Post-merge Agent Platform `main` checks passed on `a2cd923b7d187de2f0b983a169ea0f03ff96aa94`: CI [42457671532](https://github.com/LloydCoder/tinlance-agent-platform/actions/runs/42457671532), R10 [42457671536](https://github.com/LloydCoder/tinlance-agent-platform/actions/runs/42457671536), Reference Agents [42457671509](https://github.com/LloydCoder/tinlance-agent-platform/actions/runs/42457671509), CodeQL [42457671552](https://github.com/LloydCoder/tinlance-agent-platform/actions/runs/42457671552), Secret Scan [42457671510](https://github.com/LloydCoder/tinlance-agent-platform/actions/runs/42457671510), and Supply Chain Attestation [42457671530](https://github.com/LloydCoder/tinlance-agent-platform/actions/runs/42457671530).
+
+**Readiness boundary:** this closes the missing Platform-side replay registration and reference integration tests; it does not prove a live production deployment. The approval verifier is injected and defaults to fail-closed; production must supply a durable, tenant-scoped approval implementation and durable idempotency/permit semantics across replicas. Real KMS key provisioning, issuer/client configuration, HTTPS JWKS publication, matching Extensions OIDC environment configuration, secret rotation, deployment, and live cross-service replay proof remain outstanding. A3 production operations, Phase 02 external evidence gates, A2 Safari runtime/distribution, A4–A7, and customer/legal/commercial approvals remain open.
+
+Current Tinlance Extensions repository checkpoint: `7f74412399fedda54da9da2e60a883f50994b3a0` (PR #66). Repository Quality passed on that exact main commit [42456582929](https://github.com/LloydCoder/tinlance-extensions/actions/runs/42456582929). No open pull requests or issues were present at this checkpoint.
