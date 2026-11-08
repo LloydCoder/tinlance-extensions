@@ -1,7 +1,7 @@
 # Tinlance Extensions — Final Consolidated Phase Plan
 
 **Document status:** Accepted programme baseline; implementation authorization remains gated
-**Date:** 2026-11-07
+**Date:** 2026-11-08
 **Owner:** Tinlance Limited
 **Repository:** https://github.com/LloydCoder/tinlance-extensions
 **Canonical catalogue:** [26 products](PRODUCT-CATALOGUE.md)
@@ -652,3 +652,8 @@ Platform PR #193 exact-head CI, R10 certification, reference-agent, CodeQL and s
 **This is a code-level integration, not a live production connection.** Deployment still needs a real Platform KMS asymmetric signing key, issuer/client ID, published HTTPS JWKS endpoint, Extensions API base URL, and matching `PLATFORM_OIDC_ISSUER`, `PLATFORM_OIDC_AUDIENCE`, `PLATFORM_OIDC_JWKS_URI`, and `PLATFORM_OIDC_CLIENT_ID` configuration. The Platform-side tool registration currently covers job cancellation only; the Extensions receiver has a separate replay scope, but the Platform-side high-risk, approval-bound dead-letter replay tool is not yet registered. Production deployment, provider identity mapping, secret rotation, and live end-to-end proof remain open.
 
 The earlier A3 database-side cancellation audit evidence remains valid. This update does not close A3, Phase 02, A2 Safari runtime/distribution, A4–A7, or any customer/product-owner/legal/commercial approval gate.
+
+
+## 13. Verified checkpoint — 2026-11-08
+
+Current `main` is `9715a0c0541b9244124e11228057d60bf7c9e2fa` after PR #65. Exact-head and post-merge Repository Quality, A3 API and PostgreSQL workflows all passed; see [programme execution status](PROGRAMME-EXECUTION-STATUS.md) for run IDs. The latest PR #65 change is a correctness fix to decimal integer parsing in OIDC configuration, not a phase exit or production-readiness decision. No product implementation authorization, paid infrastructure authorization, Phase 02 closeout or Phase 03 feasibility completion is inferred.
