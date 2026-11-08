@@ -71,3 +71,6 @@ The A5 verifier now supports an explicitly configured RS256 allowlist and valida
 ## Cross-service tenant ID alignment — PRs #214 and #108
 
 The Platform service-token issuer, A3 PostgreSQL schema/verifier and A5 RS256 verifier now share the tenant ID contract `^[a-z0-9_-]{1,64}$`. Platform refuses to mint tokens for uppercase/dotted IDs that Extensions cannot store or verify; A5 rejects them too. This removes a code-level mismatch but does not prove live KMS/JWKS or production cross-service traffic.
+## RS256 remote JWKS test — PR #114
+
+The A5 suite now verifies Platform-style RS256 tokens using a remote JWKS endpoint and `kid` selection, including rejection for an unpublished key ID. This remains a local synthetic JWKS fixture; live KMS/JWKS discovery, key rotation, revocation and production network connectivity are still open.
