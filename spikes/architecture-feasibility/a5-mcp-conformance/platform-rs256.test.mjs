@@ -14,10 +14,10 @@ const RESOURCE = "https://extensions.test/mcp";
 const { publicKey, privateKey } = await generateKeyPair("RS256");
 const { privateKey: edPrivateKey } = await generateKeyPair("EdDSA");
 
-function createApp() {
+function createApp(allowedAlgorithms = ["RS256"]) {
   return createConformanceApp({
     publicKey,
-    allowedAlgorithms: ["RS256"],
+    allowedAlgorithms,
     issuer: ISSUER,
     resourceUrl: RESOURCE,
     oauthMetadata: {
@@ -33,6 +33,25 @@ function createApp() {
     allowedOriginHostnames: ["extensions.test"]
   });
 }
+
+test("resource server refuses to start without an explicit JWT algorithm allowlist", () => {
+  assert.throws(() => createConformanceApp({
+    publicKey,
+    issuer: ISSUER,
+    resourceUrl: RESOURCE,
+    oauthMetadata: {
+      issuer: ISSUER,
+      authorization_endpoint: "https://platform.issuer.test/authorize",
+      token_endpoint: "https://platform.issuer.test/token",
+      response_types_supported: ["code"],
+      grant_types_supported: ["authorization_code"],
+      token_endpoint_auth_methods_supported: ["none"],
+      code_challenge_methods_supported: ["S256"]
+    },
+    allowedHostnames: ["extensions.test"],
+    allowedOriginHostnames: ["extensions.test"]
+  }), /allowedAlgorithms/);
+});
 
 async function signedPlatformToken(overrides = {}) {
   const now = Math.floor(Date.now() / 1000);
@@ -77,6 +96,18 @@ async function requestWithToken(app, token) {
     body: "{}"
   }));
 }
+
+test("JWT algorithm allowlist is copied and cannot be widened by caller mutation", async () => {
+  const configuredAlgorithms = ["RS256"];
+  const app = createApp(configuredAlgorithms);
+  try {
+    configuredAlgorithms.push("EdDSA");
+    const token = await signedPlatformToken({ alg: "EdDSA", signingKey: edPrivateKey });
+    assert.equal((await requestWithToken(app, token)).status, 401);
+  } finally {
+    await app.close();
+  }
+});
 
 test("Platform RS256 service token with complete delegated claims is accepted", async () => {
   const app = createApp();

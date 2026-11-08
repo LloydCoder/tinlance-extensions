@@ -253,6 +253,7 @@ async function startAuthorizationCodeFixture() {
   const resourceUrl = `${origin}/mcp`;
   app = createConformanceApp({
     jwksUrl: `${origin}/.well-known/jwks.json`,
+    allowedAlgorithms: ["EdDSA"],
     issuer: origin,
     resourceUrl,
     oauthMetadata: {

@@ -234,6 +234,7 @@ async function startOAuthIntegrationServer() {
 function createApp(overrides = {}) {
   return createConformanceApp({
     publicKey,
+    allowedAlgorithms: overrides.allowedAlgorithms ?? ["EdDSA"],
     issuer: ISSUER,
     resourceUrl: RESOURCE,
     oauthMetadata: OAUTH_METADATA,

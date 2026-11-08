@@ -82,6 +82,7 @@ async function startNetworkFixture({ onToolStart, onToolAbort }) {
   const resourceUrl = `${origin}/mcp`;
   app = createConformanceApp({
     publicKey,
+    allowedAlgorithms: ["EdDSA"],
     issuer: ISSUER,
     resourceUrl,
     oauthMetadata: {
