@@ -37,7 +37,7 @@ jobs:
         working-directory: spikes/architecture-feasibility/a5-mcp-conformance
         run: npm sbom --sbom-format cyclonedx > sbom.cdx.json
       - name: Export generated SBOM for review
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: a5-cyclonedx-sbom
           path: spikes/architecture-feasibility/a5-mcp-conformance/sbom.cdx.json

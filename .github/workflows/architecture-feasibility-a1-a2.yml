@@ -111,14 +111,14 @@ jobs:
           if-no-files-found: error
           retention-days: 3
       - name: Publish Safari extension input
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: safari-readonly-extension
           path: spikes/architecture-feasibility/a1-a2/apps/extension-readonly/.output/safari-mv2/
           if-no-files-found: error
           retention-days: 3
       - name: Publish Chromium permission-sensitive extension input
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: chromium-permission-sensitive-extension
           path: spikes/architecture-feasibility/a1-a2/apps/extension-permission-sensitive/.output/chrome-mv3/
@@ -157,7 +157,7 @@ jobs:
           xcodebuild -list -project "$project"
           bash spikes/architecture-feasibility/a1-a2/scripts/verify-safari-xcode-build.sh "$project" "$RUNNER_TEMP/safari-derived-data"
       - name: Preserve generated Safari Xcode project for review
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: safari-xcode-project-feasibility
           path: ${{ runner.temp }}/TinlanceReadOnlySpike/
